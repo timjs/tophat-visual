@@ -22,6 +22,8 @@ module Preload
   , span
   , group
   , groupBy
+  , class Initialise
+  , from
   -- Functions
   , (<<)
   , (>>)
@@ -50,7 +52,7 @@ module Preload
   , class Torsor
   , diff
   , adjust
-  -- Foldables, Traversables
+  -- Foldables, Traversables, Unfoldables
   , foldlInfix
   , (/:)
   , foldrInfix
@@ -101,10 +103,12 @@ import Data.FoldableWithIndex hiding (foldlDefault, foldrDefault, foldMapDefault
 import Data.Function (apply, applyFlipped)
 import Data.Functor (mapFlipped, voidLeft, voidRight) as Reexport
 import Data.HashMap (HashMap) as Reexport
+import Data.HashMap as HashMap
 import Data.HashSet (HashSet) as Reexport
 import Data.HashSet as HashSet
 import Data.Hashable (class Hashable) as Reexport
 import Data.List (List) as Reexport
+import Data.List as List
 import Data.Maybe hiding (fromMaybe) as Reexport
 import Data.Monoid (mempty)
 import Data.Newtype (class Newtype, wrap, unwrap, ala, over, over2, under, under2) as Reexport
@@ -195,6 +199,19 @@ groupBy f = Slice.fromArray >> Slice.groupBy f >> Reexport.map fromNonEmptyArray
 -- INTERNAL USE ONLY --
 fromNonEmptyArrayView :: forall a. Slice.NonEmptyArrayView a -> Reexport.NonEmpty Slice a
 fromNonEmptyArrayView (Slice.NonEmptyArrayView xs) = xs
+
+class Initialise c i | c -> i where
+  -- type Item c = i
+  from :: Array i -> c
+
+instance initialiseList :: Initialise (Reexport.List a) a where
+  from = List.fromFoldable
+
+instance initialiseHashSet :: Reexport.Hashable a => Initialise (Reexport.HashSet a) a where
+  from = HashSet.fromArray
+
+instance initialiseHashMap :: Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k Reexport./\ v) where
+  from = HashMap.fromArray
 
 ---- Functions -----------------------------------------------------------------
 infixr 9 Reexport.compose as <<

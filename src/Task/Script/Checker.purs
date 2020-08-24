@@ -9,35 +9,35 @@ module Task.Script.Checker
 import Preload hiding (note)
 import Run (Run, extract)
 import Run.Except (EXCEPT, note, runExcept, throw)
-import Task.Script.Syntax (Argument(..), BasicTy, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimTy(..), Row, Statement(..), Task(..), Ty(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Statement(..), Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 
 ---- Errors --------------------------------------------------------------------
 data TypeError
   = UnknownVariable Name
-  | UnknownLabel Label Ty
-  | ArgumentError Ty Ty
-  | VariantError Label Ty Ty
-  | BranchError Ty Ty
-  | BranchesError (Row Ty)
-  | AssignError Ty Ty
-  | ListError Ty Ty
-  | FunctionNeeded Ty
-  | BoolNeeded Ty
-  | RecordNeeded Ty
-  | VariantNeeded Ty
-  | ListNeeded Ty
-  | ReferenceNeeded Ty
-  | TaskNeeded Ty
-  | BasicNeeded Ty
+  | UnknownLabel Label Type
+  | ArgumentError Type Type
+  | VariantError Label Type Type
+  | BranchError Type Type
+  | BranchesError (Row Type)
+  | AssignError Type Type
+  | ListError Type Type
+  | FunctionNeeded Type
+  | BoolNeeded Type
+  | RecordNeeded Type
+  | VariantNeeded Type
+  | ListNeeded Type
+  | ReferenceNeeded Type
+  | TaskNeeded Type
+  | BasicNeeded Type
   | UnknownLabels Labels Labels
   | DoubleLabels Labels Labels
   | EmptyCase
   | EmptyChoice
   | HoleFound Context
-  | RecordMismatch (Row Match) Ty
-  | UnpackMismatch Ty
+  | RecordMismatch (Row Match) Type
+  | UnpackMismatch Type
 
 instance showTypeError :: Show TypeError where
   show = case _ of
@@ -70,10 +70,10 @@ instance showTypeError :: Show TypeError where
 
 ---- Checker -------------------------------------------------------------------
 type Context
-  = HashMap Name Ty
+  = HashMap Name Type
 
 class Check a where
-  check :: Context -> a -> Run ( except :: EXCEPT TypeError ) Ty
+  check :: Context -> a -> Run ( except :: EXCEPT TypeError ) Type
 
 instance checkExpression :: Check Expression where
   check g = case _ of
@@ -227,7 +227,7 @@ merge r1 r2 =
   where
   ds = r1 \\ r2
 
-smash :: Row Ty -> Run ( except :: EXCEPT TypeError ) Ty
+smash :: Row Type -> Run ( except :: EXCEPT TypeError ) Type
 smash r = case HashMap.values r |> uncons of
   Nothing -> throw <| EmptyCase
   Just { head, tail } ->
@@ -236,39 +236,39 @@ smash r = case HashMap.values r |> uncons of
     else
       throw <| BranchesError r
 
-needBasic :: Ty -> Run ( except :: EXCEPT TypeError ) Ty
+needBasic :: Type -> Run ( except :: EXCEPT TypeError ) Type
 needBasic t
   | isBasic t = done t
   | otherwise = throw <| BasicNeeded t
 
-outofBasic :: Ty -> Run ( except :: EXCEPT TypeError ) BasicTy
+outofBasic :: Type -> Run ( except :: EXCEPT TypeError ) BasicType
 outofBasic t
   | Just b <- ofType t = done b
   | otherwise = throw <| BasicNeeded t
 
-outofRecord :: Ty -> Run ( except :: EXCEPT TypeError ) (Row Ty)
+outofRecord :: Type -> Run ( except :: EXCEPT TypeError ) (Row Type)
 outofRecord t
   | Just r <- ofRecord t = done r
   | otherwise = throw <| RecordNeeded t
 
-outofReference :: Ty -> Run ( except :: EXCEPT TypeError ) Ty
+outofReference :: Type -> Run ( except :: EXCEPT TypeError ) Type
 outofReference t
   | Just b <- ofReference t = done <| ofBasic b
   | otherwise = throw <| ReferenceNeeded t
 
-outofTask :: Ty -> Run ( except :: EXCEPT TypeError ) (Row Ty)
+outofTask :: Type -> Run ( except :: EXCEPT TypeError ) (Row Type)
 outofTask t
   | Just r <- ofTask t = done r
   | otherwise = throw <| TaskNeeded t
 
-returnValue :: forall m. Monad m => Ty -> m Ty
-returnValue t = done <| TTask <| HashMap.fromFoldable [ "value" /\ t ]
+returnValue :: forall m. Monad m => Type -> m Type
+returnValue t = done <| TTask <| from [ "value" /\ t ]
 
 ---- Matcher -------------------------------------------------------------------
-match :: Match -> Ty -> Run ( except :: EXCEPT TypeError ) Context
+match :: Match -> Type -> Run ( except :: EXCEPT TypeError ) Context
 match m t = case m of
   MIgnore -> done neutral
-  MBind x -> done <| HashMap.fromFoldable [ x /\ t ]
+  MBind x -> done <| from [ x /\ t ]
   MRecord ms -> do
     case t of
       TRecord r -> merge ms r |= traverse (uncurry match) |= unite
@@ -284,7 +284,7 @@ execute = runExcept >> extract
 
 ---- Helpers -------------------------------------------------------------------
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
-keys = HashMap.keys >> HashSet.fromArray
+keys = HashMap.keys >> from
 
 infixl 6 HashMap.intersection as ^^
 

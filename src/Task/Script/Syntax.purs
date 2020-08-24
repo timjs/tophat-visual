@@ -6,13 +6,13 @@ module Task.Script.Syntax
   , Label
   , Message
   -- # Types
-  , Ty(..)
+  , Type(..)
   , ofRecord
   , ofVariant
   , ofReference
   , ofTask
-  , PrimTy(..)
-  , BasicTy(..)
+  , PrimType(..)
+  , BasicType(..)
   , ofType
   , ofBasic
   , isBasic
@@ -47,18 +47,18 @@ type Message
   = String
 
 ---- Types ---------------------------------------------------------------------
-data Ty
-  = TFunction Ty Ty
-  | TList Ty
-  | TRecord (Row Ty)
-  | TVariant (Row Ty)
-  | TReference BasicTy
-  | TTask (Row Ty)
-  | TPrimitive PrimTy
+data Type
+  = TFunction Type Type
+  | TList Type
+  | TRecord (Row Type)
+  | TVariant (Row Type)
+  | TReference BasicType
+  | TTask (Row Type)
+  | TPrimitive PrimType
 
-derive instance eqTy :: Eq Ty
+derive instance eqType :: Eq Type
 
-instance showTy :: Show Ty where
+instance showType :: Show Type where
   show = case _ of
     TFunction t1 t2 -> unwords [ show t1, "->", show t2 ] |> inbetween '(' ')'
     TList t -> unwords [ "List", show t ]
@@ -68,55 +68,55 @@ instance showTy :: Show Ty where
     TTask t -> unwords [ "Task", show t ]
     TPrimitive p -> show p
 
-ofRecord :: Ty -> Maybe (Row Ty)
+ofRecord :: Type -> Maybe (Row Type)
 ofRecord = case _ of
   TRecord r -> Just r
   _ -> Nothing
 
-ofVariant :: Ty -> Maybe (Row Ty)
+ofVariant :: Type -> Maybe (Row Type)
 ofVariant = case _ of
   TVariant r -> Just r
   _ -> Nothing
 
-ofReference :: Ty -> Maybe BasicTy
+ofReference :: Type -> Maybe BasicType
 ofReference = case _ of
   TReference b -> Just b
   _ -> Nothing
 
-ofTask :: Ty -> Maybe (Row Ty)
+ofTask :: Type -> Maybe (Row Type)
 ofTask = case _ of
   TTask r -> Just r
   _ -> Nothing
 
-data PrimTy
+data PrimType
   = TBool
   | TInt
   | TString
 
-derive instance eqPrimTy :: Eq PrimTy
+derive instance eqPrimType :: Eq PrimType
 
-instance showPrimTy :: Show PrimTy where
+instance showPrimType :: Show PrimType where
   show = case _ of
     TBool -> "Bool"
     TInt -> "Int"
     TString -> "String"
 
-data BasicTy
-  = BList BasicTy
-  | BRecord (Row BasicTy)
-  | BVariant (Row BasicTy)
-  | BPrimitive PrimTy
+data BasicType
+  = BList BasicType
+  | BRecord (Row BasicType)
+  | BVariant (Row BasicType)
+  | BPrimitive PrimType
 
-derive instance eqBasicTy :: Eq BasicTy
+derive instance eqBasicType :: Eq BasicType
 
-instance showBasicTy :: Show BasicTy where
+instance showBasicType :: Show BasicType where
   show = case _ of
     BList t -> unwords [ "List", show t ]
     BRecord r -> show r
     BVariant r -> HashMap.toArrayBy (/\) r |> map (\(k /\ v) -> show k ++ ":" ++ show v) |> intercalate "," |> inbetween '<' '>'
     BPrimitive p -> show p
 
-ofType :: Ty -> Maybe BasicTy
+ofType :: Type -> Maybe BasicType
 ofType = case _ of
   TPrimitive p -> Just <| BPrimitive p
   TList t
@@ -132,28 +132,28 @@ ofType = case _ of
   TReference _ -> Nothing
   TTask _ -> Nothing
 
-ofBasic :: BasicTy -> Ty
+ofBasic :: BasicType -> Type
 ofBasic = case _ of
   BList t -> TList <| ofBasic t
   BRecord r -> TRecord <| map ofBasic r
   BVariant r -> TVariant <| map ofBasic r
   BPrimitive p -> TPrimitive p
 
-isBasic :: Ty -> Bool
+isBasic :: Type -> Bool
 isBasic t
   | Just _ <- ofType t = true
   | otherwise = false
 
 ---- Expressions ---------------------------------------------------------------
 data Expression
-  = Lambda Match Ty Expression
+  = Lambda Match Type Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
   | Case Expression (Row (Match /\ Expression))
   | Record (Row Expression)
-  | Variant Label Expression Ty
-  | Nil Ty
+  | Variant Label Expression Type
+  | Nil Type
   | Cons Expression Expression
   | Constant Constant
 
@@ -202,7 +202,7 @@ derive instance eqStatement :: Eq Statement
 
 data Task
   -- Editors
-  = Enter BasicTy Message
+  = Enter BasicType Message
   | Update Message Expression
   | Change Message Expression
   | View Message Expression
