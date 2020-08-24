@@ -82,6 +82,7 @@ module Preload
 import Control.Applicative (pure)
 import Control.Apply (applyFirst, applySecond) as Reexport
 import Control.Bind (bind, bindFlipped, discard) as Reexport
+import Control.Plus (empty) as Reexport
 import Control.Semigroupoid (composeFlipped)
 import Data.Array as Array
 import Data.Array.NonEmpty (fromNonEmpty, toUnfoldable)

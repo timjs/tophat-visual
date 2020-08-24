@@ -1,53 +1,52 @@
 module Task.Script.Syntax
-  ( -- * Synonyms
-    Row,
-    Labels,
-    Name,
-    Label,
-    Message,
+  -- # Synonyms
+  ( Row
+  , Labels
+  , Name
+  , Label
+  , Message
+  -- # Types
+  , Ty(..)
+  , ofRecord
+  , ofVariant
+  , ofReference
+  , ofTask
+  , PrimTy(..)
+  , BasicTy(..)
+  , ofType
+  , ofBasic
+  , isBasic
+  -- # Expressions
+  , Expression(..)
+  , Argument(..)
+  , Constant(..)
+  -- # Matches
+  , Match(..)
+  -- # Statements
+  , Statement(..)
+  , Task(..)
+  ) where
 
-    -- * Types
-    Ty (..),
-    ofRecord,
-    ofVariant,
-    ofReference,
-    ofTask,
-    PrimTy (..),
-    BasicTy (..),
-    ofType,
-    ofBasic,
-    isBasic,
-
-    -- * Expressions
-    Expression (..),
-    Argument (..),
-    Constant (..),
-
-    -- * Matches
-    Match (..),
-
-    -- * Statements
-    Statement (..),
-    Task (..),
-  )
-where
-
-import qualified Data.HashMap.Strict as HashMap
+import Preload
+import Data.HashMap as HashMap
 
 ---- Synonyms ------------------------------------------------------------------
+type Row a
+  = HashMap Label a
 
-type Row a = HashMap Label a
+type Labels
+  = HashSet Label
 
-type Labels = HashSet Label
+type Name
+  = String
 
-type Name = Text
+type Label
+  = String
 
-type Label = Text
-
-type Message = Text
+type Message
+  = String
 
 ---- Types ---------------------------------------------------------------------
-
 data Ty
   = TFunction Ty Ty
   | TList Ty
@@ -56,35 +55,36 @@ data Ty
   | TReference BasicTy
   | TTask (Row Ty)
   | TPrimitive PrimTy
-  deriving (Eq, Ord, Debug)
 
-instance Display Ty where
-  display = \case
-    TFunction t1 t2 -> unwords [display t1, "->", display t2] |> between '(' ')'
-    TList t -> unwords ["List", display t]
-    TRecord r -> display r
-    TVariant r -> display r
-    TReference t -> unwords ["Ref", display t]
-    TTask t -> unwords ["Task", display t]
-    TPrimitive p -> display p
+derive instance eqTy :: Eq Ty
+
+instance showTy :: Show Ty where
+  show = case _ of
+    TFunction t1 t2 -> unwords [ show t1, "->", show t2 ] |> inbetween '(' ')'
+    TList t -> unwords [ "List", show t ]
+    TRecord r -> show r
+    TVariant r -> show r
+    TReference t -> unwords [ "Ref", show t ]
+    TTask t -> unwords [ "Task", show t ]
+    TPrimitive p -> show p
 
 ofRecord :: Ty -> Maybe (Row Ty)
-ofRecord = \case
+ofRecord = case _ of
   TRecord r -> Just r
   _ -> Nothing
 
 ofVariant :: Ty -> Maybe (Row Ty)
-ofVariant = \case
+ofVariant = case _ of
   TVariant r -> Just r
   _ -> Nothing
 
 ofReference :: Ty -> Maybe BasicTy
-ofReference = \case
+ofReference = case _ of
   TReference b -> Just b
   _ -> Nothing
 
 ofTask :: Ty -> Maybe (Row Ty)
-ofTask = \case
+ofTask = case _ of
   TTask r -> Just r
   _ -> Nothing
 
@@ -92,10 +92,11 @@ data PrimTy
   = TBool
   | TInt
   | TString
-  deriving (Eq, Ord, Debug)
 
-instance Display PrimTy where
-  display = \case
+derive instance eqPrimTy :: Eq PrimTy
+
+instance showPrimTy :: Show PrimTy where
+  show = case _ of
     TBool -> "Bool"
     TInt -> "Int"
     TString -> "String"
@@ -105,17 +106,18 @@ data BasicTy
   | BRecord (Row BasicTy)
   | BVariant (Row BasicTy)
   | BPrimitive PrimTy
-  deriving (Eq, Ord, Debug)
 
-instance Display BasicTy where
-  display = \case
-    BList t -> unwords ["List", display t]
-    BRecord r -> display r
-    BVariant r -> HashMap.toList r |> map (\(k, v) -> display k ++ ":" ++ display v) |> intercalate "," |> between '<' '>'
-    BPrimitive p -> display p
+derive instance eqBasicTy :: Eq BasicTy
+
+instance showBasicTy :: Show BasicTy where
+  show = case _ of
+    BList t -> unwords [ "List", show t ]
+    BRecord r -> show r
+    BVariant r -> HashMap.toArrayBy (/\) r |> map (\(k /\ v) -> show k ++ ":" ++ show v) |> intercalate "," |> inbetween '<' '>'
+    BPrimitive p -> show p
 
 ofType :: Ty -> Maybe BasicTy
-ofType = \case
+ofType = case _ of
   TPrimitive p -> Just <| BPrimitive p
   TList t
     | Just t' <- ofType t -> Just <| BList t'
@@ -131,7 +133,7 @@ ofType = \case
   TTask _ -> Nothing
 
 ofBasic :: BasicTy -> Ty
-ofBasic = \case
+ofBasic = case _ of
   BList t -> TList <| ofBasic t
   BRecord r -> TRecord <| map ofBasic r
   BVariant r -> TVariant <| map ofBasic r
@@ -139,80 +141,83 @@ ofBasic = \case
 
 isBasic :: Ty -> Bool
 isBasic t
-  | Just _ <- ofType t = True
-  | otherwise = False
+  | Just _ <- ofType t = true
+  | otherwise = false
 
 ---- Expressions ---------------------------------------------------------------
-
 data Expression
   = Lambda Match Ty Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
-  | Case Expression (Row (Match, Expression))
+  | Case Expression (Row (Match /\ Expression))
   | Record (Row Expression)
   | Variant Label Expression Ty
   | Nil Ty
   | Cons Expression Expression
   | Constant Constant
-  deriving (Eq, Ord, Debug)
+
+derive instance eqExpression :: Eq Expression
 
 data Argument
   = ARecord (Row Expression)
-  deriving (Eq, Ord, Debug)
+
+derive instance eqArgument :: Eq Argument
 
 data Constant
   = B Bool
   | I Int
-  | S Text
-  deriving (Eq, Ord, Debug)
+  | S String
 
-instance Display Constant where
-  display = \case
-    B b -> display b
-    I i -> display i
-    S s -> display s
+derive instance eqConstant :: Eq Constant
+
+instance showConstant :: Show Constant where
+  show = case _ of
+    B b -> show b
+    I i -> show i
+    S s -> show s
 
 ---- Matches -------------------------------------------------------------------
-
 data Match
   = MIgnore
   | MBind Name
   | MRecord (Row Match)
   | MUnpack
-  deriving (Eq, Ord, Debug)
 
-instance Display Match where
-  display = \case
+derive instance eqMatch :: Eq Match
+
+instance showMatch :: Show Match where
+  show = case _ of
     MIgnore -> "_"
     MBind x -> x
-    MRecord ms -> display ms
+    MRecord ms -> show ms
     MUnpack -> "{..}"
 
 ---- Statements ----------------------------------------------------------------
-
 data Statement
   = Step Match Task Statement
   | Task Task
-  deriving (Eq, Ord, Debug)
+
+derive instance eqStatement :: Eq Statement
 
 data Task
-  = -- Editors
-    Enter BasicTy Message
+  -- Editors
+  = Enter BasicTy Message
   | Update Message Expression
   | Change Message Expression
   | View Message Expression
   | Watch Message Expression
-  | -- Basics
-    Done Expression
+  -- Basics
+  | Lift Expression
   | Pair (List Statement)
   | Choose (List Statement)
-  | Branch (List (Expression, Statement))
-  | Select (List (Label, Expression, Statement))
-  | -- Extras
-    Execute Name Argument
+  | Branch (List (Expression /\ Statement))
+  | Select (List (Label /\ Expression /\ Statement))
+  -- Extras
+  | Execute Name Argument
   | Hole Argument
-  | -- Shares
-    Share Expression
+  -- Shares
+  | Share Expression
   | Assign Expression Expression
-  deriving (Eq, Ord, Debug)
+
+derive instance eqTask :: Eq Task

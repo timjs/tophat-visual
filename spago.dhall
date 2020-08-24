@@ -4,7 +4,8 @@ You can edit this file as you like.
 -}
 { name = "my-project"
 , dependencies =
-  [ "arrays"
+  [ "array-views"
+  , "arrays"
   , "console"
   , "effect"
   , "either"
@@ -14,7 +15,10 @@ You can edit this file as you like.
   , "maybe"
   , "newtype"
   , "psci-support"
+  , "run"
+  , "strings"
   , "tuples"
+  , "unfoldable"
   , "unordered-collections"
   ]
 , packages = ./packages.dhall

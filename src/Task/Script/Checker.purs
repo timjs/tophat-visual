@@ -1,20 +1,19 @@
 module Task.Script.Checker
-  ( check,
-    match,
-    execute,
-    executeVerbose,
-  )
-where
+  ( TypeError
+  , class Check
+  , check
+  , match
+  , execute
+  ) where
 
-import qualified Data.HashMap.Strict as HashMap
-import qualified Data.HashSet as HashSet
-import Polysemy
-import Polysemy.Error
-import Polysemy.Output
-import Task.Script.Syntax
+import Preload hiding (note)
+import Run (Run, extract)
+import Run.Except (EXCEPT, note, runExcept, throw)
+import Task.Script.Syntax (Argument(..), BasicTy, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimTy(..), Row, Statement(..), Task(..), Ty(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Data.HashMap as HashMap
+import Data.HashSet as HashSet
 
 ---- Errors --------------------------------------------------------------------
-
 data TypeError
   = UnknownVariable Name
   | UnknownLabel Label Ty
@@ -39,60 +38,60 @@ data TypeError
   | HoleFound Context
   | RecordMismatch (Row Match) Ty
   | UnpackMismatch Ty
-  deriving (Debug)
 
-instance Display TypeError where
-  display = \case
-    UnknownVariable x -> unwords ["Unknown variable", x |> quote]
-    UnknownLabel l t -> unwords ["Unknown label", l |> quote, "in variant type", display t]
-    -- VariableMismatch x t_exp t_act -> unwords ["Variable", quote x, "has type", display t_act, ", but it is expected to be a(n)", display t_exp]
-    -- ConstantMismatch c t_exp t_act -> unwords ["Constant", quote (display c), "has type", display t_act, "but it is expected to be a(n)", display t_exp]
-    ArgumentError t_exp t_act -> unlines ["This function needs it argument to be of type", display t_exp |> quote |> indent 2, ", but it is of type", display t_act |> quote |> indent 2]
-    VariantError l t_exp t_act -> unwords ["This variant with label", display l |> quote, "needs it argument to be of type", display t_exp |> quote, ", but it is of type", display t_act |> quote]
-    BranchError t_then t_else -> unlines ["This conditional's then-branch has type", display t_then |> quote |> indent 2, ", while the else-branch has type", display t_else |> quote |> indent 2]
-    BranchesError ts -> unwords ["This case expression has branches of different types", display ts |> quote]
-    AssignError t_ref t_val -> unlines ["This assignment tries to store something of type", display t_val |> quote |> indent 2, "into a reference of type", display t_ref |> quote |> indent 2]
-    ListError t_head t_tail -> unlines ["This element has type", display t_head |> quote |> indent 2, "but the list if of type", display t_tail |> quote |> indent 2]
-    FunctionNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a function"]
-    -- BindNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a a function from row to task"]
-    RecordNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a record"]
-    VariantNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a variant"]
-    ListNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a list"]
-    BoolNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a boolean"]
-    ReferenceNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a reference"]
-    TaskNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a task"]
-    BasicNeeded t_bad -> unwords ["Cannot use", display t_bad |> quote, "as a basic type"]
-    UnknownLabels r_diff r_orig -> unwords ["Labels", display r_diff |> quote, "are not part of row", display r_orig |> quote]
-    DoubleLabels r_double r_orig -> unwords ["Double occurence of label", display r_double |> quote, "in row", display r_orig |> quote]
-    EmptyCase -> unwords ["This case expression has no branches"]
-    EmptyChoice -> unwords ["This choice task has no branches"]
-    HoleFound g -> unlines ["Found hole of type _ in context", display g |> indent 2]
-    RecordMismatch ms t -> unwords ["Matching against", display ms, "needs", display t, "to be a record type"]
-    UnpackMismatch t -> unwords ["Unpacking needs", display t, "to be a record type"]
+instance showTypeError :: Show TypeError where
+  show = case _ of
+    UnknownVariable x -> unwords [ "Unknown variable", x |> quote ]
+    UnknownLabel l t -> unwords [ "Unknown label", l |> quote, "in variant type", show t ]
+    -- VariableMismatch x t_exp t_act -> unwords ["Variable", quote x, "has type", show t_act, ", but it is expected to be a(n)", show t_exp]
+    -- ConstantMismatch c t_exp t_act -> unwords ["Constant", quote (show c), "has type", show t_act, "but it is expected to be a(n)", show t_exp]
+    ArgumentError t_exp t_act -> unlines [ "This function needs it argument to be of type", show t_exp |> quote |> indent 2, ", but it is of type", show t_act |> quote |> indent 2 ]
+    VariantError l t_exp t_act -> unwords [ "This variant with label", show l |> quote, "needs it argument to be of type", show t_exp |> quote, ", but it is of type", show t_act |> quote ]
+    BranchError t_then t_else -> unlines [ "This conditional's then-branch has type", show t_then |> quote |> indent 2, ", while the else-branch has type", show t_else |> quote |> indent 2 ]
+    BranchesError ts -> unwords [ "This case expression has branches of different types", show ts |> quote ]
+    AssignError t_ref t_val -> unlines [ "This assignment tries to store something of type", show t_val |> quote |> indent 2, "into a reference of type", show t_ref |> quote |> indent 2 ]
+    ListError t_head t_tail -> unlines [ "This element has type", show t_head |> quote |> indent 2, "but the list if of type", show t_tail |> quote |> indent 2 ]
+    FunctionNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a function" ]
+    -- BindNeeded t_bad -> unwords ["Cannot use", show t_bad |> quote, "as a a function from row to task"]
+    RecordNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a record" ]
+    VariantNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a variant" ]
+    ListNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a list" ]
+    BoolNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a boolean" ]
+    ReferenceNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a reference" ]
+    TaskNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a task" ]
+    BasicNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a basic type" ]
+    UnknownLabels r_diff r_orig -> unwords [ "Labels", show r_diff |> quote, "are not part of row", show r_orig |> quote ]
+    DoubleLabels r_double r_orig -> unwords [ "Double occurence of label", show r_double |> quote, "in row", show r_orig |> quote ]
+    EmptyCase -> unwords [ "This case expression has no branches" ]
+    EmptyChoice -> unwords [ "This choice task has no branches" ]
+    HoleFound g -> unlines [ "Found hole of type _ in context", show g |> indent 2 ]
+    RecordMismatch ms t -> unwords [ "Matching against", show ms, "needs", show t, "to be a record type" ]
+    UnpackMismatch t -> unwords [ "Unpacking needs", show t, "to be a record type" ]
 
 ---- Checker -------------------------------------------------------------------
-
-type Context = HashMap Name Ty
+type Context
+  = HashMap Name Ty
 
 class Check a where
-  check :: Members '[Error TypeError, Output Text] r => Context -> a -> Sem r Ty
+  check :: Context -> a -> Run ( except :: EXCEPT TypeError ) Ty
 
-instance Check Expression where
-  check g = \case
+instance checkExpression :: Check Expression where
+  check g = case _ of
     ---- Basics
     Variable x -> HashMap.lookup x g |> note (UnknownVariable x)
     Lambda m t e -> do
       d <- match m t
-      t' <- check (g \/ d) e
-      pure <| TFunction t t'
+      t' <- check (g ++ d) e
+      done <| TFunction t t'
     Apply e1 e2 -> do
       t1 <- check g e1
       case t1 of
         TFunction t' t -> do
           t2 <- check g e2
-          if t' == t2
-            then pure t
-            else throw <| ArgumentError t' t2
+          if t' == t2 then
+            done t
+          else
+            throw <| ArgumentError t' t2
         _ -> throw <| FunctionNeeded t1
     ---- Branches
     IfThenElse e1 e2 e3 -> do
@@ -101,18 +100,20 @@ instance Check Expression where
         TPrimitive TBool -> do
           t2 <- check g e2
           t3 <- check g e3
-          if t2 == t3
-            then pure t2
-            else throw <| BranchError t2 t3
+          if t2 == t3 then
+            done t2
+          else
+            throw <| BranchError t2 t3
         _ -> throw <| BoolNeeded t1
     Case e0 bs -> do
       t0 <- check g e0
       case t0 of
         TVariant r -> do
           bs' <- merge r bs --NOTE be aware of order: r is a subset of bs
-          ts <- for bs' \(t, (m, e)) -> do
-            d <- match m t
-            check (g \/ d) e
+          ts <-
+            for bs' \(t /\ m /\ e) -> do
+              d <- match m t
+              check (g ++ d) e
           smash ts
         _ -> throw <| VariantNeeded t0
     ---- Records & Variants
@@ -122,49 +123,51 @@ instance Check Expression where
         t_e <- check g e
         case HashMap.lookup l r of
           Just t' ->
-            if t_e == t'
-              then pure t
-              else throw <| VariantError l t' t_e
+            if t_e == t' then
+              done t
+            else
+              throw <| VariantError l t' t_e
           Nothing -> throw <| UnknownLabel l t
       _ -> throw <| VariantNeeded t
     ---- Lists
-    Nil t -> pure <| TList t
+    Nil t -> done <| TList t
     Cons e1 e2 -> do
       t1 <- check g e1
       t2 <- check g e2
       case t2 of
         TList t' ->
-          if t2 == t'
-            then pure t2
-            else throw <| ListError t1 t2
+          if t2 == t' then
+            done t2
+          else
+            throw <| ListError t1 t2
         _ -> throw <| ListNeeded t2
     ---- Constants
-    Constant (B _) -> pure <| TPrimitive TBool
-    Constant (I _) -> pure <| TPrimitive TInt
-    Constant (S _) -> pure <| TPrimitive TString
+    Constant (B _) -> done <| TPrimitive TBool
+    Constant (I _) -> done <| TPrimitive TInt
+    Constant (S _) -> done <| TPrimitive TString
 
-instance Check Argument where
+instance checkArgument :: Check Argument where
   check g (ARecord es) = traverse (check g) es ||> TRecord
 
-instance Check Statement where
-  check g = \case
+instance checkStatement :: Check Statement where
+  check g = case _ of
     Step m t s -> do
       t_t <- check g t
       case t_t of
         TTask r -> do
           d <- match m (TRecord r)
-          check (g \/ d) s
+          check (g ++ d) s
         _ -> throw <| TaskNeeded t_t
     Task t -> check g t
 
-instance Check Task where
-  check g = \case
+instance checkTask :: Check Task where
+  check g = case _ of
     Enter b _ -> ofBasic b |> returnValue
     Update _ e -> check g e |= needBasic |= returnValue
     Change _ e -> check g e |= outofReference |= returnValue
     View _ e -> check g e |= needBasic |= returnValue
     Watch _ e -> check g e |= outofReference |= returnValue
-    Done e -> check g e |= outofRecord ||> TTask
+    Lift e -> check g e |= outofRecord ||> TTask
     Pair ss -> traverse subcheck ss |= unite ||> TTask
     Choose ss -> traverse subcheck ss |= intersect ||> TTask
     Branch bs -> traverse subcheck' bs |= intersect ||> TTask
@@ -174,9 +177,10 @@ instance Check Task where
       case t_x of
         TFunction r' t -> do
           t_a <- check g a
-          if r' == t_a
-            then pure t
-            else throw <| ArgumentError r' t_a
+          if r' == t_a then
+            done t
+          else
+            throw <| ArgumentError r' t_a
         _ -> throw <| FunctionNeeded t_x
     Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
     Share e -> check g e |= outofBasic ||> TReference |= returnValue
@@ -184,103 +188,104 @@ instance Check Task where
       t1 <- check g e1
       b1 <- outofReference t1
       b2 <- check g e2
-      if b1 == b2
-        then pure (TRecord [])
-        else throw (AssignError b1 b2)
+      if b1 == b2 then
+        done (TRecord neutral)
+      else
+        throw (AssignError b1 b2)
     where
-      subcheck s = check g s |= outofTask
-      subcheck' (e, s) = do
-        t_e <- check g e
-        case t_e of
-          TPrimitive TBool -> subcheck s
-          _ -> throw <| BoolNeeded t_e
-      subcheck'' (_, e, s) = subcheck' (e, s)
+    subcheck s = check g s |= outofTask
 
-unite :: (Members '[Error TypeError] r, Fold t) => t (Row a) -> Sem r (Row a)
-unite = gather go []
+    subcheck' (e /\ s) = do
+      t_e <- check g e
+      case t_e of
+        TPrimitive TBool -> subcheck s
+        _ -> throw <| BoolNeeded t_e
+
+    subcheck'' (_ /\ e /\ s) = subcheck' (e /\ s)
+
+unite :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
+unite = gather go neutral
   where
-    go :: (Members '[Error TypeError] r) => Row a -> Row a -> Sem r (Row a)
-    go acc r =
-      let is = HashMap.keysSet r `HashSet.intersection` HashMap.keysSet acc
-       in if null is
-            then pure <| acc \/ r
-            else throw <| DoubleLabels is (HashMap.keysSet r)
+  go :: Row a -> Row a -> Run ( except :: EXCEPT TypeError ) (Row a)
+  go acc r =
+    if null is then
+      done <| acc ++ r
+    else
+      throw <| DoubleLabels is (keys r)
+    where
+    is = keys r `HashSet.intersection` keys acc
 
-intersect :: (Members '[Error TypeError] r, Fold t) => t (Row a) -> Sem r (Row a)
-intersect rs = foldr1 (/\) rs |> note EmptyChoice
+intersect :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
+intersect rs = foldr1 (^^) rs |> note EmptyChoice
 
-merge :: (Members '[Error TypeError] r) => Row a -> Row b -> Sem r (Row (a, b))
-merge r1 r2
-  | HashMap.null ds = pure <| HashMap.intersectionWith (,) r1 r2
-  | otherwise = throw <| UnknownLabels (HashMap.keysSet ds) (HashMap.keysSet r2)
+merge :: forall a b. Row a -> Row b -> Run ( except :: EXCEPT TypeError ) (Row (a /\ b))
+merge r1 r2 =
+  if HashMap.isEmpty ds then
+    done <| HashMap.intersectionWith (/\) r1 r2
+  else
+    throw <| UnknownLabels (keys ds) (keys r2)
   where
-    ds = r1 // r2
+  ds = r1 \\ r2
 
-smash :: (Members '[Error TypeError] r) => Row Ty -> Sem r Ty
-smash r = case HashMap.elems r of
-  [] -> throw <| EmptyCase
-  t : ts
-    | all (t ==) ts -> pure t
-    | otherwise -> throw <| BranchesError r
+smash :: Row Ty -> Run ( except :: EXCEPT TypeError ) Ty
+smash r = case HashMap.values r |> uncons of
+  Nothing -> throw <| EmptyCase
+  Just { head, tail } ->
+    if all (_ == head) tail then
+      done head
+    else
+      throw <| BranchesError r
 
-needBasic :: (Members '[Error TypeError] r) => Ty -> Sem r Ty
+needBasic :: Ty -> Run ( except :: EXCEPT TypeError ) Ty
 needBasic t
-  | isBasic t = pure t
+  | isBasic t = done t
   | otherwise = throw <| BasicNeeded t
 
-outofBasic :: (Members '[Error TypeError] r) => Ty -> Sem r BasicTy
+outofBasic :: Ty -> Run ( except :: EXCEPT TypeError ) BasicTy
 outofBasic t
-  | Just b <- ofType t = pure b
+  | Just b <- ofType t = done b
   | otherwise = throw <| BasicNeeded t
 
-outofRecord :: (Members '[Error TypeError] r) => Ty -> Sem r (Row Ty)
+outofRecord :: Ty -> Run ( except :: EXCEPT TypeError ) (Row Ty)
 outofRecord t
-  | Just r <- ofRecord t = pure r
+  | Just r <- ofRecord t = done r
   | otherwise = throw <| RecordNeeded t
 
-outofReference :: (Members '[Error TypeError] r) => Ty -> Sem r Ty
+outofReference :: Ty -> Run ( except :: EXCEPT TypeError ) Ty
 outofReference t
-  | Just b <- ofReference t = pure <| ofBasic b
+  | Just b <- ofReference t = done <| ofBasic b
   | otherwise = throw <| ReferenceNeeded t
 
-outofTask :: (Members '[Error TypeError] r) => Ty -> Sem r (Row Ty)
+outofTask :: Ty -> Run ( except :: EXCEPT TypeError ) (Row Ty)
 outofTask t
-  | Just r <- ofTask t = pure r
+  | Just r <- ofTask t = done r
   | otherwise = throw <| TaskNeeded t
 
-returnValue :: (Monad m) => Ty -> m Ty
-returnValue t = pure <| TTask ["value" ~> t]
+returnValue :: forall m. Monad m => Ty -> m Ty
+returnValue t = done <| TTask <| HashMap.fromFoldable [ "value" /\ t ]
 
 ---- Matcher -------------------------------------------------------------------
-
-match :: (Members '[Error TypeError, Output Text] r) => Match -> Ty -> Sem r Context
+match :: Match -> Ty -> Run ( except :: EXCEPT TypeError ) Context
 match m t = case m of
-  MIgnore -> pure []
-  MBind x -> pure [x ~> t]
+  MIgnore -> done neutral
+  MBind x -> done <| HashMap.fromFoldable [ x /\ t ]
   MRecord ms -> do
     case t of
       TRecord r -> merge ms r |= traverse (uncurry match) |= unite
       _ -> throw <| RecordMismatch ms t
   MUnpack -> do
     case t of
-      TRecord r -> pure r
+      TRecord r -> done r
       _ -> throw <| UnpackMismatch t
 
 ---- Executing -----------------------------------------------------------------
-
-execute :: Sem '[Error TypeError, Output o] a -> Either TypeError a
-execute = runError >> ignoreOutput >> run
-
-executeVerbose :: Sem '[Error TypeError, Output o] a -> (List o, Either TypeError a)
-executeVerbose = runError >> runOutputList >> run
+execute :: forall a. Run ( except :: EXCEPT TypeError ) a -> Either TypeError a
+execute = runExcept >> extract
 
 ---- Helpers -------------------------------------------------------------------
+keys :: forall k v. Hashable k => HashMap k v -> HashSet k
+keys = HashMap.keys >> HashSet.fromArray
 
-(\/) :: (Hash k) => HashMap k v -> HashMap k v -> HashMap k v
-(\/) = HashMap.union
+infixl 6 HashMap.intersection as ^^
 
-(/\) :: (Hash k) => HashMap k v -> HashMap k w -> HashMap k v
-(/\) = HashMap.intersection
-
-(//) :: (Hash k) => HashMap k v -> HashMap k w -> HashMap k v
-(//) = HashMap.difference
+infixl 6 HashMap.difference as \\
