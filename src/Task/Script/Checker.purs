@@ -216,7 +216,7 @@ unite = gather go neutral
     is = keys r `HashSet.intersection` keys acc
 
 intersect :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
-intersect rs = foldr1 (^^) rs |> note EmptyChoice
+intersect rs = foldr1 (**) rs |> note EmptyChoice
 
 merge :: forall a b. Row a -> Row b -> Run ( except :: EXCEPT TypeError ) (Row (a /\ b))
 merge r1 r2 =
@@ -286,6 +286,6 @@ execute = runExcept >> extract
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
 keys = HashMap.keys >> from
 
-infixl 6 HashMap.intersection as ^^
+infixl 6 HashMap.intersection as **
 
 infixl 6 HashMap.difference as \\

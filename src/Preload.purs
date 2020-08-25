@@ -2,6 +2,10 @@ module Preload
   ( module Reexport
   -- Booleans
   , Bool
+  , (&&&)
+  , composeAnd
+  , (|||)
+  , composeOr
   -- Strings
   , inbetween
   , quote
@@ -127,6 +131,16 @@ import Unsafe.Coerce (unsafeCoerce)
 ---- Booleans ------------------------------------------------------------------
 type Bool
   = Boolean
+
+infixr 3 composeAnd as &&&
+
+infixr 2 composeOr as |||
+
+composeAnd :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
+composeAnd f g x = f x Reexport.&& g x
+
+composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
+composeOr f g x = f x Reexport.|| g x
 
 ---- Strings -------------------------------------------------------------------
 inbetween :: Char -> Char -> String -> String
