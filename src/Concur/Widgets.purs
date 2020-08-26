@@ -20,8 +20,8 @@ import Concur.Core as Core
 import Concur.React as Html
 import Concur.React.DOM as Html
 import Concur.React.Props hiding (label) as Html
-import Data.Int (floor)
-import Global (readInt, readFloat)
+import Data.Int as Int
+import Data.Number as Number
 import React.SyntheticEvent as React
 
 ---- Types ---------------------------------------------------------------------
@@ -88,8 +88,8 @@ inputbox value = do
 stringValue :: forall a. React.SyntheticEvent_ a -> String
 stringValue = Html.unsafeTargetValue
 
-intValue :: forall a. React.SyntheticEvent_ a -> Int
-intValue = stringValue >> readInt 10 >> floor
+floatValue :: forall a. React.SyntheticEvent_ a -> Maybe Number
+floatValue = stringValue >> Number.fromString
 
-floatValue :: forall a. React.SyntheticEvent_ a -> Number
-floatValue = stringValue >> readFloat
+intValue :: forall a. React.SyntheticEvent_ a -> Maybe Int
+intValue e = floatValue e ||> Int.floor
