@@ -88,7 +88,8 @@ module Preload
 import Control.Applicative (pure)
 import Control.Apply (applyFirst, applySecond) as Reexport
 import Control.Bind (bind, bindFlipped, discard) as Reexport
-import Control.Plus (empty) as Reexport
+import Control.Plus (class Plus, empty) as Reexport
+import Control.Alt (class Alt) as Reexport
 import Control.Semigroupoid (composeFlipped)
 import Data.Array as Array
 import Data.Array.NonEmpty (fromNonEmpty, toUnfoldable)
@@ -341,9 +342,9 @@ infixl 4 Reexport.map as <||
 
 infixl 1 Reexport.mapFlipped as ||>
 
-infixl 4 Reexport.voidLeft as -||
+infixl 4 Reexport.voidRight as -||
 
-infixl 4 Reexport.voidRight as ||-
+infixl 4 Reexport.voidLeft as ||-
 
 infixl 4 Reexport.apply as -<
 
