@@ -6,6 +6,8 @@ You can edit this file as you like.
 , dependencies =
   [ "array-views"
   , "arrays"
+  , "concur-core"
+  , "concur-react"
   , "console"
   , "effect"
   , "either"

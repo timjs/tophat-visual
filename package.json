@@ -1,0 +1,24 @@
+{
+  "private": true,
+  "name": "tophat-visual",
+  "description": "A visual editor for TopHat",
+  "version": "0.1.0",
+  "author": "Tim Steenvoorden <tim.steenvoorden@gmail.com> (https://github.com/timjs)",
+  "license": "MIT",
+  "scripts": {
+    "clean": "rm -rf .cache .spago .psci_modules .pulp-cache node_modules output prod dist",
+    "build": "rm -rf dist && spago build && parcel build --public-url ./ index.html",
+    "bundle": "rm -rf prod dist && mkdir prod && spago bundle-app --main Main --to prod/index.js && cp index.html prod/index.html && parcel build --public-url ./ prod/index.html && rm -rf prod",
+    "run": "spago build && parcel index.html",
+    "watch": "spago build && parcel watch index.html"
+  },
+  "devDependencies": {
+    "purescript": "~0.13.8",
+    "spago": "~0.15.3",
+    "parcel-bundler": "^1.12.4"
+  },
+  "dependencies": {
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1"
+  }
+}
