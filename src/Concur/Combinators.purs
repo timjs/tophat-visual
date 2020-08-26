@@ -1,5 +1,6 @@
 module Concur.Combinators where
 
+{-
 import Concur.Core (Widget, orr)
 import qualified Data.List.Index as List
 
@@ -36,3 +37,4 @@ list render elements = do
   where
     indexedElements =
       List.imap (\index element -> (index,) <|| render element) <| elements
+-}

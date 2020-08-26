@@ -1,11 +1,6 @@
-module Concur.Wire
-  ( Wire,
-    value,
-    send,
-    with,
-    focus,
-  )
-where
+module Concur.Wire where
+
+{-
 
 import Concur.Core (Widget, liftSafeBlockingIO, liftUnsafeBlockingIO)
 import Control.Concurrent.STM.TChan (TChan)
@@ -43,3 +38,5 @@ focus lens' (Wire store chan lens) = Wire store chan (lens << lens')
 
 _identity :: Lens' a a
 _identity = Lens.iso identity identity
+
+-}
