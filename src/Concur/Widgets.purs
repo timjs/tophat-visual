@@ -1,91 +1,95 @@
-module Concur.Replica.Widgets
-  ( Html,
-    Attr,
+module Concur.Widgets
+  ( Html
+  , Attr
+  -- # Static
+  , text
+  , row
+  , column
+  -- # Inputs
+  , button
+  , checkbox
+  , inputbox
+  -- # Values
+  , stringValue
+  , intValue
+  , floatValue
+  ) where
 
-    -- * Static
-    text,
-    row,
-    column,
+import Preload
+import Concur.Core as Core
+import Concur.React as Html
+import Concur.React.DOM as Html
+import Concur.React.Props hiding (label) as Html
+import Data.Int (floor)
+import Global (readInt, readFloat)
+import React.SyntheticEvent as React
 
-    -- * Inputs
-    button,
-    checkbox,
-    inputbox,
+---- Types ---------------------------------------------------------------------
+type Widget
+  = Core.Widget
 
-    -- * Values
-    stringValue,
-    intValue,
-    floatValue,
-  )
-where
+type Html
+  = Html.HTML
 
-import Concur.Core (Widget)
-import qualified Concur.Replica as Html
-import Concur.Replica.DOM.Events (BaseEvent)
+type Attr a
+  = Html.ReactProps a
 
--- Types -----------------------------------------------------------------------
-
-type Html = Html.HTML
-
-type Attr = Html.Props
-
--- Static ----------------------------------------------------------------------
-
-text :: Text -> Widget Html void
+---- Static --------------------------------------------------------------------
+text :: forall a. String -> Widget Html a
 text = Html.text
 
-row :: List (Attr a) -> List (Widget Html a) -> Widget Html a
+row :: forall a. Array (Attr a) -> Array (Widget Html a) -> Widget Html a
 row = Html.div
 
-column :: List (Attr a) -> List (Widget Html a) -> Widget Html a
+column :: forall a. Array (Attr a) -> Array (Widget Html a) -> Widget Html a
 column = Html.div
 
--- Inputs ----------------------------------------------------------------------
-
-button :: Text -> Widget Html ()
+---- Inputs --------------------------------------------------------------------
+button :: String -> Widget Html Unit
 button label = do
-  result <- Html.button [const Nothing <|| Html.onClick, Just <|| Html.onKeyDown] [Html.text label]
+  result <- Html.button [ Nothing -|| Html.onClick, Just <|| Html.onKeyDown ] [ Html.text label ]
   case result of
-    Nothing -> pure ()
-    Just event ->
-      if Html.kbdKey event == "Enter"
-        then pure ()
-        else button label
+    Nothing -> done unit
+    Just key ->
+      if Html.isEnterEvent key then
+        done unit
+      else
+        button label
 
-checkbox :: Text -> Bool -> Widget Html Bool
+checkbox :: String -> Bool -> Widget Html Bool
 checkbox label checked = do
   Html.div
     []
-    [ Html.input [Html.type_ "checkbox", Html.checked checked, const () <|| Html.onInput],
-      Html.label [] [Html.text label]
+    [ Html.input [ Html._type "checkbox", Html.checked checked, unit -|| Html.onInput ]
+    , Html.label [] [ Html.text label ]
     ]
   checkbox label (not checked)
 
-inputbox :: Text -> Widget Html Text
+inputbox :: String -> Widget Html String
 inputbox value = do
   result <-
     Html.input
-      [ Html.autofocus True,
-        Html.type_ "text",
-        Html.value value,
-        Html.placeholder value,
-        Left <|| Html.onInput,
-        Right <|| Html.onKeyDown
+      [ Html.autoFocus true
+      , Html._type "text"
+      , Html.value value
+      , Html.placeholder value
+      , Left <|| Html.onInput
+      , Right <|| Html.onKeyDown
       ]
   case result of
-    Left event -> inputbox (Html.targetValue <| Html.target event)
-    Right e ->
-      if Html.kbdKey e == "Enter"
-        then pure value
-        else inputbox value
+    Left event -> inputbox (stringValue event)
+    Right key ->
+      if Html.isEnterEvent key then
+        done value
+      else
+        inputbox value
 
--- Target values ---------------------------------------------------------------
+---- Target values -------------------------------------------------------------
+stringValue :: forall a. React.SyntheticEvent_ a -> String
+stringValue = Html.unsafeTargetValue
 
-stringValue :: BaseEvent -> Text
-stringValue = Html.target >> Html.targetValue
+intValue :: forall a. React.SyntheticEvent_ a -> Int
+intValue = stringValue >> readInt 10 >> floor
 
-intValue :: BaseEvent -> Maybe Int
-intValue = stringValue >> read
-
-floatValue :: BaseEvent -> Maybe Double
-floatValue = stringValue >> read
+floatValue :: forall a. React.SyntheticEvent_ a -> Number
+floatValue = stringValue >> readFloat
