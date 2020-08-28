@@ -1,64 +1,69 @@
 module Task.Script.Example where
 
-import Task.Script.Syntax
+import Preload
+import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Statement(..), Task(..), Type(..))
 
 ---- Types ---------------------------------------------------------------------
-
-t_nationality :: Ty
+t_nationality :: Type
 t_nationality =
   TVariant
-    [ "Dutch" ~> TRecord [],
-      "British" ~> TRecord [],
-      "German" ~> TRecord []
-    ]
+    <| from
+        [ "Dutch" /\ TRecord neutral
+        , "British" /\ TRecord neutral
+        , "German" /\ TRecord neutral
+        ]
 
-t_passenger :: Ty
+t_passenger :: Type
 t_passenger =
   TRecord
-    [ "first_name" ~> TPrimitive TString,
-      "last_name" ~> TPrimitive TString,
-      "nationality" ~> t_nationality,
-      "age" ~> TPrimitive TInt
-    ]
+    <| from
+        [ "first_name" /\ TPrimitive TString
+        , "last_name" /\ TPrimitive TString
+        , "nationality" /\ t_nationality
+        , "age" /\ TPrimitive TInt
+        ]
 
-t_flight :: Ty
+t_flight :: Type
 t_flight =
   TVariant
-    [ "ToAmsterdam" ~> TRecord [],
-      "ToLondon" ~> TRecord [],
-      "ToBerlin" ~> TRecord []
-    ]
+    <| from
+        [ "ToAmsterdam" /\ TRecord neutral
+        , "ToLondon" /\ TRecord neutral
+        , "ToBerlin" /\ TRecord neutral
+        ]
 
-t_row :: Ty
+t_row :: Type
 t_row = TPrimitive TInt
 
-t_chair :: Ty
+t_chair :: Type
 t_chair = TPrimitive TString
 
-t_seat :: Ty
+t_seat :: Type
 t_seat =
   TRecord
-    [ "row" ~> t_row,
-      "chair" ~> t_chair
-    ]
+    <| from
+        [ "row" /\ t_row
+        , "chair" /\ t_chair
+        ]
 
-t_booking :: Ty
+t_booking :: Type
 t_booking =
   TRecord
-    [ "passengers" ~> TList t_passenger,
-      "flight" ~> t_flight,
-      "seats" ~> TList t_seat
-    ]
+    <| from
+        [ "passengers" /\ TList t_passenger
+        , "flight" /\ t_flight
+        , "seats" /\ TList t_seat
+        ]
 
 ---- Tasks ---------------------------------------------------------------------
-
 enter_passenger :: Statement
 enter_passenger =
-  Step (MRecord ["value" ~> MBind "passengers"]) (Enter (BPrimitive TString) "Passenger details")
+  Step (MRecord <| from [ "value" /\ MBind "passengers" ]) (Enter (BPrimitive TString) "Passenger details")
     <| Task
     <| Select
-      [ ( "Continue",
-          Constant (B True),
-          Task <| Done (Record ["passengers" ~> Variable "passengers"])
-        )
-      ]
+    <| from
+        [ ( "Continue"
+              /\ Constant (B true)
+              /\ (Task <| Lift (Record <| from [ "passengers" /\ Variable "passengers" ]))
+          )
+        ]
