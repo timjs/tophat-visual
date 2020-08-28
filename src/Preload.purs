@@ -129,6 +129,7 @@ import Data.Tuple (curry, fst, lookup, snd, swap, uncurry) as Reexport
 import Data.Tuple (Tuple(..))
 -- import Data.Tuple.Nested ((/\), type (/\)) as Reexport
 import Data.Unfoldable as Reexport
+import Effect (Effect) as Reexport
 import Prelude hiding (mempty, pure, (<<<), (>>>), (<>), ($), (#), (<$>), (<#>), (<@>), (<$), ($>), (<*>), (<*), (*>)) as Reexport
 import Prim.TypeError (class Warn, Text)
 import Unsafe.Coerce (unsafeCoerce)
