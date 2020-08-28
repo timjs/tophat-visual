@@ -6,6 +6,9 @@ module Preload
   , composeAnd
   , (|||)
   , composeOr
+  -- Tuples
+  , (:)
+  , type (*)
   -- Strings
   , inbetween
   , quote
@@ -123,7 +126,8 @@ import Data.String.Common as String
 import Data.String.Pattern as String
 import Data.Traversable as Reexport
 import Data.Tuple (curry, fst, lookup, snd, swap, uncurry) as Reexport
-import Data.Tuple.Nested ((/\), type (/\)) as Reexport
+import Data.Tuple (Tuple(..))
+-- import Data.Tuple.Nested ((/\), type (/\)) as Reexport
 import Data.Unfoldable as Reexport
 import Prelude hiding (mempty, pure, (<<<), (>>>), (<>), ($), (#), (<$>), (<#>), (<@>), (<$), ($>), (<*>), (<*), (*>)) as Reexport
 import Prim.TypeError (class Warn, Text)
@@ -142,6 +146,11 @@ composeAnd f g x = f x Reexport.&& g x
 
 composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
 composeOr f g x = f x Reexport.|| g x
+
+---- Tuples --------------------------------------------------------------------
+infixr 6 Tuple as :
+
+infixr 6 type Tuple as *
 
 ---- Strings -------------------------------------------------------------------
 inbetween :: Char -> Char -> String -> String
@@ -225,7 +234,7 @@ instance initialiseList :: Initialise (Reexport.List a) a where
 instance initialiseHashSet :: Reexport.Hashable a => Initialise (Reexport.HashSet a) a where
   from = HashSet.fromArray
 
-instance initialiseHashMap :: Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k Reexport./\ v) where
+instance initialiseHashMap :: Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k * v) where
   from = HashMap.fromArray
 
 ---- Functions -----------------------------------------------------------------
@@ -361,8 +370,8 @@ infixr 1 Reexport.bindFlipped as =|
 done :: forall f a. Reexport.Applicative f => a -> f a
 done = pure
 
-pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a Reexport./\ b)
-pair x y = done Reexport.(/\) -< x -< y
+pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a * b)
+pair x y = done (:) -< x -< y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit

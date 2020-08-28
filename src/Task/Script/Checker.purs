@@ -111,7 +111,7 @@ instance checkExpression :: Check Expression where
         TVariant r -> do
           bs' <- merge r bs --NOTE be aware of order: r is a subset of bs
           ts <-
-            for bs' \(t /\ m /\ e) -> do
+            for bs' \(t : m : e) -> do
               d <- match m t
               check (g ++ d) e
           smash ts
@@ -195,13 +195,13 @@ instance checkTask :: Check Task where
     where
     subcheck s = check g s |= outofTask
 
-    subcheck' (e /\ s) = do
+    subcheck' (e : s) = do
       t_e <- check g e
       case t_e of
         TPrimitive TBool -> subcheck s
         _ -> throw <| BoolNeeded t_e
 
-    subcheck'' (_ /\ e /\ s) = subcheck' (e /\ s)
+    subcheck'' (_ : e : s) = subcheck' (e : s)
 
 unite :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
 unite = gather go neutral
@@ -218,10 +218,10 @@ unite = gather go neutral
 intersect :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
 intersect rs = foldr1 (**) rs |> note EmptyChoice
 
-merge :: forall a b. Row a -> Row b -> Run ( except :: EXCEPT TypeError ) (Row (a /\ b))
+merge :: forall a b. Row a -> Row b -> Run ( except :: EXCEPT TypeError ) (Row (a * b))
 merge r1 r2 =
   if HashMap.isEmpty ds then
-    done <| HashMap.intersectionWith (/\) r1 r2
+    done <| HashMap.intersectionWith (:) r1 r2
   else
     throw <| UnknownLabels (keys ds) (keys r2)
   where
@@ -262,13 +262,13 @@ outofTask t
   | otherwise = throw <| TaskNeeded t
 
 returnValue :: forall m. Monad m => Type -> m Type
-returnValue t = done <| TTask <| from [ "value" /\ t ]
+returnValue t = done <| TTask <| from [ "value" : t ]
 
 ---- Matcher -------------------------------------------------------------------
 match :: Match -> Type -> Run ( except :: EXCEPT TypeError ) Context
 match m t = case m of
   MIgnore -> done neutral
-  MBind x -> done <| from [ x /\ t ]
+  MBind x -> done <| from [ x : t ]
   MRecord ms -> do
     case t of
       TRecord r -> merge ms r |= traverse (uncurry match) |= unite

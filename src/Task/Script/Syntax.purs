@@ -113,7 +113,7 @@ instance showBasicType :: Show BasicType where
   show = case _ of
     BList t -> unwords [ "List", show t ]
     BRecord r -> show r
-    BVariant r -> HashMap.toArrayBy (/\) r |> map (\(k /\ v) -> show k ++ ":" ++ show v) |> intercalate "," |> inbetween '<' '>'
+    BVariant r -> HashMap.toArrayBy (:) r |> map (\(k : v) -> show k ++ ":" ++ show v) |> intercalate "," |> inbetween '<' '>'
     BPrimitive p -> show p
 
 ofType :: Type -> Maybe BasicType
@@ -150,7 +150,7 @@ data Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
-  | Case Expression (Row (Match /\ Expression))
+  | Case Expression (Row (Match * Expression))
   | Record (Row Expression)
   | Variant Label Expression Type
   | Nil Type
@@ -211,8 +211,8 @@ data Task
   | Lift Expression
   | Pair (List Statement)
   | Choose (List Statement)
-  | Branch (List (Expression /\ Statement))
-  | Select (List (Label /\ Expression /\ Statement))
+  | Branch (List (Expression * Statement))
+  | Select (List (Label * Expression * Statement))
   -- Extras
   | Execute Name Argument
   | Hole Argument
