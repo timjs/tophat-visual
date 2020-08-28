@@ -1,4 +1,4 @@
-module Concur.Widgets
+module Concur.Forms
   ( Html
   , Attr
   -- # Static
@@ -13,26 +13,26 @@ module Concur.Widgets
   , stringValue
   , intValue
   , floatValue
+  -- # Running
+  , runWidgetInDom
   ) where
 
 import Preload
-import Concur.Core as Core
-import Concur.React as Html
+import Concur (Widget)
+import Concur.React (HTML)
 import Concur.React.DOM as Html
-import Concur.React.Props hiding (label) as Html
+import Concur.React.Props as Attr
+import Concur.React.Run as Run
 import Data.Int as Int
 import Data.Number as Number
 import React.SyntheticEvent as React
 
 ---- Types ---------------------------------------------------------------------
-type Widget
-  = Core.Widget
-
 type Html
-  = Html.HTML
+  = HTML
 
 type Attr a
-  = Html.ReactProps a
+  = Attr.ReactProps a
 
 ---- Static --------------------------------------------------------------------
 text :: forall a. String -> Widget Html a
@@ -47,11 +47,11 @@ column = Html.div
 ---- Inputs --------------------------------------------------------------------
 button :: String -> Widget Html Unit
 button label = do
-  result <- Html.button [ Nothing -|| Html.onClick, Just <|| Html.onKeyDown ] [ Html.text label ]
+  result <- Html.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Html.text label ]
   case result of
     Nothing -> done unit
     Just key ->
-      if Html.isEnterEvent key then
+      if Attr.isEnterEvent key then
         done unit
       else
         button label
@@ -60,7 +60,7 @@ checkbox :: String -> Bool -> Widget Html Bool
 checkbox label checked = do
   Html.div
     []
-    [ Html.input [ Html._type "checkbox", Html.checked checked, unit -|| Html.onInput ]
+    [ Html.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
     , Html.label [] [ Html.text label ]
     ]
   checkbox label (not checked)
@@ -69,27 +69,31 @@ inputbox :: String -> Widget Html String
 inputbox value = do
   result <-
     Html.input
-      [ Html.autoFocus true
-      , Html._type "text"
-      , Html.value value
-      , Html.placeholder value
-      , Left <|| Html.onInput
-      , Right <|| Html.onKeyDown
+      [ Attr.autoFocus true
+      , Attr._type "text"
+      , Attr.value value
+      , Attr.placeholder value
+      , Left <|| Attr.onInput
+      , Right <|| Attr.onKeyDown
       ]
   case result of
     Left event -> inputbox (stringValue event)
     Right key ->
-      if Html.isEnterEvent key then
+      if Attr.isEnterEvent key then
         done value
       else
         inputbox value
 
 ---- Target values -------------------------------------------------------------
 stringValue :: forall a. React.SyntheticEvent_ a -> String
-stringValue = Html.unsafeTargetValue
+stringValue = Attr.unsafeTargetValue
 
 floatValue :: forall a. React.SyntheticEvent_ a -> Maybe Number
 floatValue = stringValue >> Number.fromString
 
 intValue :: forall a. React.SyntheticEvent_ a -> Maybe Int
 intValue e = floatValue e ||> Int.floor
+
+---- Running -------------------------------------------------------------------
+runWidgetInDom :: forall a. String -> Widget Html a -> Effect Unit
+runWidgetInDom = Run.runWidgetInDom

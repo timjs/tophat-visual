@@ -1,17 +1,14 @@
 module Main where
 
 import Preload
-import Concur.Core (Widget)
-import Concur.React (HTML)
-import Concur.React.DOM as Html
-import Concur.React.Props as Props
-import Concur.React.Run (runWidgetInDom)
-import Effect (Effect)
+import Concur (Widget)
+import Concur.Forms (Html)
+import Concur.Forms as Forms
 
-hello :: forall a. Widget HTML a
+hello :: forall a. Widget Html a
 hello = do
-  void <| Html.button [ Props.onClick ] [ Html.text "Say Hello" ]
-  Html.text "Hello Sailor!"
+  void <| Forms.button "Say Hello"
+  Forms.text "Hello Sailor!"
 
 main :: Effect Unit
-main = runWidgetInDom "root" hello
+main = Forms.runWidgetInDom "root" hello
