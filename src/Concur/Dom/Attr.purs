@@ -1,7 +1,5 @@
 module Concur.Dom.Attr
   ( module Reexport
-  , rx
-  , ry
   , display
   , align_items
   , justify_content

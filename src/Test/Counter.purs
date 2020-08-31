@@ -38,7 +38,7 @@ counters'' xs = do
   repeat xs counters
 
 main' :: Widget Dom (Array Int)
-main' = dynamic <| loop [ 1, 2, 3 ] counters''
+main' = dynamic <| loop [ 1, 2, 3 ] counters'
 
 ---- Helpers -------------------------------------------------------------------
 sorted :: Array Int -> Bool

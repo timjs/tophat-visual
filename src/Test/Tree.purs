@@ -1,11 +1,11 @@
 module Test.Tree where
 
 import Preload
-import Concur (Widget, list)
+import Concur (Widget, Signal, dynamic, hold, loop, repeat, list)
 import Concur.Dom (Dom)
-import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Elem as Elem
+import Concur.Dom.Node as Node
 import Data.Array as Array
 
 ---- Data ----------------------------------------------------------------------
@@ -15,11 +15,14 @@ data Tree a
 type Forest a
   = Array (Tree a)
 
+singleton :: Tree String
+singleton = Tree "New heading" []
+
 init :: Tree String
 init =
   Tree
     "Double click to edit me"
-    [ Tree "Or use the 'delete' button to delete me" []
+    [ Tree "Or use the 'deleteButton' button to delete me" []
     , Tree "Or use the 'new' button to add a sub node" []
     ]
 
@@ -37,41 +40,75 @@ data Action
 
 view :: Maybe (Tree String) -> Widget Dom (Maybe (Tree String))
 view = case _ of
-  Nothing -> Just <|| create
-  Just tree -> view' tree
+  Nothing -> Just <|| createButton
+  Just tree -> go tree
   where
-  view' (Tree title children) = do
+  go (Tree name children) = do
     result <-
       Node.ul'
         [ Node.li'
-            [ Rename <|| rename title
-            , Create <|| create
-            , Delete -|| delete
-            , Modify <|| list view' children
+            [ Rename <|| titleWidget name
+            , Create <|| createButton
+            , Delete -|| deleteButton
+            , Modify <|| list go children
             ]
         ]
     done
       <| case result of
-          Rename title' -> Just <| Tree title' children
-          Create tree' -> Just <| Tree title (Array.cons tree' children)
+          Rename name' -> Just <| Tree name' children
+          Create tree' -> Just <| Tree name (Array.cons tree' children)
           Delete -> Nothing
-          Modify children' -> Just <| Tree title children'
+          Modify children' -> Just <| Tree name children'
 
-rename :: String -> Widget Dom String
-rename title = do
-  Node.h5 [ void Attr.onDoubleClick ] [ Node.text title ]
-  renamed <- Node.div' [ Elem.inputbox title, Node.button [ title -|| Attr.onClick ] [ Node.text "Cancel" ] ]
+---- Widgets -------------------------------------------------------------------
+titleWidget :: String -> Widget Dom String
+titleWidget old = do
+  Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
+  new <- Node.div' [ Elem.inputbox old, old -|| Elem.button "Cancel" ]
   done
-    <| if renamed == "" then
-        title
+    <| if new == "" then
+        old
       else
-        renamed
+        new
 
-create :: Widget Dom (Tree String)
-create = do
+createButton :: Widget Dom (Tree String)
+createButton = do
   Node.button [ void Attr.onClick ] [ Node.text "New" ]
-  done <| Tree "New Heading" []
+  done singleton
 
-delete :: Widget Dom Unit
-delete = do
+deleteButton :: Widget Dom Unit
+deleteButton = do
   Node.button [ void Attr.onClick ] [ Node.text "Delete" ]
+
+treeWidget :: Tree String -> Widget Dom (Tree String)
+treeWidget (Tree name children) = do
+  action <-
+    Node.ul'
+      [ Node.li'
+          [ Rename <|| titleWidget name
+          , Create <|| createButton
+          , Delete -|| deleteButton
+          , Modify <|| forestWidget children
+          ]
+      ]
+  done
+    <| case action of
+        Rename name' -> Tree name' children
+        Create tree' -> Tree name (Array.cons tree' children)
+        Delete -> singleton
+        Modify children' -> Tree name children'
+
+treeSignal :: Tree String -> Signal Dom (Tree String)
+treeSignal t = repeat t treeWidget
+
+forestWidget :: Forest String -> Widget Dom (Forest String)
+forestWidget ts = dynamic <| forestSignal ts
+
+forestSignal :: Forest String -> Signal Dom (Forest String)
+forestSignal ts = traverse treeSignal ts
+
+renderTree' :: Tree String -> Signal Dom (Tree String)
+renderTree' t = repeat t treeWidget
+
+renderTree :: Tree String -> Widget Dom (Tree String)
+renderTree t = dynamic <| loop t renderTree'
