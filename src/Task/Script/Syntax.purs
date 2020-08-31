@@ -2,6 +2,7 @@ module Task.Script.Syntax
   -- # Synonyms
   ( Row
   , Labels
+  , showLabels
   , Name
   , Label
   , Message
@@ -29,27 +30,30 @@ module Task.Script.Syntax
 
 import Preload
 import Data.HashMap as HashMap
+import Data.HashSet as HashSet
 
 ---- Synonyms ------------------------------------------------------------------
 type Row a
   = HashMap Label a
 
-showFields :: forall a. Show a => String -> HashMap Label a -> String
-showFields sep as =
+showRow :: forall a. Show a => Char -> Char -> String -> HashMap Label a -> String
+showRow beg end sep as =
   as
     |> HashMap.toArrayBy (\l x -> unwords [ l, sep, show x ])
     |> intercalate ","
-    |> inbetween '{' '}'
+    |> inbetween beg end
+
+showFields :: forall a. Show a => String -> HashMap Label a -> String
+showFields = showRow '{' '}'
 
 showVariants :: forall a. Show a => HashMap String a -> String
-showVariants as =
-  as
-    |> HashMap.toArrayBy (\l x -> unwords [ l, ":", show x ])
-    |> intercalate ","
-    |> inbetween '[' ']'
+showVariants = showRow '[' ']' ":"
 
 type Labels
   = HashSet Label
+
+showLabels :: HashSet Label -> String
+showLabels = HashSet.toArray >> intercalate "," >> inbetween '[' ']'
 
 type Name
   = String

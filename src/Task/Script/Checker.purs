@@ -9,7 +9,7 @@ module Task.Script.Checker
 import Preload hiding (note)
 import Run (Run, extract)
 import Run.Except (EXCEPT, note, runExcept, throw)
-import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Statement(..), Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Statement(..), Task(..), Type(..), showLabels, isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 
@@ -60,8 +60,8 @@ instance showTypeError :: Show TypeError where
     ReferenceNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a reference" ]
     TaskNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a task" ]
     BasicNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a basic type" ]
-    UnknownLabels r_diff r_orig -> unwords [ "Labels", show r_diff |> quote, "are not part of row", show r_orig |> quote ]
-    DoubleLabels r_double r_orig -> unwords [ "Double occurence of label", show r_double |> quote, "in row", show r_orig |> quote ]
+    UnknownLabels r_diff r_orig -> unwords [ "Labels", showLabels r_diff, "are not part of row", showLabels r_orig ]
+    DoubleLabels r_double r_orig -> unwords [ "Double occurence of label", showLabels r_double, "in row", showLabels r_orig ]
     EmptyCase -> unwords [ "This case expression has no branches" ]
     EmptyChoice -> unwords [ "This choice task has no branches" ]
     HoleFound g -> unlines [ "Found hole of type _ in context", show g |> indent 2 ]
