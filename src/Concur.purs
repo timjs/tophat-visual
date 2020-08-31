@@ -8,16 +8,19 @@ module Concur
   , Wire
   , local
   , focus
+  -- # Combinators
+  , list
   ) where
 
 import Preload
 import Control.Cofree (Cofree)
 import Concur.Core.FRP (Signal, display, step, always, update, poll, hold, foldp) as Reexport
+import Concur.Core.FRP as Internal
 import Concur.Core.Patterns as Patterns
 import Concur.Core.Types (Widget, andd) as Reexport
-import Control.MultiAlternative (class MultiAlternative) as Reexport
+import Control.MultiAlternative (class MultiAlternative, orr) as Reexport
 import Control.ShiftMap (class ShiftMap) as Reexport
-import Concur.Core.FRP as Internal
+import Data.Array as Array
 import Data.Lens (Lens')
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
@@ -45,6 +48,16 @@ focus :: forall m s a. Functor m => Lens' s a -> Wire m s -> Wire m a
 focus = Patterns.mapWire
 
 ---- Combinators ---------------------------------------------------------------
+list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
+list render elements = do
+  (index : result) <- Reexport.orr indexedElements
+  done
+    <| case result of
+        Nothing -> Array.deleteAt index elements ?? elements
+        Just element' -> Array.updateAt index element' elements ?? elements
+  where
+  indexedElements = Array.mapWithIndex (\index element -> (index : _) <|| render element) <| elements
+
 {-
 import Concur.Core (Widget, orr)
 import qualified Data.List.Index as List
@@ -72,14 +85,4 @@ list' render elements = do
     indexedElements =
       List.imap (\index element -> (index,) <|| render element) <| elements
 
-list :: Monoid v => (a -> Widget v (Maybe a)) -> List a -> Widget v (List a)
-list render elements = do
-  (index, result) <- orr indexedElements
-  pure
-    <| case result of
-      Nothing -> List.deleteAt index elements
-      Just element' -> List.setAt index element' elements
-  where
-    indexedElements =
-      List.imap (\index element -> (index,) <|| render element) <| elements
 -}
