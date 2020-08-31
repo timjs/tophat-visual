@@ -1,4 +1,4 @@
-module Concur.Dom.Attributes
+module Concur.Dom.Attr
   ( module Reexport
   , rx
   , ry
@@ -12,12 +12,6 @@ import Preload
 import Concur.Core.Props as Concur
 import Concur.React.Props as Reexport
 import React.DOM.Props as React
-
-rx :: forall a. String -> Reexport.ReactProps a
-rx = Concur.PrimProp << React.unsafeMkProps "rx"
-
-ry :: forall a. String -> Reexport.ReactProps a
-ry = Concur.PrimProp << React.unsafeMkProps "ry"
 
 display :: forall a. String -> Reexport.ReactProps a
 display = Concur.PrimProp << React.unsafeMkProps "display"

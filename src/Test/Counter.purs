@@ -1,19 +1,19 @@
 module Test.Counter where
 
-import Preload
-import Concur
+import Preload (Bool, Maybe(..), and, discard, map, show, traverse, (+), (-), (-||), (<=), (<|))
+import Concur (Signal, Widget, andd, display, dynamic, loop, repeat)
 import Concur.Dom (Dom)
-import Concur.Dom.Html as Html
-import Concur.Dom.Attributes as Attr
+import Concur.Dom.Node as Node
+import Concur.Dom.Attr as Attr
 import Data.Array (zipWith, tail)
 
 ---- Widgets -------------------------------------------------------------------
 counter :: Int -> Widget Dom Int
 counter n = do
-  Html.div'
-    [ n + 1 -|| Html.button [ Attr.onClick ] [ Html.text "+" ]
-    , Html.text <| show n
-    , n - 1 -|| Html.button [ Attr.onClick ] [ Html.text "-" ]
+  Node.div'
+    [ n + 1 -|| Node.button [ Attr.onClick ] [ Node.text "+" ]
+    , Node.text <| show n
+    , n - 1 -|| Node.button [ Attr.onClick ] [ Node.text "-" ]
     ]
 
 counters :: Array Int -> Widget Dom (Array Int)
@@ -28,11 +28,17 @@ counter' k = repeat k counter
 
 counters' :: Array Int -> Signal Dom (Array Int)
 counters' xs = do
-  display <| Html.text <| show { content: xs, sorted: sorted xs }
+  display <| Node.text <| show { content: xs, sorted: sorted xs }
   traverse counter' xs
 
+--NOTE: This is something completely different!
+counters'' :: Array Int -> Signal Dom (Array Int)
+counters'' xs = do
+  display <| Node.text <| show { content: xs, sorted: sorted xs }
+  repeat xs counters
+
 main' :: Widget Dom (Array Int)
-main' = dynamic <| loop [ 1, 2, 3 ] counters'
+main' = dynamic <| loop [ 1, 2, 3 ] counters''
 
 ---- Helpers -------------------------------------------------------------------
 sorted :: Array Int -> Bool

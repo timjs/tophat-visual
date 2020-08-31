@@ -1,10 +1,6 @@
-module Concur.Forms
-  -- # Static
-  ( text
-  , horizontal
-  , vertical
+module Concur.Dom.Elem
   -- # Inputs
-  , button
+  ( button
   , checkbox
   , inputbox
   -- # Values
@@ -14,31 +10,18 @@ module Concur.Forms
   ) where
 
 import Preload
-import Concur (Widget, class ShiftMap, class MultiAlternative)
-import Concur.Dom (Dom, Attr)
-import Concur.Dom.Attributes as Attr
-import Concur.Dom.Tags as Tag
+import Concur (Widget)
+import Concur.Dom (Dom)
+import Concur.Dom.Attr as Attr
+import Concur.Dom.Node as Node
 import Data.Int as Int
 import Data.Number as Number
 import React.SyntheticEvent as React
 
----- Static --------------------------------------------------------------------
-text :: forall a. String -> Widget Dom a
-text = Tag.text_
-
-divProps :: forall a. Array (Attr a)
-divProps = [ Attr.display "flex", Attr.align_items "center", Attr.justify_content "center" ]
-
-horizontal :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
-horizontal = Tag.div <| [ Attr.flex_direction "row" ] ++ divProps
-
-vertical :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
-vertical = Tag.div <| [ Attr.flex_direction "column" ] ++ divProps
-
 ---- Inputs --------------------------------------------------------------------
 button :: String -> Widget Dom Unit
 button label = do
-  result <- Tag.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Tag.text_ label ]
+  result <- Node.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Node.text label ]
   case result of
     Nothing -> done unit
     Just key ->
@@ -49,17 +32,16 @@ button label = do
 
 checkbox :: String -> Bool -> Widget Dom Bool
 checkbox label checked = do
-  Tag.div
-    []
-    [ Tag.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
-    , Tag.label [] [ Tag.text_ label ]
+  Node.div'
+    [ Node.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
+    , Node.label [] [ Node.text label ]
     ]
-  checkbox label (not checked)
+  done (not checked)
 
 inputbox :: String -> Widget Dom String
 inputbox value = do
   result <-
-    Tag.input
+    Node.input
       [ Attr.autoFocus true
       , Attr._type "text"
       , Attr.value value

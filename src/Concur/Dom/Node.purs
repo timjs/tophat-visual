@@ -1,4 +1,4 @@
-module Concur.Dom.Html
+module Concur.Dom.Node
   ( module Reexport
   ) where
 
