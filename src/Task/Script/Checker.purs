@@ -7,11 +7,11 @@ module Task.Script.Checker
   ) where
 
 import Preload hiding (note)
-import Run (Run, extract)
-import Run.Except (EXCEPT, note, runExcept, throw)
-import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Statement(..), Task(..), Type(..), showLabels, isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
+import Run (Run, extract)
+import Run.Except (EXCEPT, note, runExcept, throw)
+import Task.Script.Syntax (Argument(..), BasicType, Checked, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Statement(..), Task(..), Type(..), Unchecked, isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType, showLabels)
 
 ---- Errors --------------------------------------------------------------------
 data TypeError
@@ -74,6 +74,9 @@ type Context
 
 class Check a where
   check :: Context -> a -> Run ( except :: EXCEPT TypeError ) Type
+
+class Check' f where
+  check' :: Context -> Unchecked f -> Checked f
 
 instance checkExpression :: Check Expression where
   check g = case _ of
@@ -149,18 +152,18 @@ instance checkExpression :: Check Expression where
 instance checkArgument :: Check Argument where
   check g (ARecord es) = traverse (check g) es ||> TRecord
 
-instance checkStatement :: Check Statement where
+instance checkStatement :: Check (Statement t) where
   check g = case _ of
     Step m t s -> do
-      t_t <- check g t
+      t_t <- undefined g t
       case t_t of
         TTask r -> do
           d <- match m (TRecord r)
           check (g ++ d) s
         _ -> throw <| TaskNeeded t_t
-    Task t -> check g t
+    Task t -> undefined g t
 
-instance checkTask :: Check Task where
+instance checkTask :: Check (Statement t) => Check (Task t) where
   check g = case _ of
     Enter b _ -> ofBasic b |> returnValue
     Update _ e -> check g e |= needBasic |= returnValue

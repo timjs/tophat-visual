@@ -26,6 +26,10 @@ module Task.Script.Syntax
   -- # Statements
   , Statement(..)
   , Task(..)
+  -- # Errors
+  , Unchecked(..)
+  , Checked(..)
+  , Error(..)
   ) where
 
 import Preload
@@ -240,18 +244,18 @@ instance showMatch :: Show Match where
     MUnpack -> "{..}"
 
 ---- Statements ----------------------------------------------------------------
-data Statement
-  = Step Match Task Statement
-  | Task Task
+data Statement t
+  = Step Match t (Statement t)
+  | Task t
 
-derive instance eqStatement :: Eq Statement
+derive instance eqStatement :: Eq t => Eq (Statement t)
 
-instance showStatement :: Show Statement where
+instance showStatement :: Show t => Show (Statement t) where
   show = case _ of
     Step m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
     Task t -> show t
 
-data Task
+data Task t
   -- Editors
   = Enter BasicType Message
   | Update Message Expression
@@ -260,10 +264,10 @@ data Task
   | Watch Message Expression
   -- Basics
   | Lift Expression
-  | Pair (List Statement)
-  | Choose (List Statement)
-  | Branch (List (Expression * Statement))
-  | Select (List (Label * Expression * Statement))
+  | Pair (List (Statement t))
+  | Choose (List (Statement t))
+  | Branch (List (Expression * (Statement t)))
+  | Select (List (Label * Expression * (Statement t)))
   -- Extras
   | Execute Name Argument
   | Hole Argument
@@ -271,9 +275,9 @@ data Task
   | Share Expression
   | Assign Expression Expression
 
-derive instance eqTask :: Eq Task
+derive instance eqTask :: Eq t => Eq (Task t)
 
-instance showTask :: Show Task where
+instance showTask :: Show t => Show (Task t) where
   show = case _ of
     Enter t m -> unwords [ "enter", show t, quote m ]
     Update m e -> unwords [ "update", quote m, show e ]
@@ -304,3 +308,33 @@ instance showTask :: Show Task where
       map (\(l : e : s) -> unwords [ l, "?", show e, "~>", show s ])
         >> unlines
         >> inbetween '[' ']'
+
+---- Checking ------------------------------------------------------------------
+data Unchecked f
+  = Unchecked (f (Unchecked f))
+
+--NOTE: below instance is infinite, we create one for Tasks only
+-- instance showUnchecked :: Show (f (Unchecked f)) => Show (Unchecked f) where
+instance showUnchecked :: Show (Unchecked Task) where
+  show (Unchecked x) = show x
+
+data Checked f
+  = Pass Type (f (Checked f))
+  | Fail Error (f (Checked f))
+
+instance showChecked :: Show (Checked Task) where
+  show = case _ of
+    Pass _ x -> unwords [ "(o)", show x ]
+    Fail e x -> unwords [ "(!", show e, "!)", show x ]
+
+data Error
+  = Error
+
+instance showError :: Show Error where
+  show Error = "Error!"
+
+test1 :: Statement (Unchecked Task)
+test1 = Task <| Unchecked <| Enter (BPrimitive TString) "Hallo"
+
+test2 :: Statement (Unchecked Task)
+test2 = Task <| Unchecked <| Select <| from [ "Continue" : Constant (B true) : test1 ]

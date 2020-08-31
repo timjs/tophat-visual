@@ -1,7 +1,7 @@
 module Task.Script.Example where
 
 import Preload
-import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Statement(..), Task(..), Type(..))
+import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Statement(..), Task(..), Type(..), Unchecked(..))
 
 ---- Types ---------------------------------------------------------------------
 t_nationality :: Type
@@ -56,14 +56,14 @@ t_booking =
         ]
 
 ---- Tasks ---------------------------------------------------------------------
-enter_passenger :: Statement
+enter_passenger :: Statement (Unchecked Task)
 enter_passenger =
-  Step (MRecord <| from [ "value" : MBind "passengers" ]) (Enter (BPrimitive TString) "Passenger details")
+  Step (MRecord <| from [ "value" : MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
     <| Task
+    <| Unchecked
     <| Select
     <| from
-        [ ( "Continue"
-              : Constant (B true)
-              : (Task <| Lift (Record <| from [ "passengers" : Variable "passengers" ]))
-          )
+        [ "Continue"
+            : Constant (B true)
+            : (Task <| Unchecked <| Lift (Record <| from [ "passengers" : Variable "passengers" ]))
         ]
