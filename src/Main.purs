@@ -2,13 +2,16 @@ module Main where
 
 import Preload
 import Concur (Widget)
-import Concur.Forms (Html)
+import Concur.Dom (Dom, runWidgetInDom)
 import Concur.Forms as Forms
 
-hello :: forall a. Widget Html a
+hello :: forall a. Widget Dom a
 hello = do
   void <| Forms.button "Say Hello"
   Forms.text "Hello Sailor!"
 
+buts :: Widget Dom Unit
+buts = Forms.button "blub" <|> Forms.button "blab"
+
 main :: Effect Unit
-main = Forms.runWidgetInDom "root" hello
+main = runWidgetInDom "root" buts

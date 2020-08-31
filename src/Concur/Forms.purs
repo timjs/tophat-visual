@@ -1,8 +1,6 @@
 module Concur.Forms
-  ( Html
-  , Attr
   -- # Static
-  , text
+  ( text
   , row
   , column
   -- # Inputs
@@ -13,41 +11,31 @@ module Concur.Forms
   , stringValue
   , intValue
   , floatValue
-  -- # Running
-  , runWidgetInDom
   ) where
 
 import Preload
 import Concur (Widget)
-import Concur.React (HTML)
-import Concur.React.DOM as Html
-import Concur.React.Props as Attr
-import Concur.React.Run as Run
+import Concur.Dom (Dom, Attr)
+import Concur.Dom.Tags as Tag
+import Concur.Dom.Attributes as Attr
 import Data.Int as Int
 import Data.Number as Number
 import React.SyntheticEvent as React
 
----- Types ---------------------------------------------------------------------
-type Html
-  = HTML
-
-type Attr a
-  = Attr.ReactProps a
-
 ---- Static --------------------------------------------------------------------
-text :: forall a. String -> Widget Html a
-text = Html.text
+text :: forall a. String -> Widget Dom a
+text = Tag.text_
 
-row :: forall a. Array (Attr a) -> Array (Widget Html a) -> Widget Html a
-row = Html.div
+row :: forall a. Array (Attr a) -> Array (Widget Dom a) -> Widget Dom a
+row = Tag.div
 
-column :: forall a. Array (Attr a) -> Array (Widget Html a) -> Widget Html a
-column = Html.div
+column :: forall a. Array (Attr a) -> Array (Widget Dom a) -> Widget Dom a
+column = Tag.div
 
 ---- Inputs --------------------------------------------------------------------
-button :: String -> Widget Html Unit
+button :: String -> Widget Dom Unit
 button label = do
-  result <- Html.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Html.text label ]
+  result <- Tag.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Tag.text_ label ]
   case result of
     Nothing -> done unit
     Just key ->
@@ -56,19 +44,19 @@ button label = do
       else
         button label
 
-checkbox :: String -> Bool -> Widget Html Bool
+checkbox :: String -> Bool -> Widget Dom Bool
 checkbox label checked = do
-  Html.div
+  Tag.div
     []
-    [ Html.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
-    , Html.label [] [ Html.text label ]
+    [ Tag.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
+    , Tag.label [] [ Tag.text_ label ]
     ]
   checkbox label (not checked)
 
-inputbox :: String -> Widget Html String
+inputbox :: String -> Widget Dom String
 inputbox value = do
   result <-
-    Html.input
+    Tag.input
       [ Attr.autoFocus true
       , Attr._type "text"
       , Attr.value value
@@ -93,7 +81,3 @@ floatValue = stringValue >> Number.fromString
 
 intValue :: forall a. React.SyntheticEvent_ a -> Maybe Int
 intValue e = floatValue e ||> Int.floor
-
----- Running -------------------------------------------------------------------
-runWidgetInDom :: forall a. String -> Widget Html a -> Effect Unit
-runWidgetInDom = Run.runWidgetInDom

@@ -92,7 +92,7 @@ import Control.Applicative (pure)
 import Control.Apply (applyFirst, applySecond) as Reexport
 import Control.Bind (bind, bindFlipped, discard) as Reexport
 import Control.Plus (class Plus, empty) as Reexport
-import Control.Alt (class Alt) as Reexport
+import Control.Alt (class Alt, (<|>)) as Reexport
 import Control.Semigroupoid (composeFlipped)
 import Data.Array as Array
 import Data.Array.NonEmpty (fromNonEmpty, toUnfoldable)
