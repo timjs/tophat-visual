@@ -9,6 +9,9 @@ module Preload
   -- Tuples
   , (:)
   , type (*)
+  -- Maybes
+  , (??)
+  , withDefault
   -- Strings
   , inbetween
   , quote
@@ -118,6 +121,7 @@ import Data.Hashable (class Hashable) as Reexport
 import Data.List (List) as Reexport
 import Data.List as List
 import Data.Maybe hiding (fromMaybe) as Reexport
+import Data.Maybe (fromMaybe)
 import Data.Monoid (mempty)
 import Data.Newtype (class Newtype, wrap, unwrap, ala, over, over2, under, under2) as Reexport
 import Data.NonEmpty (NonEmpty(..)) as Reexport
@@ -152,6 +156,12 @@ composeOr f g x = f x Reexport.|| g x
 infixr 6 Tuple as :
 
 infixr 6 type Tuple as *
+
+---- Maybes --------------------------------------------------------------------
+infix 1 withDefault as ??
+
+withDefault :: forall a. Reexport.Maybe a -> a -> a
+withDefault = Reexport.flip fromMaybe
 
 ---- Strings -------------------------------------------------------------------
 inbetween :: Char -> Char -> String -> String
