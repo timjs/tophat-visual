@@ -1,6 +1,9 @@
 module Concur
-  -- # Widgets
-  ( Widget
+  ( module Reexport
+  -- # Signals
+  , repeat
+  , loop
+  , dynamic
   -- # Wires
   , Wire
   , local
@@ -8,15 +11,28 @@ module Concur
   ) where
 
 import Preload
-import Concur.Core as Core
+import Control.Cofree (Cofree)
+import Concur.Core.FRP (Signal, display, step, always, update, poll, hold, foldp) as Reexport
 import Concur.Core.Patterns as Patterns
+import Concur.Core.Types (Widget, andd) as Reexport
+import Control.MultiAlternative (class MultiAlternative) as Reexport
+import Control.ShiftMap (class ShiftMap) as Reexport
+import Concur.Core.FRP as Internal
 import Data.Lens (Lens')
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
 ---- Widgets -------------------------------------------------------------------
-type Widget
-  = Core.Widget
+{- -}
+---- Signals -------------------------------------------------------------------
+dynamic :: forall m a b. Monad m => Cofree m a -> m b
+dynamic = Internal.dyn
+
+repeat :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
+repeat = Internal.loopW
+
+loop :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
+loop = Internal.loopS
 
 ---- Wires ---------------------------------------------------------------------
 type Wire m a

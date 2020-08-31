@@ -1,8 +1,8 @@
 module Concur.Forms
   -- # Static
   ( text
-  , row
-  , column
+  , horizontal
+  , vertical
   -- # Inputs
   , button
   , checkbox
@@ -14,10 +14,10 @@ module Concur.Forms
   ) where
 
 import Preload
-import Concur (Widget)
+import Concur (Widget, class ShiftMap, class MultiAlternative)
 import Concur.Dom (Dom, Attr)
-import Concur.Dom.Tags as Tag
 import Concur.Dom.Attributes as Attr
+import Concur.Dom.Tags as Tag
 import Data.Int as Int
 import Data.Number as Number
 import React.SyntheticEvent as React
@@ -26,11 +26,14 @@ import React.SyntheticEvent as React
 text :: forall a. String -> Widget Dom a
 text = Tag.text_
 
-row :: forall a. Array (Attr a) -> Array (Widget Dom a) -> Widget Dom a
-row = Tag.div
+divProps :: forall a. Array (Attr a)
+divProps = [ Attr.display "flex", Attr.align_items "center", Attr.justify_content "center" ]
 
-column :: forall a. Array (Attr a) -> Array (Widget Dom a) -> Widget Dom a
-column = Tag.div
+horizontal :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
+horizontal = Tag.div <| [ Attr.flex_direction "row" ] ++ divProps
+
+vertical :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
+vertical = Tag.div <| [ Attr.flex_direction "column" ] ++ divProps
 
 ---- Inputs --------------------------------------------------------------------
 button :: String -> Widget Dom Unit
