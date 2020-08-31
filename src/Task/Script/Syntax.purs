@@ -34,6 +34,20 @@ import Data.HashMap as HashMap
 type Row a
   = HashMap Label a
 
+showFields :: forall a. Show a => String -> HashMap Label a -> String
+showFields sep as =
+  as
+    |> HashMap.toArrayBy (\l x -> unwords [ l, sep, show x ])
+    |> intercalate ","
+    |> inbetween '{' '}'
+
+showVariants :: forall a. Show a => HashMap String a -> String
+showVariants as =
+  as
+    |> HashMap.toArrayBy (\l x -> unwords [ l, ":", show x ])
+    |> intercalate ","
+    |> inbetween '[' ']'
+
 type Labels
   = HashSet Label
 
@@ -60,10 +74,12 @@ derive instance eqType :: Eq Type
 
 instance showType :: Show Type where
   show = case _ of
-    TFunction t1 t2 -> unwords [ show t1, "->", show t2 ] |> inbetween '(' ')'
+    TFunction t1 t2 ->
+      unwords [ show t1, "->", show t2 ]
+        |> inbetween '(' ')'
     TList t -> unwords [ "List", show t ]
-    TRecord r -> show r
-    TVariant r -> show r
+    TRecord ts -> showFields ":" ts
+    TVariant ts -> showVariants ts
     TReference t -> unwords [ "Ref", show t ]
     TTask t -> unwords [ "Task", show t ]
     TPrimitive p -> show p
@@ -112,8 +128,8 @@ derive instance eqBasicType :: Eq BasicType
 instance showBasicType :: Show BasicType where
   show = case _ of
     BList t -> unwords [ "List", show t ]
-    BRecord r -> show r
-    BVariant r -> HashMap.toArrayBy (:) r |> map (\(k : v) -> show k ++ ":" ++ show v) |> intercalate "," |> inbetween '<' '>'
+    BRecord ts -> showFields ":" ts
+    BVariant ts -> showVariants ts
     BPrimitive p -> show p
 
 ofType :: Type -> Maybe BasicType
@@ -159,10 +175,35 @@ data Expression
 
 derive instance eqExpression :: Eq Expression
 
+instance showExpression :: Show Expression where
+  show = case _ of
+    Lambda m t e -> unwords [ show m, ":", show t, ".", show e ]
+    Apply e1 e2 -> unwords [ show e1, show e2 ] --FIXME
+    Variable n -> n
+    IfThenElse e1 e2 e3 ->
+      unlines
+        [ unwords [ "if", show e1 ]
+        , unwords [ "then", show e2 ] |> indent 2
+        , unwords [ "else", show e3 ] |> indent 2
+        ]
+    Case e0 ms ->
+      unlines
+        [ unwords [ "case", show e0, "of" ]
+        , unlines (HashMap.toArrayBy (\m e -> unwords [ show m, "~>", show e ] |> indent 2) ms)
+        ]
+    Record es -> showFields "=" es
+    Variant l e t -> unwords [ l, show e, "as", show t ]
+    Nil t -> unwords [ "[]", "as", show t ]
+    Cons e1 e2 -> unwords [ show e1, "::", show e2 ]
+    Constant c -> show c
+
 data Argument
   = ARecord (Row Expression)
 
 derive instance eqArgument :: Eq Argument
+
+instance showArgument :: Show Argument where
+  show (ARecord es) = showFields "=" es
 
 data Constant
   = B Bool
@@ -173,7 +214,8 @@ derive instance eqConstant :: Eq Constant
 
 instance showConstant :: Show Constant where
   show = case _ of
-    B b -> show b
+    B true -> "True"
+    B false -> "False"
     I i -> show i
     S s -> show s
 
@@ -190,7 +232,7 @@ instance showMatch :: Show Match where
   show = case _ of
     MIgnore -> "_"
     MBind x -> x
-    MRecord ms -> show ms
+    MRecord ms -> showFields "=" ms
     MUnpack -> "{..}"
 
 ---- Statements ----------------------------------------------------------------
@@ -199,6 +241,11 @@ data Statement
   | Task Task
 
 derive instance eqStatement :: Eq Statement
+
+instance showStatement :: Show Statement where
+  show = case _ of
+    Step m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
+    Task t -> show t
 
 data Task
   -- Editors
@@ -221,3 +268,35 @@ data Task
   | Assign Expression Expression
 
 derive instance eqTask :: Eq Task
+
+instance showTask :: Show Task where
+  show = case _ of
+    Enter t m -> unwords [ "enter", show t, quote m ]
+    Update m e -> unwords [ "update", quote m, show e ]
+    Change m e -> unwords [ "change", quote m, show e ]
+    View m e -> unwords [ "view", quote m, show e ]
+    Watch m e -> unwords [ "watch", quote m, show e ]
+    Lift e -> unwords [ "done", show e ]
+    Pair ss -> unwords [ "all", inner ss ]
+    Choose ss -> unwords [ "any", inner ss ]
+    Branch bs -> unwords [ "one", inner' bs ]
+    Select bs -> unwords [ "select", inner'' bs ]
+    Execute n as -> unwords [ n, show as ]
+    Hole as -> unwords [ "?", show as ]
+    Share e -> unwords [ "share", show e ]
+    Assign e1 e2 -> unwords [ show e1, ":=", show e2 ]
+    where
+    inner =
+      map show
+        >> unlines
+        >> inbetween '[' ']'
+
+    inner' =
+      map (\(e : s) -> unwords [ show e, "~>", show s ])
+        >> unlines
+        >> inbetween '[' ']'
+
+    inner'' =
+      map (\(l : e : s) -> unwords [ l, "?", show e, "~>", show s ])
+        >> unlines
+        >> inbetween '[' ']'
