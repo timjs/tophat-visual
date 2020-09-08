@@ -152,18 +152,18 @@ instance checkExpression :: Check Expression where
 instance checkArgument :: Check Argument where
   check g (ARecord es) = traverse (check g) es ||> TRecord
 
-instance checkStatement :: Check (Statement t) where
+instance checkStatement :: Check t => Check (Statement t) where
   check g = case _ of
     Step m t s -> do
-      t_t <- undefined g t
+      t_t <- check g t
       case t_t of
         TTask r -> do
           d <- match m (TRecord r)
           check (g ++ d) s
         _ -> throw <| TaskNeeded t_t
-    Task t -> undefined g t
+    Task t -> check g t
 
-instance checkTask :: Check (Statement t) => Check (Task t) where
+instance checkTask :: Check t => Check (Task t) where
   check g = case _ of
     Enter b _ -> ofBasic b |> returnValue
     Update _ e -> check g e |= needBasic |= returnValue
