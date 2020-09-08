@@ -153,12 +153,12 @@ composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
 composeOr f g x = f x Reexport.|| g x
 
 ---- Tuples --------------------------------------------------------------------
-infixr 6 Tuple as :
+infixr 2 Tuple as :
 
-infixr 6 type Tuple as *
+infixr 2 type Tuple as *
 
 ---- Maybes --------------------------------------------------------------------
-infix 1 withDefault as ??
+infix 2 withDefault as ??
 
 withDefault :: forall a. Reexport.Maybe a -> a -> a
 withDefault = Reexport.flip fromMaybe
