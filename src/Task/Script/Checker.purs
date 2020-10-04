@@ -22,7 +22,7 @@ instance showUnchecked :: Show (Unchecked Task) where
   show (Unchecked x) = show x
 
 data Checked f
-  = Fail Error (f (Checked f))
+  = Fail Error (f (Unchecked f))
   | Pass Type (f (Checked f))
 
 instance showChecked :: Show (Checked Task) where
@@ -35,16 +35,15 @@ extract = case _ of
   Fail e _ -> Left e
   Pass t _ -> Right t
 
-annotate :: Task (Checked Task) -> Error ++ Type -> Checked Task
-annotate c = case _ of
-  Left e -> Fail e c
-  Right t -> Pass t c
+annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
+annotate (Unchecked t) f = case f t of
+  Left x -> Fail x t
+  Right (c ** a) -> Pass a c
 
-replace :: Error -> Checked Task -> Checked Task
-replace e = case _ of
-  Fail _ c -> Fail e c
-  Pass _ c -> Fail e c
-
+-- replace :: Error -> Checked Task -> Checked Task
+-- replace x = case _ of
+--   Fail _ c -> Fail x c
+--   Pass _ c -> Pass x c
 data Error
   = UnknownVariable Name
   | UnknownLabel Label Type
@@ -187,68 +186,66 @@ instance checkArgument :: Check Argument where
 --   Step' m t s -> ?s1
 --   Task' t -> Task' ?s2
 check' :: Context -> Unchecked Task -> Checked Task
-check' g (Unchecked t) = case t of
-  Enter b m -> done (ofBasic b |> returnValue) |> annotate (Enter b m)
-  Update m e -> check g e |= needBasic ||> returnValue |> annotate (Update m e)
-  Change m e -> check g e |= outofReference ||> returnValue |> annotate (Change m e)
-  View m e -> check g e |= needBasic ||> returnValue |> annotate (View m e)
-  Watch m e -> check g e |= outofReference ||> returnValue |> annotate (Watch m e)
-  Lift e -> check g e |= outofRecord ||> TTask |> annotate (Lift e)
-  Pair bs -> traverse outofBranch bs' |= unite ||> TTask |> annotate (Pair bs')
-    where
-    bs' = map subcheck1 bs
-  Choose bs -> traverse outofBranch bs' |= intersect ||> TTask |> annotate (Choose bs')
-    where
-    bs' = map subcheck1 bs
-  Branch bs -> traverse (snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Branch bs')
-    where
-    bs' = map subcheck2 bs
-  Select bs -> traverse (snd >> snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Select bs')
-    where
-    bs' = map subcheck3 bs
-  _ -> undefined
-  -- Step m t u -> do
-  --   t_t <- check g t
-  --   case t_t of
-  --     TTask r -> do
-  --       d <- match m (TRecord r)
-  --       check (g ++ d) u
-  --     _ -> throw <| TaskNeeded t_t
-  -- Execute x a -> do
-  --   t_x <- HashMap.lookup x g |> note (UnknownVariable x)
-  --   case t_x of
-  --     TFunction r' t -> do
-  --       t_a <- check g a
-  --       if r' == t_a then
-  --         done t
-  --       else
-  --         throw <| ArgumentError r' t_a
-  --     _ -> throw <| FunctionNeeded t_x
-  -- Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
-  -- Share e -> check g e |= outofBasic ||> TReference |= returnValue
-  -- Assign e1 e2 -> do
-  --   t1 <- check g e1
-  --   b1 <- outofReference t1
-  --   b2 <- check g e2
-  --   if b1 == b2 then
-  --     done (TRecord neutral)
-  --   else
-  --     throw (AssignError b1 b2)
-  where
-  subcheck1 :: Unchecked Task -> Checked Task
-  subcheck1 = check' g
+check' g u =
+  annotate u case _ of
+    Enter b m -> done (ofBasic b) ||> returnValue ||> Tuple (Enter b m)
+    Update m e -> check g e |= needBasic ||> returnValue ||> Tuple (Update m e)
+    Change m e -> check g e |= outofReference ||> returnValue ||> Tuple (Change m e)
+    View m e -> check g e |= needBasic ||> returnValue ||> Tuple (View m e)
+    Watch m e -> check g e |= outofReference ||> returnValue ||> Tuple (Watch m e)
+    Lift e -> check g e |= outofRecord ||> TTask ||> Tuple (Lift e)
+    -- Pair bs -> traverse outofBranch bs' |= unite ||> TTask |> annotate (Pair bs')
+    --   where
+    --   bs' = map subcheck1 bs
+    -- Choose bs -> traverse outofBranch bs' |= intersect ||> TTask |> annotate (Choose bs')
+    --   where
+    --   bs' = map subcheck1 bs
+    -- Branch bs -> traverse (snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Branch bs')
+    --   where
+    --   bs' = map subcheck2 bs
+    -- Select bs -> traverse (snd >> snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Select bs')
+    --   where
+    --   bs' = map subcheck3 bs
+    -- Step m t u -> do
+    --   t_t <- check g t
+    --   case t_t of
+    --     TTask r -> do
+    --       d <- match m (TRecord r)
+    --       check (g ++ d) u
+    --     _ -> throw <| TaskNeeded t_t
+    -- Execute x a -> do
+    --   t_x <- HashMap.lookup x g |> note (UnknownVariable x)
+    --   case t_x of
+    --     TFunction r' t -> do
+    --       t_a <- check g a
+    --       if r' == t_a then
+    --         done t
+    --       else
+    --         throw <| ArgumentError r' t_a
+    --     _ -> throw <| FunctionNeeded t_x
+    -- Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
+    -- Share e -> check g e |= outofBasic ||> TReference |= returnValue
+    -- Assign e1 e2 -> do
+    --   t1 <- check g e1
+    --   b1 <- outofReference t1
+    --   b2 <- check g e2
+    --   if b1 == b2 then
+    --     done (TRecord neutral)
+    --   else
+    --     throw (AssignError b1 b2)
+    _ -> undefined
 
-  subcheck2 :: Expression ** Unchecked Task -> Expression ** Checked Task
-  subcheck2 (e ** u) = case check g e of
-    Right (TPrimitive TBool) -> e ** u'
-    Right t_e -> e ** replace (BoolNeeded t_e) u'
-    Left x -> e ** replace x u'
-    where
-    u' = subcheck1 u
-
-  subcheck3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
-  subcheck3 (l ** e ** u) = l ** subcheck2 (e ** u)
-
+-- where
+-- subcheck1 :: Unchecked Task -> Checked Task
+-- subcheck1 = check' g
+-- subcheck2 :: Expression ** Unchecked Task -> Expression ** Checked Task
+-- subcheck2 (e ** u) = do
+--   t_e <- check g e
+--   case t_e of
+--     TPrimitive TBool -> e ** subcheck1 u
+--     _ -> e ** Fail (BoolNeeded t_e) u
+-- subcheck3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
+-- subcheck3 (l ** e ** u) = l ** subcheck2 (e ** u)
 -- check' g (Unchecked x) = case check g x |> execute of
 --   Left e -> Fail e ?t1
 --   Right t -> Pass t ?t2
