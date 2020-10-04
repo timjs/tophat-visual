@@ -36,9 +36,9 @@ extract = case _ of
   Pass t _ -> Right t
 
 annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
-annotate (Unchecked t) f = case f t of
-  Left x -> Fail x t
-  Right (c ** a) -> Pass a c
+annotate (Unchecked u) f = case f u of
+  Left x -> Fail x u
+  Right (c ** t) -> Pass t c
 
 -- replace :: Error -> Checked Task -> Checked Task
 -- replace x = case _ of
@@ -106,7 +106,7 @@ class Check a where
   check :: Context -> a -> Error ++ Type
 
 -- class Check' f where
---   check' :: Context -> f (Unchecked Task) -> f (Checked Task)
+--   validate :: Context -> f (Unchecked Task) -> f (Checked Task)
 instance checkExpression :: Check Expression where
   check g = case _ of
     ---- Basics
@@ -181,12 +181,9 @@ instance checkExpression :: Check Expression where
 instance checkArgument :: Check Argument where
   check g (ARecord es) = traverse (check g) es ||> TRecord
 
--- checkStatement :: Context -> Statement (Unchecked Task) -> Statement (Checked Task)
--- checkStatement g x = case x of
---   Step' m t s -> ?s1
---   Task' t -> Task' ?s2
-check' :: Context -> Unchecked Task -> Checked Task
-check' g u =
+---- Validator -----------------------------------------------------------------
+validate :: Context -> Unchecked Task -> Checked Task
+validate g u =
   annotate u case _ of
     Enter b m -> done (ofBasic b) ||> returnValue ||> Tuple (Enter b m)
     Update m e -> check g e |= needBasic ||> returnValue ||> Tuple (Update m e)
@@ -237,7 +234,7 @@ check' g u =
 
 -- where
 -- subcheck1 :: Unchecked Task -> Checked Task
--- subcheck1 = check' g
+-- subcheck1 = validate g
 -- subcheck2 :: Expression ** Unchecked Task -> Expression ** Checked Task
 -- subcheck2 (e ** u) = do
 --   t_e <- check g e
@@ -246,10 +243,25 @@ check' g u =
 --     _ -> e ** Fail (BoolNeeded t_e) u
 -- subcheck3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
 -- subcheck3 (l ** e ** u) = l ** subcheck2 (e ** u)
--- check' g (Unchecked x) = case check g x |> execute of
+-- validate g (Unchecked x) = case check g x |> execute of
 --   Left e -> Fail e ?t1
 --   Right t -> Pass t ?t2
----- Rows ----------------------------------------------------------------------
+---- Matcher -------------------------------------------------------------------
+match :: Match -> Type -> Error ++ Context
+match m t = case m of
+  MIgnore -> done neutral
+  MBind x -> done <| from [ x ** t ]
+  MRecord ms -> do
+    case t of
+      TRecord r -> merge ms r |= traverse (uncurry match) |= unite
+      _ -> throw <| RecordMismatch ms t
+  MUnpack -> do
+    case t of
+      TRecord r -> done r
+      _ -> throw <| UnpackMismatch t
+
+---- Helpers -------------------------------------------------------------------
+---- Row helpers
 -- | Unite multiple rows into one.
 --
 -- Throws an error on double lables.
@@ -295,7 +307,7 @@ smash r = case HashMap.values r |> uncons of
     else
       throw <| BranchesError r
 
----- Types
+---- Type helpers
 needBasic :: Type -> Error ++ Type
 needBasic t
   | isBasic t = done t
@@ -327,24 +339,7 @@ outofBranch = extract >> map outofRecord >> join
 returnValue :: Type -> Type
 returnValue t = TTask <| from [ "value" ** t ]
 
----- Matcher -------------------------------------------------------------------
-match :: Match -> Type -> Error ++ Context
-match m t = case m of
-  MIgnore -> done neutral
-  MBind x -> done <| from [ x ** t ]
-  MRecord ms -> do
-    case t of
-      TRecord r -> merge ms r |= traverse (uncurry match) |= unite
-      _ -> throw <| RecordMismatch ms t
-  MUnpack -> do
-    case t of
-      TRecord r -> done r
-      _ -> throw <| UnpackMismatch t
-
----- Executing -----------------------------------------------------------------
--- execute :: forall a.  Error ++a ->  Error ++a
--- execute = runExcept >> extract
----- Helpers -------------------------------------------------------------------
+---- General helpers
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
 keys = HashMap.keys >> from
 
