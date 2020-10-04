@@ -132,7 +132,8 @@ import Data.String.CodeUnits as String
 import Data.String.Common as String
 import Data.String.Pattern as String
 import Data.Traversable as Reexport
-import Data.Tuple (curry, fst, lookup, snd, swap, uncurry, Tuple(..)) as Reexport
+import Data.Tuple (curry, fst, lookup, snd, swap, uncurry) as Reexport
+import Data.Tuple (Tuple(..))
 -- import Data.Tuple.Nested ((/\), type (/\)) as Reexport
 import Data.Unfoldable as Reexport
 import Effect (Effect) as Reexport
@@ -155,12 +156,12 @@ composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
 composeOr f g x = f x Reexport.|| g x
 
 ---- Tuples --------------------------------------------------------------------
-infixr 2 Reexport.Tuple as **
+infixr 2 Tuple as **
 
-infixr 2 type Reexport.Tuple as **
+infixr 2 type Tuple as **
 
 ---- Eithers -------------------------------------------------------------------
-infixr 1 type Reexport.Either as ++
+infixr 1 type Either as ++
 
 throw :: forall x a. x -> Reexport.Either x a
 throw = Reexport.Left
