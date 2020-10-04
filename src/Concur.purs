@@ -50,13 +50,13 @@ focus = Patterns.mapWire
 ---- Combinators ---------------------------------------------------------------
 list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
 list render elements = do
-  (index : result) <- Reexport.orr indexedElements
+  (index ** result) <- Reexport.orr indexedElements
   done
     <| case result of
         Nothing -> Array.deleteAt index elements ?? elements
         Just element' -> Array.updateAt index element' elements ?? elements
   where
-  indexedElements = Array.mapWithIndex (\index element -> (index : _) <|| render element) <| elements
+  indexedElements = Array.mapWithIndex (\index element -> (index ** _) <|| render element) <| elements
 
 {-
 import Concur.Core (Widget, orr)
