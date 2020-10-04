@@ -7,8 +7,11 @@ module Preload
   , (|||)
   , composeOr
   -- Tuples
-  , (:)
-  , type (*)
+  , (**)
+  , type (**)
+  -- Eithers
+  , type (++)
+  , throw
   -- Maybes
   , (??)
   , withDefault
@@ -105,7 +108,7 @@ import Data.ArrayView.Internal as Slice
 import Data.Bifoldable as Reexport
 import Data.Bifunctor (class Bifunctor, bimap, lmap, rmap) as Reexport
 import Data.Either hiding (Either) as Reexport
-import Data.Either.Nested (type (\/)) as Reexport
+import Data.Either (Either)
 import Data.Enum (class Enum) as Reexport
 import Data.Enum (enumFromTo)
 import Data.Foldable (foldM)
@@ -153,9 +156,15 @@ composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
 composeOr f g x = f x Reexport.|| g x
 
 ---- Tuples --------------------------------------------------------------------
-infixr 2 Tuple as :
+infixr 2 Tuple as **
 
-infixr 2 type Tuple as *
+infixr 2 type Tuple as **
+
+---- Eithers -------------------------------------------------------------------
+infixr 1 type Either as ++
+
+throw :: forall x a. x -> Reexport.Either x a
+throw = Reexport.Left
 
 ---- Maybes --------------------------------------------------------------------
 infix 2 withDefault as ??
@@ -245,7 +254,7 @@ instance initialiseList :: Initialise (Reexport.List a) a where
 instance initialiseHashSet :: Reexport.Hashable a => Initialise (Reexport.HashSet a) a where
   from = HashSet.fromArray
 
-instance initialiseHashMap :: Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k * v) where
+instance initialiseHashMap :: Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k ** v) where
   from = HashMap.fromArray
 
 ---- Functions -----------------------------------------------------------------
@@ -381,8 +390,8 @@ infixr 1 Reexport.bindFlipped as =|
 done :: forall f a. Reexport.Applicative f => a -> f a
 done = pure
 
-pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a * b)
-pair x y = done (:) -< x -< y
+pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a ** b)
+pair x y = done (**) -< x -< y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit
