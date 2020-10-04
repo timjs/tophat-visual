@@ -1,20 +1,51 @@
 module Task.Script.Checker
-  ( TypeError
+  ( Error
   , class Check
   , check
   , match
-  , execute
   ) where
 
-import Preload hiding (note)
+import Preload
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
-import Run (Run, extract)
-import Run.Except (EXCEPT, note, runExcept, throw)
-import Task.Script.Syntax (Argument(..), BasicType, Checked, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Statement(..), Task(..), Type(..), Unchecked, isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType, showLabels)
+-- import Run (Run, extract)
+-- import Run.Except (EXCEPT, note, runExcept, throw)
+import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Label, Labels, Match(..), Name, PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType, showLabels)
 
 ---- Errors --------------------------------------------------------------------
-data TypeError
+data Unchecked f
+  = Unchecked (f (Unchecked f))
+
+--NOTE: below instance is infinite, we create one for Tasks only
+-- instance showUnchecked :: Show (f (Unchecked f)) => Show (Unchecked f) where
+instance showUnchecked :: Show (Unchecked Task) where
+  show (Unchecked x) = show x
+
+data Checked f
+  = Fail Error (f (Checked f))
+  | Pass Type (f (Checked f))
+
+instance showChecked :: Show (Checked Task) where
+  show = case _ of
+    Fail e x -> unwords [ "(!", show e, "!)", show x ]
+    Pass _ x -> unwords [ "(o)", show x ]
+
+extract :: Checked Task -> Error ++ Type
+extract = case _ of
+  Fail e _ -> Left e
+  Pass t _ -> Right t
+
+annotate :: Task (Checked Task) -> Error ++ Type -> Checked Task
+annotate c = case _ of
+  Left e -> Fail e c
+  Right t -> Pass t c
+
+replace :: Error -> Checked Task -> Checked Task
+replace e = case _ of
+  Fail _ c -> Fail e c
+  Pass _ c -> Fail e c
+
+data Error
   = UnknownVariable Name
   | UnknownLabel Label Type
   | ArgumentError Type Type
@@ -39,7 +70,7 @@ data TypeError
   | RecordMismatch (Row Match) Type
   | UnpackMismatch Type
 
-instance showTypeError :: Show TypeError where
+instance showError :: Show Error where
   show = case _ of
     UnknownVariable x -> unwords [ "Unknown variable", x |> quote ]
     UnknownLabel l t -> unwords [ "Unknown label", l |> quote, "in variant type", show t ]
@@ -73,11 +104,10 @@ type Context
   = HashMap Name Type
 
 class Check a where
-  check :: Context -> a -> Run ( except :: EXCEPT TypeError ) Type
+  check :: Context -> a -> Error ++ Type
 
-class Check' f where
-  check' :: Context -> Unchecked f -> Checked f
-
+-- class Check' f where
+--   check' :: Context -> f (Unchecked Task) -> f (Checked Task)
 instance checkExpression :: Check Expression where
   check g = case _ of
     ---- Basics
@@ -114,7 +144,7 @@ instance checkExpression :: Check Expression where
         TVariant r -> do
           bs' <- merge r bs --NOTE be aware of order: r is a subset of bs
           ts <-
-            for bs' \(t : m : e) -> do
+            for bs' \(t ** m ** e) -> do
               d <- match m t
               check (g ++ d) e
           smash ts
@@ -152,64 +182,84 @@ instance checkExpression :: Check Expression where
 instance checkArgument :: Check Argument where
   check g (ARecord es) = traverse (check g) es ||> TRecord
 
-instance checkStatement :: Check t => Check (Statement t) where
-  check g = case _ of
-    Step m t s -> do
-      t_t <- check g t
-      case t_t of
-        TTask r -> do
-          d <- match m (TRecord r)
-          check (g ++ d) s
-        _ -> throw <| TaskNeeded t_t
-    Task t -> check g t
-
-instance checkTask :: Check t => Check (Task t) where
-  check g = case _ of
-    Enter b _ -> ofBasic b |> returnValue
-    Update _ e -> check g e |= needBasic |= returnValue
-    Change _ e -> check g e |= outofReference |= returnValue
-    View _ e -> check g e |= needBasic |= returnValue
-    Watch _ e -> check g e |= outofReference |= returnValue
-    Lift e -> check g e |= outofRecord ||> TTask
-    Pair ss -> traverse subcheck ss |= unite ||> TTask
-    Choose ss -> traverse subcheck ss |= intersect ||> TTask
-    Branch bs -> traverse subcheck' bs |= intersect ||> TTask
-    Select bs -> traverse subcheck'' bs |= intersect ||> TTask
-    Execute x a -> do
-      t_x <- HashMap.lookup x g |> note (UnknownVariable x)
-      case t_x of
-        TFunction r' t -> do
-          t_a <- check g a
-          if r' == t_a then
-            done t
-          else
-            throw <| ArgumentError r' t_a
-        _ -> throw <| FunctionNeeded t_x
-    Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
-    Share e -> check g e |= outofBasic ||> TReference |= returnValue
-    Assign e1 e2 -> do
-      t1 <- check g e1
-      b1 <- outofReference t1
-      b2 <- check g e2
-      if b1 == b2 then
-        done (TRecord neutral)
-      else
-        throw (AssignError b1 b2)
+-- checkStatement :: Context -> Statement (Unchecked Task) -> Statement (Checked Task)
+-- checkStatement g x = case x of
+--   Step' m t s -> ?s1
+--   Task' t -> Task' ?s2
+check' :: Context -> Unchecked Task -> Checked Task
+check' g (Unchecked t) = case t of
+  Enter b m -> done (ofBasic b |> returnValue) |> annotate (Enter b m)
+  Update m e -> check g e |= needBasic ||> returnValue |> annotate (Update m e)
+  Change m e -> check g e |= outofReference ||> returnValue |> annotate (Change m e)
+  View m e -> check g e |= needBasic ||> returnValue |> annotate (View m e)
+  Watch m e -> check g e |= outofReference ||> returnValue |> annotate (Watch m e)
+  Lift e -> check g e |= outofRecord ||> TTask |> annotate (Lift e)
+  Pair bs -> traverse outofBranch bs' |= unite ||> TTask |> annotate (Pair bs')
     where
-    subcheck s = check g s |= outofTask
+    bs' = map subcheck1 bs
+  Choose bs -> traverse outofBranch bs' |= intersect ||> TTask |> annotate (Choose bs')
+    where
+    bs' = map subcheck1 bs
+  Branch bs -> traverse (snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Branch bs')
+    where
+    bs' = map subcheck2 bs
+  Select bs -> traverse (snd >> snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Select bs')
+    where
+    bs' = map subcheck3 bs
+  _ -> undefined
+  -- Step m t u -> do
+  --   t_t <- check g t
+  --   case t_t of
+  --     TTask r -> do
+  --       d <- match m (TRecord r)
+  --       check (g ++ d) u
+  --     _ -> throw <| TaskNeeded t_t
+  -- Execute x a -> do
+  --   t_x <- HashMap.lookup x g |> note (UnknownVariable x)
+  --   case t_x of
+  --     TFunction r' t -> do
+  --       t_a <- check g a
+  --       if r' == t_a then
+  --         done t
+  --       else
+  --         throw <| ArgumentError r' t_a
+  --     _ -> throw <| FunctionNeeded t_x
+  -- Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
+  -- Share e -> check g e |= outofBasic ||> TReference |= returnValue
+  -- Assign e1 e2 -> do
+  --   t1 <- check g e1
+  --   b1 <- outofReference t1
+  --   b2 <- check g e2
+  --   if b1 == b2 then
+  --     done (TRecord neutral)
+  --   else
+  --     throw (AssignError b1 b2)
+  where
+  subcheck1 :: Unchecked Task -> Checked Task
+  subcheck1 = check' g
 
-    subcheck' (e : s) = do
-      t_e <- check g e
-      case t_e of
-        TPrimitive TBool -> subcheck s
-        _ -> throw <| BoolNeeded t_e
+  subcheck2 :: Expression ** Unchecked Task -> Expression ** Checked Task
+  subcheck2 (e ** u) = case check g e of
+    Right (TPrimitive TBool) -> e ** u'
+    Right t_e -> e ** replace (BoolNeeded t_e) u'
+    Left x -> e ** replace x u'
+    where
+    u' = subcheck1 u
 
-    subcheck'' (_ : e : s) = subcheck' (e : s)
+  subcheck3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
+  subcheck3 (l ** e ** u) = l ** subcheck2 (e ** u)
 
-unite :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
+-- check' g (Unchecked x) = case check g x |> execute of
+--   Left e -> Fail e ?t1
+--   Right t -> Pass t ?t2
+---- Rows ----------------------------------------------------------------------
+-- | Unite multiple rows into one.
+--
+-- Throws an error on double lables.
+unite :: forall t a. Foldable t => t (Row a) -> Error ++ Row a
 unite = gather go neutral
   where
-  go :: Row a -> Row a -> Run ( except :: EXCEPT TypeError ) (Row a)
+  go :: Row a -> Row a -> Error ++ Row a
   go acc r =
     if null is then
       done <| acc ++ r
@@ -218,19 +268,28 @@ unite = gather go neutral
     where
     is = keys r `HashSet.intersection` keys acc
 
-intersect :: forall t a. Foldable t => t (Row a) -> Run ( except :: EXCEPT TypeError ) (Row a)
-intersect rs = foldr1 (**) rs |> note EmptyChoice
+-- | Intersect multiple rows into one.
+--
+-- Throws if the intersection is empty.
+intersect :: forall t a. Foldable t => t (Row a) -> Error ++ Row a
+intersect rs = foldr1 HashMap.intersection rs |> note EmptyChoice
 
-merge :: forall a b. Row a -> Row b -> Run ( except :: EXCEPT TypeError ) (Row (a * b))
+-- | Merge the values of a second row into the first row with the same labels.
+--
+-- Throws if `r1` has labels not in `r2`.
+merge :: forall a b. Row a -> Row b -> Error ++ Row (a ** b)
 merge r1 r2 =
   if HashMap.isEmpty ds then
-    done <| HashMap.intersectionWith (:) r1 r2
+    done <| HashMap.intersectionWith (**) r1 r2
   else
     throw <| UnknownLabels (keys ds) (keys r2)
   where
   ds = r1 \\ r2
 
-smash :: Row Type -> Run ( except :: EXCEPT TypeError ) Type
+-- | Smash a row of types together into one type.
+--
+-- Throws if the row is empty or if labels have different types.
+smash :: Row Type -> Error ++ Type
 smash r = case HashMap.values r |> uncons of
   Nothing -> throw <| EmptyCase
   Just { head, tail } ->
@@ -239,39 +298,43 @@ smash r = case HashMap.values r |> uncons of
     else
       throw <| BranchesError r
 
-needBasic :: Type -> Run ( except :: EXCEPT TypeError ) Type
+---- Types
+needBasic :: Type -> Error ++ Type
 needBasic t
   | isBasic t = done t
   | otherwise = throw <| BasicNeeded t
 
-outofBasic :: Type -> Run ( except :: EXCEPT TypeError ) BasicType
+outofBasic :: Type -> Error ++ BasicType
 outofBasic t
   | Just b <- ofType t = done b
   | otherwise = throw <| BasicNeeded t
 
-outofRecord :: Type -> Run ( except :: EXCEPT TypeError ) (Row Type)
+outofRecord :: Type -> Error ++ Row Type
 outofRecord t
   | Just r <- ofRecord t = done r
   | otherwise = throw <| RecordNeeded t
 
-outofReference :: Type -> Run ( except :: EXCEPT TypeError ) Type
+outofReference :: Type -> Error ++ Type
 outofReference t
   | Just b <- ofReference t = done <| ofBasic b
   | otherwise = throw <| ReferenceNeeded t
 
-outofTask :: Type -> Run ( except :: EXCEPT TypeError ) (Row Type)
+outofTask :: Type -> Error ++ Row Type
 outofTask t
   | Just r <- ofTask t = done r
   | otherwise = throw <| TaskNeeded t
 
-returnValue :: forall m. Monad m => Type -> m Type
-returnValue t = done <| TTask <| from [ "value" : t ]
+outofBranch :: Checked Task -> Error ++ Row Type
+outofBranch = extract >> map outofRecord >> join
+
+returnValue :: Type -> Type
+returnValue t = TTask <| from [ "value" ** t ]
 
 ---- Matcher -------------------------------------------------------------------
-match :: Match -> Type -> Run ( except :: EXCEPT TypeError ) Context
+match :: Match -> Type -> Error ++ Context
 match m t = case m of
   MIgnore -> done neutral
-  MBind x -> done <| from [ x : t ]
+  MBind x -> done <| from [ x ** t ]
   MRecord ms -> do
     case t of
       TRecord r -> merge ms r |= traverse (uncurry match) |= unite
@@ -282,13 +345,10 @@ match m t = case m of
       _ -> throw <| UnpackMismatch t
 
 ---- Executing -----------------------------------------------------------------
-execute :: forall a. Run ( except :: EXCEPT TypeError ) a -> Either TypeError a
-execute = runExcept >> extract
-
+-- execute :: forall a.  Error ++a ->  Error ++a
+-- execute = runExcept >> extract
 ---- Helpers -------------------------------------------------------------------
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
 keys = HashMap.keys >> from
-
-infixl 6 HashMap.intersection as **
 
 infixl 6 HashMap.difference as \\
