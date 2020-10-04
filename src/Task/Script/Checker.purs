@@ -1,8 +1,10 @@
 module Task.Script.Checker
   ( Unchecked(..)
+  , Checked(..)
   , Error
   , class Check
   , check
+  , validate
   , match
   ) where
 
@@ -26,7 +28,7 @@ data Checked f
 
 instance showChecked :: Show (Checked Task) where
   show = case _ of
-    Fail e x -> unwords [ "(!", show e, "!)", show x ]
+    Fail e x -> unwords [ "(!)", show e, "==>", show x ]
     Pass _ x -> unwords [ "(o)", show x ]
 
 extract :: Checked Task -> Error ++ Type
@@ -104,8 +106,6 @@ type Context
 class Check a where
   check :: Context -> a -> Error ++ Type
 
--- class Check' f where
---   validate :: Context -> f (Unchecked Task) -> f (Checked Task)
 instance checkExpression :: Check Expression where
   check g = case _ of
     ---- Basics
@@ -240,7 +240,7 @@ validate g = flip annotate go
         throw <| AssignError b1 b2
 
   validate1 :: Unchecked Task -> Checked Task
-  validate1 = validate g
+  validate1 u = validate g u --XXX crashes when eta expanded
 
   validate2 :: Expression ** Unchecked Task -> Expression ** Checked Task
   validate2 (e ** u) =

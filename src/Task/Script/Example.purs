@@ -57,9 +57,10 @@ t_booking =
         ]
 
 ---- Tasks ---------------------------------------------------------------------
-enter_passenger :: Task (Unchecked Task)
+enter_passenger :: Unchecked Task
 enter_passenger =
-  Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
+  Unchecked
+    <| Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
     <| Unchecked
     <| Select
     <| from

@@ -84,7 +84,7 @@ instance showType :: Show Type where
     TRecord ts -> showFields ":" ts
     TVariant ts -> showVariants ts
     TReference t -> unwords [ "Ref", show t ]
-    TTask t -> unwords [ "Task", show t ]
+    TTask t -> unwords [ "Task", showFields ":" t ]
     TPrimitive p -> show p
 
 ofRecord :: Type -> Maybe (Row Type)
@@ -192,7 +192,7 @@ instance showExpression :: Show Expression where
     Case e0 ms ->
       unlines
         [ unwords [ "case", show e0, "of" ]
-        , unlines (HashMap.toArrayBy (\m e -> unwords [ show m, "~>", show e ] |> indent 2) ms)
+        , unlines (HashMap.toArrayBy (\m e -> unwords [ show m, "|->", show e ] |> indent 2) ms)
         ]
     Record es -> showFields "=" es
     Variant l e t -> unwords [ l, show e, "as", show t ]
@@ -297,11 +297,11 @@ instance showTask :: Show t => Show (Task t) where
         >> inbetween '[' ']'
 
     inner' =
-      map (\(e ** s) -> unwords [ show e, "~>", show s ])
+      map (\(e ** s) -> unwords [ show e, "|->", show s ])
         >> unlines
         >> inbetween '[' ']'
 
     inner'' =
-      map (\(l ** e ** s) -> unwords [ l, "?", show e, "~>", show s ])
+      map (\(l ** e ** s) -> unwords [ l, "?", show e, "|->", show s ])
         >> unlines
         >> inbetween '[' ']'
