@@ -1,5 +1,6 @@
 module Task.Script.Checker
-  ( Error
+  ( Unchecked(..)
+  , Error
   , class Check
   , check
   , match
@@ -183,26 +184,28 @@ instance checkArgument :: Check Argument where
 
 ---- Validator -----------------------------------------------------------------
 validate :: Context -> Unchecked Task -> Checked Task
-validate g u =
-  annotate u case _ of
-    Enter b m -> done (ofBasic b) ||> returnValue ||> Tuple (Enter b m)
-    Update m e -> check g e |= needBasic ||> returnValue ||> Tuple (Update m e)
-    Change m e -> check g e |= outofReference ||> returnValue ||> Tuple (Change m e)
-    View m e -> check g e |= needBasic ||> returnValue ||> Tuple (View m e)
-    Watch m e -> check g e |= outofReference ||> returnValue ||> Tuple (Watch m e)
-    Lift e -> check g e |= outofRecord ||> TTask ||> Tuple (Lift e)
-    -- Pair bs -> traverse outofBranch bs' |= unite ||> TTask |> annotate (Pair bs')
-    --   where
-    --   bs' = map subcheck1 bs
-    -- Choose bs -> traverse outofBranch bs' |= intersect ||> TTask |> annotate (Choose bs')
-    --   where
-    --   bs' = map subcheck1 bs
-    -- Branch bs -> traverse (snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Branch bs')
-    --   where
-    --   bs' = map subcheck2 bs
-    -- Select bs -> traverse (snd >> snd >> outofBranch) bs' |= intersect ||> TTask |> annotate (Select bs')
-    --   where
-    --   bs' = map subcheck3 bs
+validate g = flip annotate validate'
+  where
+  validate' :: Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)
+  validate' = case _ of
+    Enter b m -> done (ofBasic b) ||> returnValue ||> (**) (Enter b m)
+    Update m e -> check g e |= needBasic ||> returnValue ||> (**) (Update m e)
+    Change m e -> check g e |= outofReference ||> returnValue ||> (**) (Change m e)
+    View m e -> check g e |= needBasic ||> returnValue ||> (**) (View m e)
+    Watch m e -> check g e |= outofReference ||> returnValue ||> (**) (Watch m e)
+    Lift e -> check g e |= outofRecord ||> TTask ||> (**) (Lift e)
+    Pair bs -> traverse outofBranch bs' |= unite ||> TTask ||> (**) (Pair bs')
+      where
+      bs' = map validate1 bs
+    Choose bs -> traverse outofBranch bs' |= intersect ||> TTask ||> (**) (Choose bs')
+      where
+      bs' = map validate1 bs
+    Branch bs -> traverse (snd >> outofBranch) bs' |= intersect ||> TTask ||> (**) (Branch bs')
+      where
+      bs' = map validate2 bs
+    Select bs -> traverse (snd >> snd >> outofBranch) bs' |= intersect ||> TTask ||> (**) (Select bs')
+      where
+      bs' = map validate3 bs
     -- Step m t u -> do
     --   t_t <- check g t
     --   case t_t of
@@ -232,20 +235,21 @@ validate g u =
     --     throw (AssignError b1 b2)
     _ -> undefined
 
--- where
--- subcheck1 :: Unchecked Task -> Checked Task
--- subcheck1 = validate g
--- subcheck2 :: Expression ** Unchecked Task -> Expression ** Checked Task
--- subcheck2 (e ** u) = do
---   t_e <- check g e
---   case t_e of
---     TPrimitive TBool -> e ** subcheck1 u
---     _ -> e ** Fail (BoolNeeded t_e) u
--- subcheck3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
--- subcheck3 (l ** e ** u) = l ** subcheck2 (e ** u)
--- validate g (Unchecked x) = case check g x |> execute of
---   Left e -> Fail e ?t1
---   Right t -> Pass t ?t2
+  validate1 :: Unchecked Task -> Checked Task
+  validate1 = validate g
+
+  validate2 :: Expression ** Unchecked Task -> Expression ** Checked Task
+  validate2 (e ** u) =
+    e
+      ** annotate u \i -> do
+          t_e <- check g e
+          case t_e of
+            TPrimitive TBool -> validate' i
+            _ -> throw <| BoolNeeded t_e
+
+  validate3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
+  validate3 (l ** e ** u) = l ** validate2 (e ** u)
+
 ---- Matcher -------------------------------------------------------------------
 match :: Match -> Type -> Error ++ Context
 match m t = case m of
