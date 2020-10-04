@@ -24,12 +24,7 @@ module Task.Script.Syntax
   -- # Matches
   , Match(..)
   -- # Statements
-  , Statement(..)
   , Task(..)
-  -- # Errors
-  , Unchecked(..)
-  , Checked(..)
-  , Error(..)
   ) where
 
 import Preload
@@ -174,7 +169,7 @@ data Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
-  | Case Expression (Row (Match * Expression))
+  | Case Expression (Row (Match ** Expression))
   | Record (Row Expression)
   | Variant Label Expression Type
   | Nil Type
@@ -245,15 +240,15 @@ instance showMatch :: Show Match where
 
 ---- Statements ----------------------------------------------------------------
 data Statement t
-  = Step Match t (Statement t)
-  | Task t
+  = Step' Match t (Statement t)
+  | Task' t
 
 derive instance eqStatement :: Eq t => Eq (Statement t)
 
 instance showStatement :: Show t => Show (Statement t) where
   show = case _ of
-    Step m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
-    Task t -> show t
+    Step' m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
+    Task' t -> show t
 
 data Task t
   -- Editors
@@ -264,10 +259,11 @@ data Task t
   | Watch Message Expression
   -- Basics
   | Lift Expression
-  | Pair (List (Statement t))
-  | Choose (List (Statement t))
-  | Branch (List (Expression * (Statement t)))
-  | Select (List (Label * Expression * (Statement t)))
+  | Pair (List t)
+  | Choose (List t)
+  | Branch (List (Expression ** t))
+  | Select (List (Label ** Expression ** t))
+  | Step Match t t
   -- Extras
   | Execute Name Argument
   | Hole Argument
@@ -289,6 +285,7 @@ instance showTask :: Show t => Show (Task t) where
     Choose ss -> unwords [ "any", inner ss ]
     Branch bs -> unwords [ "one", inner' bs ]
     Select bs -> unwords [ "select", inner'' bs ]
+    Step m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
     Execute n as -> unwords [ n, show as ]
     Hole as -> unwords [ "?", show as ]
     Share e -> unwords [ "share", show e ]
@@ -300,41 +297,11 @@ instance showTask :: Show t => Show (Task t) where
         >> inbetween '[' ']'
 
     inner' =
-      map (\(e : s) -> unwords [ show e, "~>", show s ])
+      map (\(e ** s) -> unwords [ show e, "~>", show s ])
         >> unlines
         >> inbetween '[' ']'
 
     inner'' =
-      map (\(l : e : s) -> unwords [ l, "?", show e, "~>", show s ])
+      map (\(l ** e ** s) -> unwords [ l, "?", show e, "~>", show s ])
         >> unlines
         >> inbetween '[' ']'
-
----- Checking ------------------------------------------------------------------
-data Unchecked f
-  = Unchecked (f (Unchecked f))
-
---NOTE: below instance is infinite, we create one for Tasks only
--- instance showUnchecked :: Show (f (Unchecked f)) => Show (Unchecked f) where
-instance showUnchecked :: Show (Unchecked Task) where
-  show (Unchecked x) = show x
-
-data Checked f
-  = Pass Type (f (Checked f))
-  | Fail Error (f (Checked f))
-
-instance showChecked :: Show (Checked Task) where
-  show = case _ of
-    Pass _ x -> unwords [ "(o)", show x ]
-    Fail e x -> unwords [ "(!", show e, "!)", show x ]
-
-data Error
-  = Error
-
-instance showError :: Show Error where
-  show Error = "Error!"
-
-test1 :: Statement (Unchecked Task)
-test1 = Task <| Unchecked <| Enter (BPrimitive TString) "Hallo"
-
-test2 :: Statement (Unchecked Task)
-test2 = Task <| Unchecked <| Select <| from [ "Continue" : Constant (B true) : test1 ]
