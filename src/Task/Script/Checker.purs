@@ -28,7 +28,7 @@ data Checked f
 
 instance showChecked :: Show (Checked Task) where
   show = case _ of
-    Fail e x -> unwords [ "(!)", show e, "==>", show x ]
+    Fail e x -> unwords [ "(!", show e, "==>", show x, "!)" ]
     Pass _ x -> unwords [ "(o)", show x ]
 
 extract :: Checked Task -> Error ++ Type
@@ -209,14 +209,14 @@ validate g = flip annotate go
         u1' = validate g u1
       t_u1 <- extract u1'
       case t_u1 of
-        TTask r -> do
-          d <- match m (TRecord r)
+        TTask r1 -> do
+          d <- match m (TRecord r1)
           let
             u2' = validate (g ++ d) u2
           t_u2 <- extract u2'
           case t_u2 of
-            TFunction t1 (TTask t2) -> done <| Step m u1' u2' ** TTask t2
-            _ -> throw <| FunctionNeeded t_u2
+            TTask r2 -> done <| Step m u1' u2' ** TTask r2
+            _ -> throw <| TaskNeeded t_u2
         _ -> throw <| TaskNeeded t_u1
     Execute n a -> do
       t_n <- HashMap.lookup n g |> note (UnknownVariable n)
@@ -342,7 +342,7 @@ outofTask t
   | otherwise = throw <| TaskNeeded t
 
 outofBranch :: Checked Task -> Error ++ Row Type
-outofBranch = extract >> map outofRecord >> join
+outofBranch = extract >> map outofTask >> join
 
 wrapValue :: Type -> Type
 wrapValue t = TTask <| from [ "value" ** t ]
