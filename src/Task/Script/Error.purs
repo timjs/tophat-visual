@@ -1,6 +1,10 @@
 module Task.Script.Error
   ( Unchecked(..)
   , Checked(..)
+  , lift
+  , pass
+  , fail
+  , bury
   , extract
   , annotate
   , Error(..)
@@ -14,7 +18,7 @@ import Task.Script.Syntax (Label, Labels, Match, Name, Row, Task, Type, showLabe
 type Context
   = HashMap Name Type
 
----- Errors --------------------------------------------------------------------
+---- Checkers ------------------------------------------------------------------
 data Unchecked f
   = Unchecked (f (Unchecked f))
 
@@ -25,17 +29,33 @@ instance showUnchecked :: Show (Unchecked Task) where
 
 data Checked f
   = Fail Error (f (Unchecked f))
+  | Bury (f (Checked f))
   | Pass Type (f (Checked f))
 
 instance showChecked :: Show (Checked Task) where
   show = case _ of
-    Fail e x -> unwords [ "(!", show e, "==>", show x, "!)" ]
-    Pass _ x -> unwords [ "(o)", show x ]
+    Fail e u -> unwords [ "(!", show u, ":", show e, "!)" ]
+    Bury c -> unwords [ "(?", show c, "?)" ]
+    Pass a c -> unwords [ "(", show c, ":", show a, ")" ]
 
-extract :: Checked Task -> Error ++ Type
+lift :: forall f. f (Unchecked f) -> f (Checked f) -> Error ++ Type -> Checked f
+lift u c = case _ of
+  Left e -> Fail e u
+  Right a -> Pass a c
+
+fail :: forall f. f (Unchecked f) -> Error -> Checked f
+fail u e = Fail e u
+
+pass :: forall f. f (Checked f) -> Type -> Checked f
+pass c a = Pass a c
+
+bury :: forall f. f (Checked f) -> Checked f
+bury = Bury
+
+extract :: Checked Task -> Maybe Type
 extract = case _ of
-  Fail e _ -> Left e
-  Pass t _ -> Right t
+  Pass t _ -> Just t
+  _ -> Nothing
 
 annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
 annotate (Unchecked u) f = case f u of

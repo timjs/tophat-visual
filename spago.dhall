@@ -9,6 +9,7 @@ You can edit this file as you like.
   , "concur-core"
   , "concur-react"
   , "console"
+  , "debug"
   , "effect"
   , "either"
   , "enums"

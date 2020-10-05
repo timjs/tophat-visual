@@ -2,7 +2,7 @@ module Task.Script.Example where
 
 import Preload
 import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
-import Task.Script.Checker (Unchecked(..))
+import Task.Script.Error (Unchecked(..))
 
 ---- Types ---------------------------------------------------------------------
 t_nationality :: Type
@@ -68,3 +68,10 @@ enter_passenger =
             ** Constant (B true)
             ** (Unchecked <| Lift (Record <| from [ "passengers" ** Variable "passengers" ]))
         ]
+
+simple :: Unchecked Task
+simple =
+  Unchecked
+    <| Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
+    <| Unchecked
+    <| Update "Update passenger details" (Variable "passengers")
