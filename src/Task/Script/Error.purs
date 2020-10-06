@@ -2,6 +2,7 @@ module Task.Script.Error
   ( Unchecked(..)
   , Checked(..)
   , lift
+  , sink
   , pass
   , fail
   , bury
@@ -43,6 +44,11 @@ lift u c = case _ of
   Left e -> Fail e u
   Right a -> Pass a c
 
+sink :: forall f. f (Checked f) -> Error ++ Type -> Checked f
+sink c = case _ of
+  Left e -> Bury c
+  Right a -> Pass a c
+
 fail :: forall f. f (Unchecked f) -> Error -> Checked f
 fail u e = Fail e u
 
@@ -52,10 +58,10 @@ pass c a = Pass a c
 bury :: forall f. f (Checked f) -> Checked f
 bury = Bury
 
-extract :: Checked Task -> Maybe Type
+extract :: Checked Task -> Error ++ Type
 extract = case _ of
-  Pass t _ -> Just t
-  _ -> Nothing
+  Pass t _ -> Right t
+  _ -> Left UndeterminedType
 
 annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
 annotate (Unchecked u) f = case f u of
@@ -85,6 +91,7 @@ data Error
   | BasicNeeded Type
   | UnknownLabels Labels Labels
   | DoubleLabels Labels Labels
+  | UndeterminedType
   | EmptyCase
   | EmptyChoice
   | HoleFound Context
@@ -114,6 +121,7 @@ instance showError :: Show Error where
     BasicNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a basic type" ]
     UnknownLabels r_diff r_orig -> unwords [ "Labels", showLabels r_diff, "are not part of row", showLabels r_orig ]
     DoubleLabels r_double r_orig -> unwords [ "Double occurence of label", showLabels r_double, "in row", showLabels r_orig ]
+    UndeterminedType -> "The type of this part could not be determined due to a type check failure"
     EmptyCase -> unwords [ "This case expression has no branches" ]
     EmptyChoice -> unwords [ "This choice task has no branches" ]
     HoleFound g -> unlines [ "Found hole of type _ in context", show g |> indent 2 ]

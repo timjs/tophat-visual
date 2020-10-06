@@ -8,6 +8,12 @@ module Task.Script.Checker
   , outofBasic
   , outofRecord
   , outofReference
+  , outofTask
+  -- # Rows
+  , unite
+  , intersect
+  , merge
+  , smash
   ) where
 
 import Preload
@@ -133,9 +139,9 @@ instance checkTask :: Check t => Check (Task t) where
       b1 <- outofReference t1
       b2 <- check g e2
       if b1 == b2 then
-        done (TRecord neutral)
+        done <| TRecord neutral
       else
-        throw (AssignError b1 b2)
+        throw <| AssignError b1 b2
     where
     subcheck s = check g s |= outofTask
 
