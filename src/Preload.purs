@@ -134,7 +134,6 @@ import Data.String.Pattern as String
 import Data.Traversable as Reexport
 import Data.Tuple (curry, fst, lookup, snd, swap, uncurry) as Reexport
 import Data.Tuple (Tuple(..))
--- import Data.Tuple.Nested ((/\), type (/\)) as Reexport
 import Data.Unfoldable as Reexport
 import Effect (Effect) as Reexport
 import Prelude hiding (mempty, pure, (<<<), (>>>), (<>), ($), (#), (<$>), (<#>), (<@>), (<$), ($>), (<*>), (<*), (*>)) as Reexport
@@ -309,8 +308,7 @@ infixr 5 subtract as ~~
 neutral :: forall m. Reexport.Monoid m => m
 neutral = mempty
 
-class
-  (Reexport.Monoid a) <= Group a where
+class (Reexport.Monoid a) <= Group a where
   invert :: a -> a
   subtract :: a -> a -> a
 
@@ -320,13 +318,11 @@ invertDefault x = neutral ~~ x
 subtractDefault :: forall a. Group a => a -> a -> a
 subtractDefault x y = x ++ invert y
 
-class
-  (Group a, Reexport.Semiring s) <= Module a s | a -> s where
+class (Group a, Reexport.Semiring s) <= Module a s | a -> s where
   -- type Factor a = s
   scale :: s -> a -> a
 
-class
-  (Group d) <= Torsor a d | a -> d where
+class (Group d) <= Torsor a d | a -> d where
   -- type Difference a = d
   diff :: a -> a -> d
   adjust :: d -> a -> a

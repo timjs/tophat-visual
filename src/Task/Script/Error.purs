@@ -1,5 +1,8 @@
 module Task.Script.Error
-  ( Unchecked(..)
+  -- # Context
+  ( Context
+  -- # Checked or Unchecked
+  , Unchecked(..)
   , Checked(..)
   , lift
   , sink
@@ -8,8 +11,8 @@ module Task.Script.Error
   , bury
   , extract
   , annotate
+  -- # Errors
   , Error(..)
-  , Context
   ) where
 
 import Preload
@@ -19,7 +22,7 @@ import Task.Script.Syntax (Label, Labels, Match, Name, Row, Task, Type, showLabe
 type Context
   = HashMap Name Type
 
----- Checkers ------------------------------------------------------------------
+---- Checked or Unchecked ------------------------------------------------------
 data Unchecked f
   = Unchecked (f (Unchecked f))
 
@@ -72,6 +75,7 @@ annotate (Unchecked u) f = case f u of
 -- replace x = case _ of
 --   Fail _ c -> Fail x c
 --   Pass _ c -> Pass x c
+---- Errors --------------------------------------------------------------------
 data Error
   = UnknownVariable Name
   | UnknownLabel Label Type
@@ -120,7 +124,7 @@ instance showError :: Show Error where
     TaskNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a task" ]
     BasicNeeded t_bad -> unwords [ "Cannot use", show t_bad |> quote, "as a basic type" ]
     UnknownLabels r_diff r_orig -> unwords [ "Labels", showLabels r_diff, "are not part of row", showLabels r_orig ]
-    DoubleLabels r_double r_orig -> unwords [ "Double occurence of label", showLabels r_double, "in row", showLabels r_orig ]
+    DoubleLabels r_double r_orig -> unwords [ "Double occurence of labels", showLabels r_double, "in row", showLabels r_orig ]
     UndeterminedType -> "The type of this part could not be determined due to a type check failure"
     EmptyCase -> unwords [ "This case expression has no branches" ]
     EmptyChoice -> unwords [ "This choice task has no branches" ]

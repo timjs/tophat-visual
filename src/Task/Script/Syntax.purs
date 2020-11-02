@@ -2,9 +2,9 @@ module Task.Script.Syntax
   -- # Synonyms
   ( Row
   , Labels
-  , showLabels
   , Name
   , Label
+  , showLabels
   , Message
   -- # Types
   , Type(..)
@@ -52,7 +52,7 @@ type Labels
   = HashSet Label
 
 showLabels :: HashSet Label -> String
-showLabels = HashSet.toArray >> intercalate "," >> inbetween '[' ']'
+showLabels = HashSet.toArray >> intercalate "," >> inbetween '{' '}'
 
 type Name
   = String
@@ -239,17 +239,14 @@ instance showMatch :: Show Match where
     MUnpack -> "{..}"
 
 ---- Statements ----------------------------------------------------------------
-data Statement t
-  = Step' Match t (Statement t)
-  | Task' t
-
-derive instance eqStatement :: Eq t => Eq (Statement t)
-
-instance showStatement :: Show t => Show (Statement t) where
-  show = case _ of
-    Step' m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
-    Task' t -> show t
-
+-- data Statement t
+--   = Step' Match t (Statement t)
+--   | Task' t
+-- derive instance eqStatement :: Eq t => Eq (Statement t)
+-- instance showStatement :: Show t => Show (Statement t) where
+--   show = case _ of
+--     Step' m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
+--     Task' t -> show t
 data Task t
   -- Editors
   = Enter BasicType Message
@@ -257,7 +254,7 @@ data Task t
   | Change Message Expression
   | View Message Expression
   | Watch Message Expression
-  -- Basics
+  -- Combinators
   | Lift Expression
   | Pair (List t)
   | Choose (List t)
@@ -272,6 +269,8 @@ data Task t
   | Assign Expression Expression
 
 derive instance eqTask :: Eq t => Eq (Task t)
+
+derive instance functorTask :: Functor Task
 
 instance showTask :: Show t => Show (Task t) where
   show = case _ of
