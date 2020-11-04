@@ -1,11 +1,11 @@
 module Test.Counter where
 
-import Preload (Bool, Maybe(..), and, discard, map, show, traverse, (+), (-), (-||), (<=), (<|))
+import Preload
 import Concur (Signal, Widget, andd, display, dynamic, loop, repeat)
 import Concur.Dom (Dom)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
-import Data.Array (zipWith, tail)
+import Data.Slice (zipWith)
 
 ---- Widgets -------------------------------------------------------------------
 counter :: Int -> Widget Dom Int
@@ -28,20 +28,20 @@ counter' k = repeat k counter
 
 counters' :: Array Int -> Signal Dom (Array Int)
 counters' xs = do
-  display <| Node.text <| show { content: xs, sorted: sorted xs }
+  display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   traverse counter' xs
 
 --NOTE: This is something completely different!
 counters'' :: Array Int -> Signal Dom (Array Int)
 counters'' xs = do
-  display <| Node.text <| show { content: xs, sorted: sorted xs }
+  display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   repeat xs counters
 
 main' :: Widget Dom (Array Int)
 main' = dynamic <| loop [ 1, 2, 3 ] counters'
 
 ---- Helpers -------------------------------------------------------------------
-sorted :: Array Int -> Bool
-sorted xs = case tail xs of
+isSorted :: Array Int -> Bool
+isSorted xs = case tail xs of
   Nothing -> true
-  Just ys -> and <| zipWith (\x y -> x <= y) xs ys
+  Just ys -> and <| zipWith (\x y -> x <= y) (view xs) ys

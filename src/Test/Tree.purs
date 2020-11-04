@@ -1,7 +1,7 @@
 module Test.Tree where
 
 import Preload
-import Concur (Widget, Signal, dynamic, hold, loop, repeat, list)
+import Concur (Widget, Signal, dynamic, loop, repeat, list)
 import Concur.Dom (Dom)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Elem as Elem
@@ -15,8 +15,8 @@ data Tree a
 type Forest a
   = Array (Tree a)
 
-singleton :: Tree String
-singleton = Tree "New heading" []
+empty :: Tree String
+empty = Tree "New heading" []
 
 init :: Tree String
 init =
@@ -29,8 +29,8 @@ init =
 ---- Widgets -------------------------------------------------------------------
 {-
   Widgets:
-  - Everything you lay out on a page using `Node` tags is *parallel* composition or composition *in space*.
-  - Everything you do inside the monad is *stepwise* composition or composition *in time*.
+  - Everything you lay out on a page using `Node` tags is *parallel composition* or *composition in space*.
+  - Everything you do inside the monad is *stepwise composition* or *composition in time*.
 -}
 data Action
   = Rename String
@@ -60,7 +60,7 @@ view = case _ of
           Delete -> Nothing
           Modify children' -> Just <| Tree name children'
 
----- Widgets -------------------------------------------------------------------
+---- Signals -------------------------------------------------------------------
 titleWidget :: String -> Widget Dom String
 titleWidget old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
@@ -74,7 +74,7 @@ titleWidget old = do
 createButton :: Widget Dom (Tree String)
 createButton = do
   Node.button [ void Attr.onClick ] [ Node.text "New" ]
-  done singleton
+  done empty
 
 deleteButton :: Widget Dom Unit
 deleteButton = do
@@ -95,7 +95,7 @@ treeWidget (Tree name children) = do
     <| case action of
         Rename name' -> Tree name' children
         Create tree' -> Tree name (Array.cons tree' children)
-        Delete -> singleton
+        Delete -> empty
         Modify children' -> Tree name children'
 
 treeSignal :: Tree String -> Signal Dom (Tree String)

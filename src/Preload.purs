@@ -21,6 +21,7 @@ module Preload
   , indent
   -- Arrays
   , Slice
+  , view
   , slice
   , uncons
   , unsnoc
@@ -102,7 +103,7 @@ import Control.Alt (class Alt, (<|>)) as Reexport
 import Control.Semigroupoid (composeFlipped)
 import Data.Array as Array
 import Data.Array.NonEmpty (fromNonEmpty, toUnfoldable)
-import Data.ArrayView as Slice
+import Data.Slice as Slice
 import Data.ArrayView.Internal (fromNonEmptyArray)
 import Data.ArrayView.Internal as Slice
 import Data.Bifoldable as Reexport
@@ -184,6 +185,10 @@ indent n s = Reexport.fold (Reexport.replicate n "  " :: Array String) ++ s
 ---- Arrays --------------------------------------------------------------------
 type Slice
   = Slice.ArrayView
+
+-- *O(1)*
+view :: forall a. Array a -> Slice a
+view = Slice.fromArray
 
 -- *O(1)*
 slice :: forall a. Int -> Int -> Array a -> Slice a
@@ -308,7 +313,8 @@ infixr 5 subtract as ~~
 neutral :: forall m. Reexport.Monoid m => m
 neutral = mempty
 
-class (Reexport.Monoid a) <= Group a where
+class
+  (Reexport.Monoid a) <= Group a where
   invert :: a -> a
   subtract :: a -> a -> a
 
@@ -318,11 +324,13 @@ invertDefault x = neutral ~~ x
 subtractDefault :: forall a. Group a => a -> a -> a
 subtractDefault x y = x ++ invert y
 
-class (Group a, Reexport.Semiring s) <= Module a s | a -> s where
+class
+  (Group a, Reexport.Semiring s) <= Module a s | a -> s where
   -- type Factor a = s
   scale :: s -> a -> a
 
-class (Group d) <= Torsor a d | a -> d where
+class
+  (Group d) <= Torsor a d | a -> d where
   -- type Difference a = d
   diff :: a -> a -> d
   adjust :: d -> a -> a
