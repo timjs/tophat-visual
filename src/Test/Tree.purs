@@ -38,30 +38,26 @@ data Action
   | Delete
   | Modify (Forest String)
 
-viewMaybe :: Maybe (Tree String) -> Widget Dom (Maybe (Tree String))
-viewMaybe = case _ of
-  Nothing -> Just empty -|| Widget.button "Create"
-  Just tree -> go tree
-  where
-  go (Tree name children) = do
-    result <-
-      Node.ul'
-        [ Node.li'
-            [ Rename <|| titleWidget name
-            , Create -|| Widget.button "Create"
-            , Delete -|| Widget.button "Delete"
-            , Modify <|| list go children
-            ]
-        ]
-    done
-      <| case result of
-          Rename name' -> Just <| Tree name' children
-          Create -> Just <| Tree name (Array.snoc children empty)
-          Delete -> Nothing
-          Modify children' -> Just <| Tree name children'
+tree :: Tree String -> Widget Dom (Maybe (Tree String))
+tree (Tree name children) = do
+  result <-
+    Node.ul'
+      [ Node.li'
+          [ Rename <|| title name
+          , Create -|| Widget.button "Create"
+          , Delete -|| Widget.button "Delete"
+          , Modify <|| list tree children
+          ]
+      ]
+  done
+    <| case result of
+        Rename name' -> Just <| Tree name' children
+        Create -> Just <| Tree name (Array.snoc children empty)
+        Delete -> Nothing
+        Modify children' -> Just <| Tree name children'
 
-titleWidget :: String -> Widget Dom String
-titleWidget old = do
+title :: String -> Widget Dom String
+title old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
   new <- Node.div' [ Widget.inputbox "label" old old, Widget.button "Cancel" ||- old ]
   done
@@ -70,23 +66,30 @@ titleWidget old = do
       else
         new
 
+render :: forall a. Tree String -> Widget Dom a
+render t = do
+  mt <- tree t
+  case mt of
+    Nothing -> Node.h5 [] [ Node.text "Tree deleted" ]
+    Just t' -> render t'
+
 -- | Main tree widget
 --
 -- * Draws the tree.
 -- * After an event, the widget disapears.
 main :: Widget Dom (Maybe (Tree String))
-main = viewMaybe (Just init)
+main = render init
 
 ---- Signals -------------------------------------------------------------------
 -- | Only render a tree
 --
 -- * Just do it once!
-tree :: Tree String -> Widget Dom (Tree String)
-tree (Tree name children) = do
+tree' :: Tree String -> Widget Dom (Tree String)
+tree' (Tree name children) = do
   action <-
     Node.ul'
       [ Node.li'
-          [ Rename <|| titleWidget name
+          [ Rename <|| title name
           , Create -|| Widget.button "Create"
           , Delete -|| Widget.button "Delete"
           , Modify <|| forest children
@@ -99,14 +102,14 @@ tree (Tree name children) = do
         Delete -> empty
         Modify children' -> Tree name children'
 
-tree' :: Tree String -> Signal Dom (Tree String)
-tree' t = repeat t tree
+tree'' :: Tree String -> Signal Dom (Tree String)
+tree'' t = repeat t tree'
 
 forest :: Forest String -> Widget Dom (Forest String)
 forest ts = dynamic <| loop ts forest'
 
 forest' :: Forest String -> Signal Dom (Forest String)
-forest' ts = traverse tree' ts
+forest' ts = traverse tree'' ts
 
 main' :: Widget Dom (Tree String)
-main' = dynamic <| loop init tree'
+main' = dynamic <| loop init tree''
