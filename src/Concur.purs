@@ -1,5 +1,8 @@
 module Concur
   ( module Reexport
+  -- # Widgets
+  , combine
+  -- , choose
   -- # Signals
   , repeat
   , loop
@@ -14,11 +17,13 @@ module Concur
 
 import Preload
 import Control.Cofree (Cofree)
+import Concur.Core.Types as Internal
 import Concur.Core.FRP (Signal, display, step, always, update, poll, hold, foldp) as Reexport
 import Concur.Core.FRP as Internal
-import Concur.Core.Patterns as Patterns
-import Concur.Core.Types (Widget, andd) as Reexport
-import Control.MultiAlternative (class MultiAlternative, orr) as Reexport
+import Concur.Core.Patterns as Internal
+import Concur.Core.Types (Widget) as Reexport
+import Control.MultiAlternative (class MultiAlternative) as Reexport
+import Control.MultiAlternative as Internal
 import Control.ShiftMap (class ShiftMap) as Reexport
 import Data.Array as Array
 import Data.Lens (Lens')
@@ -26,31 +31,40 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
 ---- Widgets -------------------------------------------------------------------
-{- -}
+-- | Combine multiple widgets in parallel until all finish, and collect their outputs.
+combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
+combine = Internal.andd
+
+choose :: forall a m. Reexport.MultiAlternative m => Array (m a) -> m a
+choose = Internal.orr
+
 ---- Signals -------------------------------------------------------------------
+-- | Turn a (closed) signal into a widget.
 dynamic :: forall m a b. Monad m => Cofree m a -> m b
 dynamic = Internal.dyn
 
+-- | Repeatedly invoke a widget function for values to create a signal, looping in the previous value.
 repeat :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
 repeat = Internal.loopW
 
+-- | Loop a signal so that the return value is passed to the beginning again.
 loop :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
 loop = Internal.loopS
 
 ---- Wires ---------------------------------------------------------------------
 type Wire m a
-  = Patterns.Wire m a
+  = Internal.Wire m a
 
 local :: forall m r a. Alt m => MonadEffect m => MonadAff m => Plus m => a -> (Wire m a -> m r) -> m r
-local = Patterns.local
+local = Internal.local
 
 focus :: forall m s a. Functor m => Lens' s a -> Wire m s -> Wire m a
-focus = Patterns.mapWire
+focus = Internal.mapWire
 
 ---- Combinators ---------------------------------------------------------------
 list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
 list render elements = do
-  (index ** result) <- Reexport.orr indexedElements
+  (index ** result) <- Internal.orr indexedElements
   done
     <| case result of
         Nothing -> Array.deleteAt index elements ?? elements
