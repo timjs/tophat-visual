@@ -1,7 +1,7 @@
 module Test.Tree where
 
 import Preload
-import Concur (Widget, Signal, dynamic, loop, repeat, list)
+import Concur (Widget, Signal, dynamic, step, loop, repeat, list)
 import Concur.Dom (Dom)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
@@ -81,9 +81,34 @@ main :: Widget Dom (Maybe (Tree String))
 main = render init
 
 ---- Signals -------------------------------------------------------------------
--- | Only render a tree
---
--- * Just do it once!
+tree_ :: Tree String -> Signal Dom (Maybe (Tree String))
+tree_ (Tree name children) =
+  Node.li_ [] do
+    name' <- title_ name
+    shouldDelete <- step false (Widget.button "Delete" ||- done true)
+    if shouldDelete then
+      done Nothing
+    else do
+      child' <- step Nothing (Widget.button "New" ||- done (Just empty))
+      let
+        children' = case child' of
+          Nothing -> children
+          Just new -> Array.snoc children new
+      children'' <- traverse tree_ children' |> map Array.catMaybes |> Node.ul_ []
+      done <| Just (Tree name' children'')
+
+title_ :: String -> Signal Dom String
+title_ old = repeat old title
+
+render_ :: Maybe (Tree String) -> Signal Dom (Maybe (Tree String))
+render_ = case _ of
+  Nothing -> done Nothing
+  Just t -> tree_ t
+
+main_ :: Widget Dom (Maybe (Tree String))
+main_ = dynamic <| loop (Just init) render_
+
+{-
 tree' :: Tree String -> Widget Dom (Tree String)
 tree' (Tree name children) = do
   action <-
@@ -113,3 +138,4 @@ forest' ts = traverse tree'' ts
 
 main' :: Widget Dom (Tree String)
 main' = dynamic <| loop init tree''
+-}
