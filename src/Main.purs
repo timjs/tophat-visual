@@ -5,4 +5,4 @@ import Concur.Dom (runWidgetInDom)
 import Test.Tree as Test
 
 main :: Effect Unit
-main = runWidgetInDom "root" <| Test.main
+main = runWidgetInDom "root" <| Test.main'

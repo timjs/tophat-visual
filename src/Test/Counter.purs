@@ -54,6 +54,8 @@ counters'' xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   repeat xs counters
 
+-- * `loop` has to be there to feed the start value
+--   and to feed next results into the signal again!
 main' :: Widget Dom (Array Int)
 main' = dynamic <| loop [ 1, 2, 3 ] counters'
 

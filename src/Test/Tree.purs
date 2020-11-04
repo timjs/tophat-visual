@@ -38,8 +38,8 @@ data Action
   | Delete
   | Modify (Forest String)
 
-view :: Maybe (Tree String) -> Widget Dom (Maybe (Tree String))
-view = case _ of
+viewMaybe :: Maybe (Tree String) -> Widget Dom (Maybe (Tree String))
+viewMaybe = case _ of
   Nothing -> Just empty -|| Widget.button "Create"
   Just tree -> go tree
   where
@@ -56,7 +56,7 @@ view = case _ of
     done
       <| case result of
           Rename name' -> Just <| Tree name' children
-          Create -> Just <| Tree name (Array.cons empty children)
+          Create -> Just <| Tree name (Array.snoc children empty)
           Delete -> Nothing
           Modify children' -> Just <| Tree name children'
 
@@ -75,38 +75,38 @@ titleWidget old = do
 -- * Draws the tree.
 -- * After an event, the widget disapears.
 main :: Widget Dom (Maybe (Tree String))
-main = view (Just init)
+main = viewMaybe (Just init)
 
 ---- Signals -------------------------------------------------------------------
-treeWidget :: Tree String -> Widget Dom (Tree String)
-treeWidget (Tree name children) = do
+-- | Only render a tree
+--
+-- * Just do it once!
+tree :: Tree String -> Widget Dom (Tree String)
+tree (Tree name children) = do
   action <-
     Node.ul'
       [ Node.li'
           [ Rename <|| titleWidget name
           , Create -|| Widget.button "Create"
           , Delete -|| Widget.button "Delete"
-          -- , Modify <|| forestWidget children
+          , Modify <|| forest children
           ]
       ]
   done
     <| case action of
         Rename name' -> Tree name' children
-        Create -> Tree name (Array.cons empty children)
+        Create -> Tree name (Array.snoc children empty)
         Delete -> empty
         Modify children' -> Tree name children'
 
-treeSignal :: Tree String -> Signal Dom (Tree String)
-treeSignal t = repeat t treeWidget
+tree' :: Tree String -> Signal Dom (Tree String)
+tree' t = repeat t tree
 
-forestWidget :: Forest String -> Widget Dom (Forest String)
-forestWidget ts = dynamic <| forestSignal ts
+forest :: Forest String -> Widget Dom (Forest String)
+forest ts = dynamic <| loop ts forest'
 
-forestSignal :: Forest String -> Signal Dom (Forest String)
-forestSignal ts = traverse treeSignal ts
+forest' :: Forest String -> Signal Dom (Forest String)
+forest' ts = traverse tree' ts
 
-renderTree' :: Tree String -> Signal Dom (Tree String)
-renderTree' t = repeat t treeWidget
-
-renderTree :: Tree String -> Widget Dom (Tree String)
-renderTree t = dynamic <| loop t renderTree'
+main' :: Widget Dom (Tree String)
+main' = dynamic <| loop init tree'
