@@ -1,6 +1,6 @@
 module Concur.Dom.Layout
-  ( horizontal
-  , vertical
+  ( row
+  , column
   ) where
 
 import Preload
@@ -13,8 +13,8 @@ import Concur.Dom.Attr as Attr
 divProps :: forall a. Array (Attr a)
 divProps = [ Attr.display "flex", Attr.align_items "center", Attr.justify_content "center" ]
 
-horizontal :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
-horizontal = Node.div <| [ Attr.flex_direction "row" ] ++ divProps
+row :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
+row = Node.div <| [ Attr.flex_direction "row" ] ++ divProps
 
-vertical :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
-vertical = Node.div <| [ Attr.flex_direction "column" ] ++ divProps
+column :: forall m a. MultiAlternative m => ShiftMap (Widget Dom) m => Array (m a) -> m a
+column = Node.div <| [ Attr.flex_direction "column" ] ++ divProps

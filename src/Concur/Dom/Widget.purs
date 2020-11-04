@@ -1,4 +1,4 @@
-module Concur.Dom.Elem
+module Concur.Dom.Widget
   -- # Inputs
   ( button
   , checkbox
@@ -18,7 +18,13 @@ import Data.Int as Int
 import Data.Number as Number
 import React.SyntheticEvent as React
 
----- Inputs --------------------------------------------------------------------
+---- Text ----------------------------------------------------------------------
+-- title = h1
+-- subtitle = h2
+-- heading = h3
+-- subheading = h4
+-- emph
+---- Input ---------------------------------------------------------------------
 button :: String -> Widget Dom Unit
 button label = do
   result <- Node.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Node.text label ]
@@ -38,24 +44,25 @@ checkbox label checked = do
     ]
   done (not checked)
 
-inputbox :: String -> Widget Dom String
-inputbox value = do
+inputbox :: String -> String -> String -> Widget Dom String
+inputbox label placeholder value = do
   result <-
     Node.input
       [ Attr.autoFocus true
       , Attr._type "text"
+      , Attr.label label
       , Attr.value value
-      , Attr.placeholder value
+      , Attr.placeholder placeholder
       , Left <|| Attr.onInput
       , Right <|| Attr.onKeyDown
       ]
   case result of
-    Left event -> inputbox (stringValue event)
+    Left event -> inputbox label placeholder (stringValue event)
     Right key ->
       if Attr.isEnterEvent key then
         done value
       else
-        inputbox value
+        inputbox label placeholder value
 
 ---- Target values -------------------------------------------------------------
 stringValue :: forall a. React.SyntheticEvent_ a -> String
