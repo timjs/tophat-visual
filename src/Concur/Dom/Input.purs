@@ -1,31 +1,17 @@
-module Concur.Dom.Widget
+module Concur.Dom.Input
   -- # Inputs
   ( button
   , checkbox
   , inputbox
-  -- # Values
-  , stringValue
-  , intValue
-  , floatValue
   ) where
 
 import Preload
-import Concur (Widget)
-import Concur.Dom (Dom)
+import Concur.Dom (Widget, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
-import Data.Int as Int
-import Data.Number as Number
-import React.SyntheticEvent as React
 
----- Text ----------------------------------------------------------------------
--- title = h1
--- subtitle = h2
--- heading = h3
--- subheading = h4
--- emph
 ---- Input ---------------------------------------------------------------------
-button :: String -> Widget Dom Unit
+button :: String -> Widget Unit
 button label = do
   result <- Node.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Node.text label ]
   case result of
@@ -36,7 +22,7 @@ button label = do
       else
         button label
 
-checkbox :: String -> Bool -> Widget Dom Bool
+checkbox :: String -> Bool -> Widget Bool
 checkbox label checked = do
   Node.div'
     [ Node.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
@@ -44,7 +30,7 @@ checkbox label checked = do
     ]
   done (not checked)
 
-inputbox :: String -> String -> String -> Widget Dom String
+inputbox :: String -> String -> String -> Widget String
 inputbox label placeholder value = do
   result <-
     Node.input
@@ -63,13 +49,3 @@ inputbox label placeholder value = do
         done value
       else
         inputbox label placeholder value
-
----- Target values -------------------------------------------------------------
-stringValue :: forall a. React.SyntheticEvent_ a -> String
-stringValue = Attr.unsafeTargetValue
-
-floatValue :: forall a. React.SyntheticEvent_ a -> Maybe Number
-floatValue = stringValue >> Number.fromString
-
-intValue :: forall a. React.SyntheticEvent_ a -> Maybe Int
-intValue e = floatValue e ||> Int.floor

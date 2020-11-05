@@ -17,13 +17,13 @@ module Concur
 
 import Preload
 import Control.Cofree (Cofree)
-import Concur.Core.Types as Internal
+import Concur.Core.Types (andd) as Internal
 import Concur.Core.FRP (Signal, display, step, always, update, poll, hold, foldp) as Reexport
-import Concur.Core.FRP as Internal
-import Concur.Core.Patterns as Internal
+import Concur.Core.FRP (dyn, loopS, loopW) as Internal
+import Concur.Core.Patterns (Wire, local, mapWire) as Internal
 import Concur.Core.Types (Widget) as Reexport
 import Control.MultiAlternative (class MultiAlternative) as Reexport
-import Control.MultiAlternative as Internal
+import Control.MultiAlternative (orr) as Internal
 import Control.ShiftMap (class ShiftMap) as Reexport
 import Data.Array as Array
 import Data.Lens (Lens')

@@ -1,11 +1,11 @@
 module Test.Tree where
 
 import Preload
-import Concur (Widget, Signal, dynamic, step, loop, repeat, list)
-import Concur.Dom (Dom)
+import Concur (dynamic, step, loop, repeat, list)
+import Concur.Dom (Widget, Signal)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
-import Concur.Dom.Widget as Widget
+import Concur.Dom.Input as Input
 import Data.Array as Array
 
 ---- Data ----------------------------------------------------------------------
@@ -15,11 +15,11 @@ data Tree a
 type Forest a
   = Array (Tree a)
 
-empty :: Tree String
-empty = Tree "New heading" []
+newTree :: Tree String
+newTree = Tree "New heading" []
 
-init :: Tree String
-init =
+initTree :: Tree String
+initTree =
   Tree
     "Double click to edit me"
     [ Tree "Or use the 'delete' button to delete me" []
@@ -38,35 +38,35 @@ data Action
   | Delete
   | Modify (Forest String)
 
-tree :: Tree String -> Widget Dom (Maybe (Tree String))
+tree :: Tree String -> Widget (Maybe (Tree String))
 tree (Tree name children) = do
   result <-
     Node.ul'
       [ Node.li'
           [ Rename <|| title name
-          , Create -|| Widget.button "Create"
-          , Delete -|| Widget.button "Delete"
+          , Create -|| Input.button "Create"
+          , Delete -|| Input.button "Delete"
           , Modify <|| list tree children
           ]
       ]
   done
     <| case result of
         Rename name' -> Just <| Tree name' children
-        Create -> Just <| Tree name (Array.snoc children empty)
+        Create -> Just <| Tree name (Array.snoc children newTree)
         Delete -> Nothing
         Modify children' -> Just <| Tree name children'
 
-title :: String -> Widget Dom String
+title :: String -> Widget String
 title old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
-  new <- Node.div' [ Widget.inputbox "label" old old, Widget.button "Cancel" ||- old ]
+  new <- Node.div' [ Input.inputbox "label" old old, Input.button "Cancel" ||- old ]
   done
     <| if new == "" then
         old
       else
         new
 
-render :: forall a. Tree String -> Widget Dom a
+render :: forall a. Tree String -> Widget a
 render t = do
   mt <- tree t
   case mt of
@@ -77,19 +77,19 @@ render t = do
 --
 -- * Draws the tree.
 -- * After an event, the widget disapears.
-main :: Widget Dom (Maybe (Tree String))
-main = render init
+main :: Widget (Maybe (Tree String))
+main = render initTree
 
 ---- Signals -------------------------------------------------------------------
-tree_ :: Tree String -> Signal Dom (Maybe (Tree String))
+tree_ :: Tree String -> Signal (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
     name' <- loop name title
-    deleting <- step false (Widget.button "Delete" ||- done true)
+    deleting <- step false (Input.button "Delete" ||- done true)
     if deleting then
       done Nothing
     else do
-      child' <- step Nothing (Widget.button "New" ||- done (Just empty))
+      child' <- step Nothing (Input.button "New" ||- done (Just newTree))
       let
         children' = case child' of
           Nothing -> children
@@ -97,42 +97,42 @@ tree_ (Tree name children) =
       children'' <- traverse tree_ children' |> map Array.catMaybes |> Node.ul_ []
       done <| Just (Tree name' children'')
 
-render_ :: Maybe (Tree String) -> Signal Dom (Maybe (Tree String))
+render_ :: Maybe (Tree String) -> Signal (Maybe (Tree String))
 render_ = case _ of
   Nothing -> done Nothing
   Just t -> tree_ t
 
-main_ :: Widget Dom (Maybe (Tree String))
-main_ = dynamic <| repeat (Just init) render_
+main_ :: Widget (Maybe (Tree String))
+main_ = dynamic <| repeat (Just initTree) render_
 
 {-
-tree' :: Tree String -> Widget Dom (Tree String)
+tree' :: Tree String -> Widget  (Tree String)
 tree' (Tree name children) = do
   action <-
     Node.ul'
       [ Node.li'
           [ Rename <|| title name
-          , Create -|| Widget.button "Create"
-          , Delete -|| Widget.button "Delete"
+          , Create -|| Input.button "Create"
+          , Delete -|| Input.button "Delete"
           , Modify <|| forest children
           ]
       ]
   done
     <| case action of
         Rename name' -> Tree name' children
-        Create -> Tree name (Array.snoc children empty)
-        Delete -> empty
+        Create -> Tree name (Array.snoc children newTree)
+        Delete -> newTree
         Modify children' -> Tree name children'
 
-tree'' :: Tree String -> Signal Dom (Tree String)
+tree'' :: Tree String -> Signal  (Tree String)
 tree'' t = loop t tree'
 
-forest :: Forest String -> Widget Dom (Forest String)
+forest :: Forest String -> Widget  (Forest String)
 forest ts = dynamic <| loop ts forest'
 
-forest' :: Forest String -> Signal Dom (Forest String)
+forest' :: Forest String -> Signal  (Forest String)
 forest' ts = traverse tree'' ts
 
-main' :: Widget Dom (Tree String)
-main' = dynamic <| loop init tree''
+main' :: Widget  (Tree String)
+main' = dynamic <| loop initTree tree''
 -}
