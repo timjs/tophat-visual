@@ -84,9 +84,9 @@ main = render init
 tree_ :: Tree String -> Signal Dom (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
-    name' <- title_ name
-    shouldDelete <- step false (Widget.button "Delete" ||- done true)
-    if shouldDelete then
+    name' <- loop name title
+    deleting <- step false (Widget.button "Delete" ||- done true)
+    if deleting then
       done Nothing
     else do
       child' <- step Nothing (Widget.button "New" ||- done (Just empty))
@@ -97,16 +97,13 @@ tree_ (Tree name children) =
       children'' <- traverse tree_ children' |> map Array.catMaybes |> Node.ul_ []
       done <| Just (Tree name' children'')
 
-title_ :: String -> Signal Dom String
-title_ old = repeat old title
-
 render_ :: Maybe (Tree String) -> Signal Dom (Maybe (Tree String))
 render_ = case _ of
   Nothing -> done Nothing
   Just t -> tree_ t
 
 main_ :: Widget Dom (Maybe (Tree String))
-main_ = dynamic <| loop (Just init) render_
+main_ = dynamic <| repeat (Just init) render_
 
 {-
 tree' :: Tree String -> Widget Dom (Tree String)
@@ -128,7 +125,7 @@ tree' (Tree name children) = do
         Modify children' -> Tree name children'
 
 tree'' :: Tree String -> Signal Dom (Tree String)
-tree'' t = repeat t tree'
+tree'' t = loop t tree'
 
 forest :: Forest String -> Widget Dom (Forest String)
 forest ts = dynamic <| loop ts forest'

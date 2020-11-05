@@ -17,9 +17,9 @@ counter n = do
     ]
 
 -- | Displays a counter for every widget.
---
--- * Widgets end after the first event has been sent.
--- * Results are collected in an array.
+-- |
+-- |* Widgets end after the first event has been sent.
+-- |* Results are collected in an array.
 counters :: Array Int -> Widget Dom (Array Int)
 counters xs = combine (map counter xs)
 
@@ -28,36 +28,36 @@ main = counters [ 1, 2, 3 ]
 
 ---- Signals -------------------------------------------------------------------
 -- | Repeat the counter widget as a signal.
---
--- * Signal starts with given initial value.
--- * Widget is repeated with resulting value.
--- * Value is kept in the signal.
+-- |
+-- | * Signal starts with given initial value.
+-- | * Widget is repeated with resulting value.
+-- | * Value is kept in the signal.
 counter' :: Int -> Signal Dom Int
-counter' k = repeat k counter
+counter' k = loop k counter
 
 -- | Dynamically traverse counter signal.
---
--- * Because counter' is a signal, we can get hold of its value.
+-- |
+-- | * Because counter' is a signal, we can get hold of its value.
 counters' :: Array Int -> Signal Dom (Array Int)
 counters' xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   traverse counter' xs
 
 -- | Statically repeat the counters widget.
---
--- This is something completely different!
--- * The input value is what we get hold of
--- * We turn the "end on click" widget we created above into a signal,
---   but it still ends after an event.
+-- |
+-- | This is something completely different!
+-- | * The input value is what we get hold of
+-- | * We turn the "end on click" widget we created above into a signal,
+-- |   but it still ends after an event.
 counters'' :: Array Int -> Signal Dom (Array Int)
 counters'' xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
-  repeat xs counters
+  loop xs counters
 
--- * `loop` has to be there to feed the start value
---   and to feed next results into the signal again!
+-- | * `loop` has to be there to feed the start value
+-- |   and to feed next results into the signal again!
 main' :: Widget Dom (Array Int)
-main' = dynamic <| loop [ 1, 2, 3 ] counters'
+main' = dynamic <| repeat [ 1, 2, 3 ] counters'
 
 ---- Helpers -------------------------------------------------------------------
 isSorted :: Array Int -> Bool

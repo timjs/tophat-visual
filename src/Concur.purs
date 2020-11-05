@@ -5,8 +5,8 @@ module Concur
   -- , choose
   -- # Signals
   , repeat
-  , loop
   , dynamic
+  , loop
   -- # Wires
   , Wire
   , local
@@ -43,13 +43,13 @@ choose = Internal.orr
 dynamic :: forall m a b. Monad m => Cofree m a -> m b
 dynamic = Internal.dyn
 
--- | Repeatedly invoke a widget function for values to create a signal, looping in the previous value.
-repeat :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
-repeat = Internal.loopW
+-- | Create a signal which loops over a value, starting with the initial one
+loop :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
+loop = Internal.loopW
 
--- | Loop a signal so that the return value is passed to the beginning again.
-loop :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
-loop = Internal.loopS
+-- | Repeat a signal so that the return value is passed to the beginning again.
+repeat :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
+repeat = Internal.loopS
 
 ---- Wires ---------------------------------------------------------------------
 type Wire m a
