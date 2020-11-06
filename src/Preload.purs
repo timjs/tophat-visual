@@ -103,7 +103,7 @@ import Control.Alt (class Alt, (<|>)) as Reexport
 import Control.Semigroupoid (composeFlipped)
 import Data.Array as Array
 import Data.Array.NonEmpty (fromNonEmpty, toUnfoldable)
-import Data.Slice as Slice
+import Data.ArrayView as Slice
 import Data.ArrayView.Internal (fromNonEmptyArray)
 import Data.ArrayView.Internal as Slice
 import Data.Bifoldable as Reexport
@@ -271,7 +271,7 @@ infixr 0 apply as <|
 infixl 1 applyFlipped as |>
 
 undefined :: forall a. Warn (Text "Undefined function in code") => a
-undefined = unsafeCoerce Reexport.unit
+undefined = unsafeCoerce {}
 
 ---- Enums ---------------------------------------------------------------------
 infix 8 enumFromTo as ..
@@ -397,8 +397,8 @@ done = pure
 pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a ** b)
 pair x y = done (**) -< x -< y
 
-skip :: forall f. Reexport.Applicative f => f Reexport.Unit
-skip = done Reexport.unit
+skip :: forall f. Reexport.Applicative f => f {}
+skip = done {}
 
 ---- Newtypes ------------------------------------------------------------------
 using :: forall f s b a t. Reexport.Newtype t a => Reexport.Newtype s b => Reexport.Functor f => (a -> t) -> (f s -> t) -> f b -> a

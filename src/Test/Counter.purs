@@ -5,15 +5,16 @@ import Concur (combine, display, dynamic, loop, repeat)
 import Concur.Dom (Widget, Signal)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
+import Concur.Dom.Icon as Icon
 import Data.Slice (zipWith)
 
 ---- Widgets -------------------------------------------------------------------
 counter :: Int -> Widget Int
 counter n = do
   Node.div'
-    [ Node.button [ Attr.onClick ||- n + 1 ] [ Node.text "+" ]
+    [ Node.button [ Attr.onClick ||- n + 1 ] [ Icon.plus_square ]
     , Node.text <| show n
-    , Node.button [ Attr.onClick ||- n - 1 ] [ Node.text "-" ]
+    , Node.button [ Attr.onClick ||- n - 1 ] [ Icon.minus_square ]
     ]
 
 -- | Displays a counter for every widget.
