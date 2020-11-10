@@ -9,6 +9,7 @@ module Preload
   -- Tuples
   , (**)
   , type (**)
+  , trd
   -- Eithers
   , type (++)
   , throw
@@ -159,6 +160,9 @@ composeOr f g x = f x Reexport.|| g x
 infixr 2 Tuple as **
 
 infixr 2 type Tuple as **
+
+trd :: forall a b c. a ** b ** c -> c
+trd (_ ** _ ** c) = c
 
 ---- Eithers -------------------------------------------------------------------
 infixr 1 type Either as ++
@@ -397,8 +401,8 @@ done = pure
 pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a ** b)
 pair x y = done (**) -< x -< y
 
-skip :: forall f. Reexport.Applicative f => f {}
-skip = done {}
+skip :: forall f. Reexport.Applicative f => f Reexport.Unit
+skip = done Reexport.unit
 
 ---- Newtypes ------------------------------------------------------------------
 using :: forall f s b a t. Reexport.Newtype t a => Reexport.Newtype s b => Reexport.Functor f => (a -> t) -> (f s -> t) -> f b -> a
