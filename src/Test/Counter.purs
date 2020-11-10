@@ -33,16 +33,17 @@ main = counters [ 1, 2, 3 ]
 -- | * Signal starts with given initial value.
 -- | * Widget is repeated with resulting value.
 -- | * Value is kept in the signal.
-counter' :: Int -> Signal Int
-counter' k = loop k counter
+counter_ :: Int -> Signal Int
+-- counter_ k = loop k counter
+counter_ k = loop k counter
 
 -- | Dynamically traverse counter signal.
 -- |
--- | * Because counter' is a signal, we can get hold of its value.
-counters' :: Array Int -> Signal (Array Int)
-counters' xs = do
+-- | * Because counter_ is a signal, we can get hold of its value.
+counters_ :: Array Int -> Signal (Array Int)
+counters_ xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
-  traverse counter' xs
+  traverse counter_ xs
 
 -- | Statically repeat the counters widget.
 -- |
@@ -50,15 +51,15 @@ counters' xs = do
 -- | * The input value is what we get hold of
 -- | * We turn the "end on click" widget we created above into a signal,
 -- |   but it still ends after an event.
-counters'' :: Array Int -> Signal (Array Int)
-counters'' xs = do
+counters__ :: Array Int -> Signal (Array Int)
+counters__ xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   loop xs counters
 
 -- | * `loop` has to be there to feed the start value
 -- |   and to feed next results into the signal again!
-main' :: Widget (Array Int)
-main' = dynamic <| repeat [ 1, 2, 3 ] counters'
+main_ :: Widget (Array Int)
+main_ = dynamic <| repeat [ 1, 2, 3 ] counters_
 
 ---- Helpers -------------------------------------------------------------------
 isSorted :: Array Int -> Bool
