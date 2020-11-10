@@ -1,7 +1,7 @@
 module Test.Flow where
 
 import Preload hiding (group)
-import Concur (display, loop, merge)
+import Concur (display, infinite, merge)
 import Concur.Dom (Signal, Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
@@ -16,23 +16,23 @@ task :: Unchecked Task -> Signal (Unchecked Task)
 task u@(Unchecked t) = case t of
   ---- Editors
   Enter b m ->
-    loop b (box Icon.pen m)
+    infinite b (box Icon.pen m)
       ||> \b' -> Unchecked (Enter b' m)
   Update m e ->
-    loop e (box Icon.edit m)
+    infinite e (box Icon.edit m)
       ||> \e' -> Unchecked (Update m e')
   Change m e ->
-    loop ({} ** e) (couple Mutating (box Icon.edit m) (box Icon.database ""))
+    infinite ({} ** e) (couple Mutating (box Icon.edit m) (box Icon.database ""))
       ||> \({} ** e') -> Unchecked (Change m e')
   View m e ->
-    loop e (box Icon.eye m)
+    infinite e (box Icon.eye m)
       ||> \e' -> Unchecked (View m e')
   Watch m e ->
-    loop ({} ** e) (couple Reading (box Icon.eye m) (box Icon.database ""))
+    infinite ({} ** e) (couple Reading (box Icon.eye m) (box Icon.database ""))
       ||> \({} ** e') -> Unchecked (Watch m e')
   ---- Combinators
   Lift e ->
-    loop e (box Icon.check_square "")
+    infinite e (box Icon.check_square "")
       ||> \e' -> Unchecked (Lift e')
   Pair ts ->
     group ts
@@ -55,17 +55,17 @@ task u@(Unchecked t) = case t of
       ||> \(t1' ** t2') -> Unchecked (Step m t1' t2')
   ---- Extras
   Execute n a ->
-    loop n (box Icon.none "")
+    infinite n (box Icon.none "")
       ||> \n' -> Unchecked (Execute n' a)
   Hole a ->
-    loop {} (box Icon.question "")
+    infinite {} (box Icon.question "")
       ||> \_ -> Unchecked (Hole a)
   ---- Shares
   Share e ->
-    loop e (box Icon.retweet "")
+    infinite e (box Icon.retweet "")
       ||> \e' -> Unchecked (Share e')
   Assign e1 e2 ->
-    loop (e2 ** e1) (couple Writing (box Icon.retweet "") (box Icon.database ""))
+    infinite (e2 ** e1) (couple Writing (box Icon.retweet "") (box Icon.database ""))
       ||> \(e2' ** e1') -> Unchecked (Assign e1' e2')
 
 group :: Array (Unchecked Task) -> Signal (Array (Unchecked Task))

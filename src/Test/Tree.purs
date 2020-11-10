@@ -1,7 +1,7 @@
 module Test.Tree where
 
 import Preload
-import Concur (dynamic, step, loop, repeat, list)
+import Concur (dynamic, step, infinite, loop, list)
 import Concur.Dom (Widget, Signal)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
@@ -84,7 +84,7 @@ main = render initTree
 tree_ :: Tree String -> Signal (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
-    name' <- loop name title
+    name' <- infinite name title
     deleting <- step false (Input.button "Delete" ||- done true)
     if deleting then
       done Nothing
@@ -103,7 +103,7 @@ render_ = case _ of
   Just t -> tree_ t
 
 main_ :: Widget (Maybe (Tree String))
-main_ = dynamic <| repeat (Just initTree) render_
+main_ = dynamic <| loop (Just initTree) render_
 
 {-
 tree' :: Tree String -> Widget  (Tree String)
@@ -125,14 +125,14 @@ tree' (Tree name children) = do
         Modify children' -> Tree name children'
 
 tree'' :: Tree String -> Signal  (Tree String)
-tree'' t = loop t tree'
+tree'' t = infinite t tree'
 
 forest :: Forest String -> Widget  (Forest String)
-forest ts = dynamic <| loop ts forest'
+forest ts = dynamic <| infinite ts forest'
 
 forest' :: Forest String -> Signal  (Forest String)
 forest' ts = traverse tree'' ts
 
 main' :: Widget  (Tree String)
-main' = dynamic <| loop initTree tree''
+main' = dynamic <| infinite initTree tree''
 -}

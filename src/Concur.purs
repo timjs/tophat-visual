@@ -4,8 +4,8 @@ module Concur
   , combine
   , merge
   -- # Signals
-  , repeat
   , dynamic
+  , infinite
   , loop
   -- # Wires
   , Wire
@@ -18,7 +18,7 @@ module Concur
 import Preload
 import Control.Cofree (Cofree)
 import Concur.Core.Types (andd) as Internal
-import Concur.Core.FRP (Signal, display, step, always, update, poll, hold, foldp) as Reexport
+import Concur.Core.FRP (Signal, step, display, always, update, poll, hold, foldp) as Reexport
 import Concur.Core.FRP (dyn, loopS, loopW) as Internal
 import Concur.Core.Patterns (Wire, local, mapWire) as Internal
 import Concur.Core.Types (Widget) as Reexport
@@ -31,10 +31,11 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
 ---- Widgets -------------------------------------------------------------------
--- | Combine multiple widgets in parallel until all finish, and collect their outputs.
+-- | Combine multiple widgets showing them in parallel, until all finish, and collect their outputs.
 combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
 combine = Internal.andd
 
+-- | Merge multiple widgets showing them in parallel, until one finishes.
 merge :: forall a m. Reexport.MultiAlternative m => Array (m a) -> m a
 merge = Internal.orr
 
@@ -43,13 +44,13 @@ merge = Internal.orr
 dynamic :: forall m a b. Monad m => Cofree m a -> m b
 dynamic = Internal.dyn
 
--- | Create a signal which loops over a value, starting with the initial one
-loop :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
-loop = Internal.loopW
+-- | Create a signal which ininitely loops over the value of a widget, starting with the initial one.
+infinite :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
+infinite = Internal.loopW
 
--- | Repeat a signal so that the return value is passed to the beginning again.
-repeat :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
-repeat = Internal.loopS
+-- | Loop a signal so that the return value is passed to the beginning again.
+loop :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
+loop = Internal.loopS
 
 ---- Wires ---------------------------------------------------------------------
 type Wire m a
@@ -76,8 +77,8 @@ list render elements = do
 import Concur.Core (Widget, orr)
 import qualified Data.List.Index as List
 
-loop :: Monad m => (a -> m a) -> a -> m void
-loop f = g
+infinite :: Monad m => (a -> m a) -> a -> m void
+infinite f = g
   where
     g x = f x >>= g
 

@@ -1,7 +1,7 @@
 module Test.Counter where
 
 import Preload
-import Concur (combine, display, dynamic, loop, repeat)
+import Concur (combine, display, dynamic, infinite, loop)
 import Concur.Dom (Widget, Signal)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
@@ -34,8 +34,8 @@ main = counters [ 1, 2, 3 ]
 -- | * Widget is repeated with resulting value.
 -- | * Value is kept in the signal.
 counter_ :: Int -> Signal Int
--- counter_ k = loop k counter
-counter_ k = loop k counter
+-- counter_ k = infinite k counter
+counter_ k = infinite k counter
 
 -- | Dynamically traverse counter signal.
 -- |
@@ -45,7 +45,7 @@ counters_ xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   traverse counter_ xs
 
--- | Statically repeat the counters widget.
+-- | Statically loop the counters widget.
 -- |
 -- | This is something completely different!
 -- | * The input value is what we get hold of
@@ -54,12 +54,12 @@ counters_ xs = do
 counters__ :: Array Int -> Signal (Array Int)
 counters__ xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
-  loop xs counters
+  infinite xs counters
 
--- | * `loop` has to be there to feed the start value
+-- | * `infinite` has to be there to feed the start value
 -- |   and to feed next results into the signal again!
 main_ :: Widget (Array Int)
-main_ = dynamic <| repeat [ 1, 2, 3 ] counters_
+main_ = dynamic <| loop [ 1, 2, 3 ] counters_
 
 ---- Helpers -------------------------------------------------------------------
 isSorted :: Array Int -> Bool
