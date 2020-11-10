@@ -256,10 +256,10 @@ data Task t
   | Watch Message Expression
   -- Combinators
   | Lift Expression
-  | Pair (List t)
-  | Choose (List t)
-  | Branch (List (Expression ** t))
-  | Select (List (Label ** Expression ** t))
+  | Pair (Array t)
+  | Choose (Array t)
+  | Branch (Array (Expression ** t))
+  | Select (Array (Label ** Expression ** t))
   | Step Match t t
   -- Extras
   | Execute Name Argument
