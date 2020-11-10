@@ -2,7 +2,7 @@ module Concur
   ( module Reexport
   -- # Widgets
   , combine
-  -- , choose
+  , merge
   -- # Signals
   , repeat
   , dynamic
@@ -35,8 +35,8 @@ import Effect.Class (class MonadEffect)
 combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
 combine = Internal.andd
 
-choose :: forall a m. Reexport.MultiAlternative m => Array (m a) -> m a
-choose = Internal.orr
+merge :: forall a m. Reexport.MultiAlternative m => Array (m a) -> m a
+merge = Internal.orr
 
 ---- Signals -------------------------------------------------------------------
 -- | Turn a (closed) signal into a widget.
