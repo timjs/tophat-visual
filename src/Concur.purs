@@ -37,18 +37,18 @@ class (Internal.ShiftMap s t) <= Shift s t
 
 instance shiftAll :: (Internal.ShiftMap s t) => Shift s t
 
-class (Internal.LiftWidget v m, Shift (Reexport.Widget v) m) <= Lift v m
+class (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) <= Lift v m
 
-instance liftAll :: (Internal.LiftWidget v m, Shift (Reexport.Widget v) m) => Lift v m
+instance liftAll :: (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) => Lift v m
+
+class (Internal.MultiAlternative f) <= Merge f
+
+instance mergeAll :: (Internal.MultiAlternative f) => Merge f
 
 ---- Widgets -------------------------------------------------------------------
 -- | Combine multiple widgets showing them in parallel, until all finish, and collect their outputs.
 combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
 combine = Internal.andd
-
-class (Internal.MultiAlternative f) <= Merge f
-
-instance mergeAll :: (Internal.MultiAlternative f) => Merge f
 
 -- | Merge multiple widgets showing them in parallel, until one finishes.
 merge :: forall a m. Merge m => Array (m a) -> m a

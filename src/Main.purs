@@ -3,7 +3,7 @@ module Main where
 import Preload
 import Concur (dynamic)
 import Concur.Dom (runWidgetInDom)
-import Task.Script.Example as Example
+import Task.Script.Example.Booking as Example
 import Test.Flow as Flow
 
 main :: Effect Unit

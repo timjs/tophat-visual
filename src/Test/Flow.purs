@@ -97,7 +97,7 @@ connect (t1 ** t2) =
 -- | [i a]^m
 box :: forall a. Icon -> Message -> a -> Widget a
 box i m a =
-  Layout.box
+  Layout.element
     { backgroundColor: "lightgray"
     , borderRadius: "0.5pc"
     , minWidth: "10pc"
@@ -120,7 +120,7 @@ couple m f g (a ** b) =
     Writing -> Layout.row <| merge [ connection, dot ]
     Mutating -> Layout.row <| merge [ dot, connection, dot ]
 
-  dot = Layout.circle { fill: "black", draw: "black", stroke: "solid", thickness: 0.0 } 0.33
+  dot = Layout.circle { fill: "black", draw: "black", stroke: "solid", thickness: 0.0 } 0.33 empty
 
   connection = Layout.line { draw: "black", stroke: "solid", thickness: 2.0 } Layout.Horizontal 4.0
 
