@@ -1,8 +1,8 @@
-module Task.Script.Example where
+module Task.Script.Example.Booking where
 
 import Preload
-import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
 import Task.Script.Error (Unchecked(..))
+import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
 
 ---- Types ---------------------------------------------------------------------
 t_nationality :: Type
@@ -67,3 +67,15 @@ enter_passenger =
             ** Constant (B true)
             ** (Unchecked <| Lift (Record <| from [ "passengers" ** Variable "passengers" ]))
         ]
+
+-- choose_seats :: Expression -> Expression -> Unchecked Task
+-- choose_seats store record =
+--   Unchecked
+--     <| Step (MRecord <| from ["values" ** MBind "seats"]) (Unchecked <| Change "Pick some seats" store)
+--     <| Unchecked
+--     <| Select
+--       ["Continue"
+--         ** Apply (Variable "==") (Apply (Variable "len") (Variable "seats")) (Variable "amount")
+--         ** (Unchecked
+--           <| Step (MBind ""))
+--       ]
