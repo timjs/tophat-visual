@@ -97,6 +97,7 @@ module Preload
   ) where
 
 import Control.Applicative (pure)
+import Control.Alternative (class Alternative) as Reexport
 import Control.Apply (applyFirst, applySecond) as Reexport
 import Control.Bind (bind, bindFlipped, discard) as Reexport
 import Control.Plus (class Plus, empty) as Reexport
