@@ -1,4 +1,4 @@
-module Test.Flow where
+module Task.Script.Renderer where
 
 import Preload hiding (group)
 import Concur (display, infinite, merge)
