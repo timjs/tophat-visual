@@ -1,8 +1,10 @@
 module Main where
 
 import Preload
+import Concur (dynamic)
 import Concur.Dom (runWidgetInDom)
-import Test.Counter as Test
+import Task.Script.Example as Example
+import Test.Flow as Flow
 
 main :: Effect Unit
-main = runWidgetInDom "root" <| Test.main_
+main = runWidgetInDom "root" <| dynamic <| Flow.task Example.enter_passenger

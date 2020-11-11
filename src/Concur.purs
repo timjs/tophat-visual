@@ -1,5 +1,8 @@
 module Concur
   ( module Reexport
+  , class Shift
+  , class Lift
+  , class Merge
   -- # Widgets
   , combine
   , merge
@@ -16,27 +19,39 @@ module Concur
   ) where
 
 import Preload
-import Control.Cofree (Cofree)
-import Concur.Core.Types (andd) as Internal
+import Concur.Core (class LiftWidget) as Internal
 import Concur.Core.FRP (Signal, step, display, always, update, poll, hold, foldp) as Reexport
 import Concur.Core.FRP (dyn, loopS, loopW) as Internal
 import Concur.Core.Patterns (Wire, local, mapWire) as Internal
 import Concur.Core.Types (Widget) as Reexport
-import Control.MultiAlternative (class MultiAlternative) as Reexport
-import Control.MultiAlternative (orr) as Internal
-import Control.ShiftMap (class ShiftMap) as Reexport
+import Concur.Core.Types (andd) as Internal
+import Control.Cofree (Cofree)
+import Control.MultiAlternative (class MultiAlternative, orr) as Internal
+import Control.ShiftMap (class ShiftMap) as Internal
 import Data.Array as Array
 import Data.Lens (Lens')
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
+
+class (Internal.ShiftMap s t) <= Shift s t
+
+instance shiftAll :: (Internal.ShiftMap s t) => Shift s t
+
+class (Internal.LiftWidget v m, Shift (Reexport.Widget v) m) <= Lift v m
+
+instance liftAll :: (Internal.LiftWidget v m, Shift (Reexport.Widget v) m) => Lift v m
 
 ---- Widgets -------------------------------------------------------------------
 -- | Combine multiple widgets showing them in parallel, until all finish, and collect their outputs.
 combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
 combine = Internal.andd
 
+class (Internal.MultiAlternative f) <= Merge f
+
+instance mergeAll :: (Internal.MultiAlternative f) => Merge f
+
 -- | Merge multiple widgets showing them in parallel, until one finishes.
-merge :: forall a m. Reexport.MultiAlternative m => Array (m a) -> m a
+merge :: forall a m. Merge m => Array (m a) -> m a
 merge = Internal.orr
 
 ---- Signals -------------------------------------------------------------------

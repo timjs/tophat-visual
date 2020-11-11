@@ -5,7 +5,6 @@ import Concur (display, infinite, merge)
 import Concur.Dom (Signal, Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
-import Concur.Dom.Layout (Orientation(..))
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Task.Script.Error (Unchecked(..))
@@ -75,20 +74,22 @@ group ts =
   --   , bar
   --   ]
   -- where
-  -- bar = Layout.line { draw: "lightgray", stroke: "solid", thickness: 4.0 } Horizontal 60.0
-  Layout.box
-    { borderStyle: "solid"
-    , borderColor: "lightgray"
-    , borderWidth: "4pt 0"
-    , margin: "-2pt"
-    } do
+  -- bar = Layout.line { draw: "lightgray", stroke: "solid", thickness: 4.0 } Layout.Horizontal 60.0
+  Layout.group
+    { draw: "lightgray"
+    , stroke: "solid"
+    , thickness: 4.0
+    -- , margin: "-2pt"
+    }
+    Layout.Horizontal do
     traverse task ts
 
 connect :: Unchecked Task ** Unchecked Task -> Signal (Unchecked Task ** Unchecked Task)
 connect (t1 ** t2) =
   Layout.column do
     t1' <- task t1
-    display <| Layout.line { draw: "lightgray", stroke: "solid", thickness: 1.0 } Vertical 2.0
+    display <| Layout.line { draw: "lightgray", stroke: "solid", thickness: 1.0 } Layout.Vertical 2.0
+    display <| Layout.head { draw: "lightgray", stroke: "solid", thickness: 1.0 } Layout.Down
     t2' <- task t2
     done (t1' ** t2')
 
@@ -119,9 +120,9 @@ couple m f g (a ** b) =
     Writing -> Layout.row <| merge [ connection, dot ]
     Mutating -> Layout.row <| merge [ dot, connection, dot ]
 
-  dot = Layout.circle { fill: "black", draw: "black", stroke: "solid", thickness: 0.0 } 0.5
+  dot = Layout.circle { fill: "black", draw: "black", stroke: "solid", thickness: 0.0 } 0.33
 
-  connection = Layout.line { draw: "black", stroke: "solid", thickness: 2.0 } Horizontal 4.0
+  connection = Layout.line { draw: "black", stroke: "solid", thickness: 2.0 } Layout.Horizontal 4.0
 
 data Mode
   = Reading

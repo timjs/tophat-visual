@@ -1,9 +1,9 @@
 module Concur.Dom.Layout
   -- # Boxes
   ( box
-  , empty
   , row
   , column
+  , group
   -- # Text
   , text
   -- # Shapes
@@ -17,31 +17,43 @@ module Concur.Dom.Layout
   ) where
 
 import Preload hiding (empty)
-import Concur.Core.LiftWidget (class LiftWidget)
+import Concur (class Lift, class Shift)
 import Concur.Dom (Dom, Widget)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
-import Control.ShiftMap (class ShiftMap)
 import Record as Record
 
 ---- Boxes ---------------------------------------------------------------------
-box :: forall m a s. ShiftMap Widget m => Record s -> m a -> m a
+box :: forall m a s. Shift Widget m => Record s -> m a -> m a
 box s = Node.div_ [ Attr.style s ]
 
-empty :: forall m a s. LiftWidget Dom m => ShiftMap Widget m => Record s -> m a
+empty :: forall m a s. Lift Dom m => Record s -> m a
 empty s = box s (text "")
 
 -- row :: forall a. Array (Widget a) -> Widget a
--- row :: forall m a. MultiAlternative m => ShiftMap Widget m => Array (m a) -> m a
+-- row :: forall m a. MultiAlternative m => Lift Dom m => Array (m a) -> m a
 -- row = merge >> box ({ flexDirection: "row" } /\ style_flexbox)
-row :: forall m a. ShiftMap Widget m => m a -> m a
+row :: forall m a. Shift Widget m => m a -> m a
 row = box ({ flexDirection: "row" } /\ style_flexbox)
 
 -- column :: forall a. Array (Widget a) -> Widget a
--- column :: forall m a. MultiAlternative m => ShiftMap Widget m => Array (m a) -> m a
+-- column :: forall m a. MultiAlternative m => Lift Dom m => Array (m a) -> m a
 -- column = merge >> box ({ flexDirection: "column" } /\ style_flexbox)
-column :: forall m a. ShiftMap Widget m => m a -> m a
+column :: forall m a. Shift Widget m => m a -> m a
 column = box ({ flexDirection: "column" } /\ style_flexbox)
+
+group :: forall m a r. Shift Widget m => LineStyle r -> Orientation -> m a -> m a
+group { draw, stroke, thickness } orientation =
+  box
+    { borderColor: draw
+    , borderStyle: stroke
+    , borderWidth: style_orientation
+    -- , margin: "-2pt"
+    }
+  where
+  style_orientation = case orientation of
+    Horizontal -> unwords [ thickness |> pt, "0" ]
+    Vertical -> unwords [ "0", thickness |> pt ]
 
 style_flexbox :: { alignItems :: String, display :: String, justifyContent :: String }
 style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center" }
@@ -55,7 +67,7 @@ style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center
 --     , decoration :: Line
 --     | r
 --     }
-text :: forall m a. LiftWidget Dom m => String -> m a
+text :: forall m a. Lift Dom m => String -> m a
 text = Node.text
 
 ---- Shapes --------------------------------------------------------------------
@@ -85,7 +97,7 @@ type LineStyle r
 type ShapeStyle r
   = LineStyle ( fill :: Color | r )
 
-line :: forall m a r. LiftWidget Dom m => ShiftMap Widget m => LineStyle r -> Orientation -> Number -> m a
+line :: forall m a r. Lift Dom m => LineStyle r -> Orientation -> Number -> m a
 line { draw, stroke, thickness } orientation length =
   empty
     <| { position: "relative"
@@ -105,7 +117,7 @@ line { draw, stroke, thickness } orientation length =
       , height: length |> pc
       }
 
-head :: forall m a r. LiftWidget Dom m => ShiftMap Widget m => LineStyle r -> Direction -> m a
+head :: forall m a r. Lift Dom m => LineStyle r -> Direction -> m a
 head { draw, stroke, thickness } direction =
   empty
     <| { width: 0.0 |> pc
@@ -117,12 +129,12 @@ head { draw, stroke, thickness } direction =
   where
   style_direction = case direction of
     _ ->
-      -- top, right, bottom, and left in that order (clockwise)
+      -- top, right, bottom, left in that order (clockwise)
       { borderWidth: unwords [ thickness |> pt, thickness / 2.0 |> pt, 0.0 |> pt, thickness / 2.0 |> pt ]
       , borderColor: unwords [ draw, "transparent", "transparent", "transparent" ]
       }
 
-square :: forall m a r. LiftWidget Dom m => ShiftMap Widget m => ShapeStyle r -> Number -> Number -> m a
+square :: forall m a r. Lift Dom m => ShapeStyle r -> Number -> Number -> m a
 square { fill, draw, stroke, thickness } width height =
   empty
     { width: width |> pc
@@ -133,7 +145,7 @@ square { fill, draw, stroke, thickness } width height =
     , borderWidth: thickness |> pt
     }
 
-circle :: forall m a r. LiftWidget Dom m => ShiftMap Widget m => ShapeStyle r -> Number -> m a
+circle :: forall m a r. Lift Dom m => ShapeStyle r -> Number -> m a
 circle { fill, draw, stroke, thickness } radius =
   empty
     { width: radius * 2.0 |> pc
@@ -145,7 +157,7 @@ circle { fill, draw, stroke, thickness } radius =
     , borderWidth: thickness |> pt
     }
 
-diamond :: forall m a r. LiftWidget Dom m => ShiftMap Widget m => ShapeStyle r -> Number -> Number -> m a
+diamond :: forall m a r. Lift Dom m => ShapeStyle r -> Number -> Number -> m a
 diamond { fill, draw, stroke, thickness } width height =
   empty
     { width: width |> pc

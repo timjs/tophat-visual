@@ -63,15 +63,7 @@ enter_passenger =
     <| Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
     <| Unchecked
     <| Select
-    <| from
         [ "Continue"
             ** Constant (B true)
             ** (Unchecked <| Lift (Record <| from [ "passengers" ** Variable "passengers" ]))
         ]
-
-simple :: Unchecked Task
-simple =
-  Unchecked
-    <| Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
-    <| Unchecked
-    <| Update "Update passenger details" (Variable "passengers")
