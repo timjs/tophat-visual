@@ -1,77 +1,62 @@
 module Task.Script.Example.Subsidy where
 
 import Preload
-import Concur.Core.DevTools (subscribe)
-import Task.Script.Error (Unchecked(..), Context)
-import Task.Script.Syntax (Argument(..), BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), ofBasic)
+import Task.Script.Context (Context, (:->), b_bool, b_int, b_string, b_list, t_record, t_task)
+import Task.Script.Error (Unchecked(..))
+import Task.Script.Syntax (Argument(..), BasicType(..), Expression(..), Match(..), Task(..))
 
 ---- Types ---------------------------------------------------------------------
-t_bool :: BasicType
-t_bool = BPrimitive TBool
-
-t_int :: BasicType
-t_int = BPrimitive TInt
-
-t_string :: BasicType
-t_string = BPrimitive TString
-
-t_list :: BasicType -> BasicType
-t_list t = BList t
-
-t_task :: Array (String ** BasicType) -> Type
-t_task ts = TTask (map ofBasic (from ts))
-
-t_citizen :: BasicType
-t_citizen =
+b_citizen :: BasicType
+b_citizen =
   BRecord
     <| from
-        [ "ssn" ** t_int
-        , "name" ** t_string
-        , "address" ** t_address
+        [ "ssn" ** b_int
+        , "name" ** b_string
+        , "address" ** b_address
         ]
 
-t_company :: BasicType
-t_company =
+b_company :: BasicType
+b_company =
   BRecord
     <| from
-        [ "coc" ** t_int
-        , "name" ** t_string
-        , "address" ** t_address
+        [ "coc" ** b_int
+        , "name" ** b_string
+        , "address" ** b_address
         ]
 
-t_address :: BasicType
-t_address =
+b_address :: BasicType
+b_address =
   BRecord
     <| from
-        [ "stree" ** t_string
-        , "house_number" ** t_int
-        , "postal_code" ** t_int
-        , "city" ** t_string
+        [ "stree" ** b_string
+        , "house_number" ** b_int
+        , "postal_code" ** b_int
+        , "city" ** b_string
         ]
 
-t_documents :: BasicType
-t_documents =
+b_documents :: BasicType
+b_documents =
   BRecord
     <| from
-        [ "invoice_amount" ** t_int
-        , "invoice_date" ** t_int
-        , "roof_photos" ** t_list t_string
+        [ "invoice_amount" ** b_int
+        , "invoice_date" ** b_int
+        , "roof_photos" ** b_list b_string
         ]
 
-t_declaration :: BasicType
-t_declaration =
+b_declaration :: BasicType
+b_declaration =
   BRecord
     <| from
-        [ "roof_photos" ** t_list t_string
-        , "date" ** t_string
+        [ "roof_photos" ** b_list b_string
+        , "date" ** b_string
         ]
 
-t_dossier :: BasicType
-t_dossier =
+b_dossier :: BasicType
+b_dossier =
   BRecord
     <| from
-        [ "documents" ** t_documents
-        , "declaration" ** t_declaration
+        [ "documents" ** b_documents
+        , "declaration" ** b_declaration
         ]
 
 ---- Tasks ---------------------------------------------------------------------
@@ -94,7 +79,7 @@ t_dossier =
 request_subsidy :: Unchecked Task
 request_subsidy =
   Unchecked
-    <| Step (MRecord <| from [ "value" ** MBind "details" ]) (Unchecked <| Enter t_citizen "Passenger details")
+    <| Step (MRecord <| from [ "value" ** MBind "details" ]) (Unchecked <| Enter b_citizen "Passenger details")
     <| Unchecked
     <| Step (MRecord <| from [ "approved" ** MBind "approved" ]) (Unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ** Variable "details" ]))
     <| Unchecked
@@ -128,28 +113,18 @@ subsidy_context :: Context
 subsidy_context =
   from
     [ "check_conditions"
-        ** TFunction
-            (ofBasic <| BRecord <| from [ "details" ** t_citizen ])
-            (t_task [ "approved" ** t_bool ])
+        ** t_record [ "details" ** b_citizen ]
+        :-> t_task [ "approved" ** b_bool ]
     , "provide_documents"
-        ** TFunction
-            (ofBasic <| BRecord <| from [ "details" ** t_citizen ])
-            (t_task [ "documents" ** t_documents ])
+        ** t_record [ "details" ** b_citizen ]
+        :-> t_task [ "documents" ** b_documents ]
     , "select_contractor"
-        ** TFunction
-            (ofBasic <| BRecord neutral)
-            (t_task [ "contractor" ** t_company ])
+        ** t_record []
+        :-> t_task [ "contractor" ** b_company ]
     , "provide_declaration"
-        ** TFunction
-            (ofBasic <| BRecord <| from [ "contractor" ** t_company, "details" ** t_citizen ])
-            (t_task [ "declaration" ** t_declaration ])
+        ** t_record [ "contractor" ** b_company, "details" ** b_citizen ]
+        :-> t_task [ "declaration" ** b_declaration ]
     , "submit_request"
-        ** TFunction
-            (ofBasic <| BRecord <| from [ "dossier" ** t_dossier ])
-            (t_task [])
+        ** t_record [ "dossier" ** b_dossier ]
+        :-> t_task []
     ]
-
-toplevel :: Context
-toplevel =
-  from
-    [ "not" ** TFunction (TPrimitive TBool) (TPrimitive TBool) ]

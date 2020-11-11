@@ -1,8 +1,6 @@
 module Task.Script.Error
-  -- # Context
-  ( Context
   -- # Checked or Unchecked
-  , Unchecked(..)
+  ( Unchecked(..)
   , Checked(..)
   , lift
   , sink
@@ -17,10 +15,7 @@ module Task.Script.Error
 
 import Preload
 import Task.Script.Syntax (Label, Labels, Match, Name, Row, Task, Type, showLabels)
-
----- Contexts ------------------------------------------------------------------
-type Context
-  = HashMap Name Type
+import Task.Script.Context (Context)
 
 ---- Checked or Unchecked ------------------------------------------------------
 data Unchecked f

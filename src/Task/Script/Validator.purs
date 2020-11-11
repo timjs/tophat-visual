@@ -5,7 +5,8 @@ module Task.Script.Validator
 import Preload
 import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
-import Task.Script.Error (Checked(..), Context, Error(..), Unchecked(..), bury, sink, fail, extract, lift, pass)
+import Task.Script.Context (Context)
+import Task.Script.Error (Checked(..), Error(..), Unchecked(..), bury, sink, fail, extract, lift, pass)
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row, Task(..), Type(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------

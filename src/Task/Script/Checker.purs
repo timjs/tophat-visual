@@ -20,7 +20,8 @@ import Preload
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
-import Task.Script.Error (Context, Error(..), Unchecked(..))
+import Task.Script.Error (Error(..), Unchecked(..))
+import Task.Script.Context (Context)
 
 ---- Checker -------------------------------------------------------------------
 class Check a where
