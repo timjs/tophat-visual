@@ -38,9 +38,18 @@ type Row a
 showRow :: forall a. Show a => Char -> Char -> String -> HashMap Label a -> String
 showRow beg end sep as =
   as
-    |> HashMap.toArrayBy (\l x -> unwords [ l, sep, show x ])
-    |> intercalate ","
+    |> HashMap.toArrayBy check
+    |> intercalate ", "
     |> inbetween beg end
+  where
+  check l x =
+    let
+      r = show x
+    in
+      if l == r then
+        l
+      else
+        unwords [ l, sep, r ]
 
 showFields :: forall a. Show a => String -> HashMap Label a -> String
 showFields = showRow '{' '}'
@@ -280,9 +289,9 @@ instance showTask :: Show t => Show (Task t) where
     View m e -> unwords [ "view", quote m, show e ]
     Watch m e -> unwords [ "watch", quote m, show e ]
     Lift e -> unwords [ "done", show e ]
-    Pair ss -> unwords [ "all", inner ss ]
-    Choose ss -> unwords [ "any", inner ss ]
-    Branch bs -> unwords [ "one", inner' bs ]
+    Pair ss -> unwords [ "pair", inner ss ]
+    Choose ss -> unwords [ "choose", inner ss ]
+    Branch bs -> unwords [ "branch", inner' bs ]
     Select bs -> unwords [ "select", inner'' bs ]
     Step m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
     Execute n as -> unwords [ n, show as ]
@@ -293,14 +302,17 @@ instance showTask :: Show t => Show (Task t) where
     inner =
       map show
         >> unlines
+        >> inbetween '\n' '\n'
         >> inbetween '[' ']'
 
     inner' =
-      map (\(e ** s) -> unwords [ show e, "|->", show s ])
+      map (\(e ** s) -> unlines [ unwords [ show e, "|->" ], show s ])
         >> unlines
+        >> inbetween '\n' '\n'
         >> inbetween '[' ']'
 
     inner'' =
-      map (\(l ** e ** s) -> unwords [ l, "?", show e, "|->", show s ])
+      map (\(l ** e ** s) -> unlines [ unwords [ l, "?", show e, "|->" ], show s ])
         >> unlines
+        >> inbetween '\n' '\n'
         >> inbetween '[' ']'
