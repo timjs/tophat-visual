@@ -79,14 +79,14 @@ b_dossier =
 request_subsidy :: Unchecked Task
 request_subsidy =
   Unchecked
-    <| Step (MRecord <| from [ "value" ** MBind "details" ]) (Unchecked <| Enter b_citizen "Passenger details")
+    <| Step (MRecord <| from [ "value" ** MBind "details" ]) (Unchecked <| Enter b_citizen "Citizen details")
     <| Unchecked
     <| Step (MRecord <| from [ "approved" ** MBind "approved" ]) (Unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ** Variable "details" ]))
     <| Unchecked
     <| Branch
         [ Apply (Variable "not") (Variable "approved")
             ** ( Unchecked
-                  <| View "Cannot apply for this subsidy" (Record neutral)
+                  <| View "Cannot approve" (Record neutral)
               )
         , Variable "approved"
             ** ( Unchecked
