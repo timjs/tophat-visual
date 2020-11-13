@@ -1,16 +1,21 @@
 module Concur.Dom.Layout
+  -- # Actions
+  ( area
   -- # Boxes
-  ( element
   , row
   , column
-  , group
   -- # Text
   , text
-  -- # Shapes
+  -- # Lines
   , Orientation(..)
   , Direction(..)
+  , Sided(..)
+  , Sized(..)
   , line
   , head
+  -- # Shapes
+  , group
+  , box
   , rectangle
   , square
   , circle
@@ -19,10 +24,14 @@ module Concur.Dom.Layout
 
 import Preload
 import Concur (class Lift, class Shift)
-import Concur.Dom (Dom, Widget)
+import Concur.Dom (Dom, Attr, Widget)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Record as Record
+
+---- Actions -------------------------------------------------------------------
+area :: forall m a. Shift Widget m => Array (Attr a) -> m a -> m a
+area = Node.div_
 
 ---- Boxes ---------------------------------------------------------------------
 element :: forall m a s. Shift Widget m => Record s -> m a -> m a
@@ -79,8 +88,8 @@ type LineStyle r
     | r
     }
 
-line :: forall m a r. Lift Dom m => LineStyle r -> Orientation -> Number -> m a
-line { draw, stroke, thickness } orientation length =
+line :: forall m a r. Lift Dom m => Orientation -> Number -> LineStyle r -> m a
+line orientation length { draw, stroke, thickness } =
   element
     ( { position: "relative"
       , borderColor: draw
@@ -101,8 +110,8 @@ line { draw, stroke, thickness } orientation length =
       , height: length |> pc
       }
 
-head :: forall m a r. Lift Dom m => LineStyle r -> Direction -> m a
-head { draw, stroke, thickness } direction =
+head :: forall m a r. Lift Dom m => Direction -> LineStyle r -> m a
+head direction { draw, stroke, thickness } =
   element
     ( { width: 0.0 |> pc
       , height: 0.0 |> pc
@@ -121,11 +130,28 @@ head { draw, stroke, thickness } direction =
       }
 
 ---- Shapes --------------------------------------------------------------------
-type ShapeStyle r
-  = LineStyle ( fill :: Color | r )
+data Sided a
+  = All a
+  | Some { top :: a, right :: a, bottom :: a, left :: a }
 
-group :: forall m a r. Shift Widget m => LineStyle r -> Orientation -> m a -> m a
-group { draw, stroke, thickness } orientation =
+derive instance functorSided :: Functor Sided
+
+convert :: Sided String -> String
+convert = case _ of
+  All a -> a
+  Some { top, right, bottom, left } -> unwords [ top, right, bottom, left ]
+
+data Sized a
+  = Exactly a
+  | Maximally a
+  | Minimally a
+  | Between a a
+
+type ShapeStyle r
+  = LineStyle ( fill :: Color, margin :: Sided Number, padding :: Sided Number | r )
+
+group :: forall m a r. Shift Widget m => Orientation -> LineStyle r -> m a -> m a
+group orientation { draw, stroke, thickness } =
   element
     { borderColor: draw
     , borderStyle: stroke
@@ -137,8 +163,8 @@ group { draw, stroke, thickness } orientation =
     Horizontal -> unwords [ thickness |> pt, "0" ]
     Vertical -> unwords [ "0", thickness |> pt ]
 
-box :: forall m a r. Shift Widget m => ShapeStyle r -> Number -> Number -> Number -> m a -> m a
-box { fill, draw, stroke, thickness } round width height =
+box :: forall m a r. Shift Widget m => Number -> Number -> Number -> ShapeStyle r -> m a -> m a
+box round width height { fill, draw, stroke, thickness, margin, padding } =
   element
     { width: width |> pc
     , height: height |> pc
@@ -147,21 +173,23 @@ box { fill, draw, stroke, thickness } round width height =
     , borderColor: draw
     , borderStyle: stroke
     , borderWidth: thickness |> pt
+    , margin: margin |> map pc |> convert
+    , padding: padding |> map pc |> convert
     }
 
-rectangle :: forall m a r. Shift Widget m => ShapeStyle r -> Number -> Number -> m a -> m a
-rectangle style = box style 0.0
+rectangle :: forall m a r. Shift Widget m => Number -> Number -> ShapeStyle r -> m a -> m a
+rectangle = box 0.0
 
-square :: forall m a r. Shift Widget m => ShapeStyle r -> Number -> m a -> m a
-square style size = rectangle style size size
+square :: forall m a r. Shift Widget m => Number -> ShapeStyle r -> m a -> m a
+square size = rectangle size size
 
-circle :: forall m a r. Shift Widget m => ShapeStyle r -> Number -> m a -> m a
-circle style radius = box style 50.0 diameter diameter
+circle :: forall m a r. Shift Widget m => Number -> ShapeStyle r -> m a -> m a
+circle radius = box 50.0 diameter diameter
   where
   diameter = radius * 2.0
 
-diamond :: forall m a r. Shift Widget m => ShapeStyle r -> Number -> Number -> m a -> m a
-diamond style width height inner = rotate 45.0 (rectangle style width height (rotate (-45.0) inner))
+diamond :: forall m a r. Shift Widget m => Number -> Number -> ShapeStyle r -> m a -> m a
+diamond width height style inner = rotate 45.0 (rectangle width height style (rotate (-45.0) inner))
 
 ---- Transformations -----------------------------------------------------------
 rotate :: forall m a. Shift Widget m => Number -> m a -> m a
