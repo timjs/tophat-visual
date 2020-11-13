@@ -8,9 +8,10 @@ module Concur.Dom.Input
   ) where
 
 import Preload
-import Concur.Dom (Widget, stringValue)
+import Concur.Dom (Widget, intValue, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
+import Data.Array as Array
 
 ---- Input ---------------------------------------------------------------------
 button :: String -> Widget Unit
@@ -71,7 +72,17 @@ inputbox label placeholder value = do
       else
         inputbox label placeholder value
 
-selectionbox :: String -> Array String -> Widget String
+selectionbox :: forall a. Show a => String -> Array a -> Widget a
 selectionbox label options = do
-  Node.select []
-    <| map (\s -> Node.option [ Attr.value s ] [ Node.text s ]) options
+  r <-
+    Node.select
+      [ Attr.label label
+      , Attr.onChange
+      ]
+      (Array.mapWithIndex go options)
+  case intValue r |= Array.index options of
+    Just x -> done x
+    Nothing -> selectionbox label options
+  where
+  -- go :: Show a => Int -> a -> Widget a
+  go i x = Node.option [ Attr.value <| show i ] [ Node.text <| show x ]

@@ -9,7 +9,27 @@ input {
   border-bottom: 1pt solid black;
 }
 
-input:focus {
+input:active {
   outline      : none;
+  border-bottom: 1pt solid red;
+}
+
+select {
+  appearance           : none;
+  -webkit-appearance   : none;
+  -moz-appearance      : none;
+  border               : none;
+  outline              : none;
+  border-radius        : 0pc;
+  /* width             : auto; */
+  margin               : 0;
+  font                 : initial;
+  padding              : 0pc;
+  /* background        : lightgray; */
+
+  /* border-bottom     : 1pt solid black; */
+}
+
+select:active {
   border-bottom: 1pt solid red;
 }
