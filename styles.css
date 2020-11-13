@@ -1,0 +1,15 @@
+body {
+  font-family: Lucida Grande;
+}
+
+input {
+  display      : block;
+  width        : auto;
+  border       : none;
+  border-bottom: 1pt solid black;
+}
+
+input:focus {
+  outline      : none;
+  border-bottom: 1pt solid red;
+}

@@ -2,7 +2,9 @@ module Concur.Dom.Input
   -- # Inputs
   ( button
   , checkbox
+  , textbox
   , inputbox
+  , selectionbox
   ) where
 
 import Preload
@@ -30,6 +32,17 @@ checkbox label checked = do
     ]
   done (not checked)
 
+textbox :: String -> Widget String
+textbox value = do
+  Node.div [ void Attr.onClick ] [ Node.text value ]
+  new <- Node.div' [ inputbox "label" value value, button "Cancel" ||- value ]
+  --XXX inconsistent formatting when compared to `case-of`...
+  done
+    if new == "" then
+      value
+    else
+      new
+
 inputbox :: String -> String -> String -> Widget String
 inputbox label placeholder value = do
   result <-
@@ -39,6 +52,14 @@ inputbox label placeholder value = do
       , Attr.label label
       , Attr.value value
       , Attr.placeholder placeholder
+      , Attr.style
+          { boxSizing: "border-box"
+          , backgroundColor: "transparent"
+          , border: "none"
+          , borderBottom: "1px solid black"
+          , width: "auto"
+          , height: "auto"
+          }
       , Left <|| Attr.onInput
       , Right <|| Attr.onKeyDown
       ]
@@ -49,3 +70,8 @@ inputbox label placeholder value = do
         done value
       else
         inputbox label placeholder value
+
+selectionbox :: String -> Array String -> Widget String
+selectionbox label options = do
+  Node.select []
+    <| map (\s -> Node.option [ Attr.value s ] [ Node.text s ]) options
