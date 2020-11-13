@@ -5,6 +5,7 @@ import Concur (display, infinite, merge)
 import Concur.Dom (Signal, Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
+import Concur.Dom.Input as Input
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Task.Script.Error (Unchecked(..))
@@ -15,24 +16,24 @@ task :: Unchecked Task -> Signal (Unchecked Task)
 task u@(Unchecked t) = case t of
   ---- Editors
   Enter b m ->
-    infinite b (box Icon.pen m)
-      ||> \b' -> Unchecked (Enter b' m)
+    infinite m (box Icon.pen)
+      ||> \m' -> Unchecked (Enter b m')
   Update m e ->
-    infinite e (box Icon.edit m)
-      ||> \e' -> Unchecked (Update m e')
+    infinite m (box Icon.edit)
+      ||> \m' -> Unchecked (Update m' e)
   Change m e ->
-    infinite ({} ** e) (couple Mutating (box Icon.edit m) (box Icon.database ""))
-      ||> \({} ** e') -> Unchecked (Change m e')
+    infinite (m ** "") (couple Mutating (box Icon.edit) (box Icon.database))
+      ||> \(m' ** _) -> Unchecked (Change m' e)
   View m e ->
-    infinite e (box Icon.eye m)
-      ||> \e' -> Unchecked (View m e')
+    infinite m (box Icon.eye)
+      ||> \m' -> Unchecked (View m' e)
   Watch m e ->
-    infinite ({} ** e) (couple Reading (box Icon.eye m) (box Icon.database ""))
-      ||> \({} ** e') -> Unchecked (Watch m e')
+    infinite (m ** "") (couple Reading (box Icon.eye) (box Icon.database))
+      ||> \(m' ** _) -> Unchecked (Watch m' e)
   ---- Combinators
   Lift e ->
-    infinite e (box Icon.check_square "")
-      ||> \e' -> Unchecked (Lift e')
+    infinite "" (box Icon.check_square)
+      ||> \m' -> Unchecked (Lift e)
   Pair ts ->
     group ts
       ||> \ts' -> Unchecked (Pair ts')
@@ -54,18 +55,18 @@ task u@(Unchecked t) = case t of
       ||> \(t1' ** t2') -> Unchecked (Step m t1' t2')
   ---- Extras
   Execute n a ->
-    infinite n (box Icon.none "")
+    infinite n (box Icon.none)
       ||> \n' -> Unchecked (Execute n' a)
   Hole a ->
-    infinite {} (box Icon.question "")
-      ||> \_ -> Unchecked (Hole a)
+    infinite "" (box Icon.question)
+      ||> \m' -> Unchecked (Hole a)
   ---- Shares
   Share e ->
-    infinite e (box Icon.retweet "")
-      ||> \e' -> Unchecked (Share e')
+    infinite "" (box Icon.retweet)
+      ||> \m' -> Unchecked (Share e)
   Assign e1 e2 ->
-    infinite (e2 ** e1) (couple Writing (box Icon.retweet "") (box Icon.database ""))
-      ||> \(e2' ** e1') -> Unchecked (Assign e1' e2')
+    infinite ("" ** "") (couple Writing (box Icon.retweet) (box Icon.database))
+      ||> \(_ ** _) -> Unchecked (Assign e1 e2)
 
 group :: Array (Unchecked Task) -> Signal (Array (Unchecked Task))
 group ts =
@@ -75,54 +76,56 @@ group ts =
   --   ]
   -- where
   -- bar = Layout.line { draw: "lightgray", stroke: "solid", thickness: 4.0 } Layout.Horizontal 60.0
-  Layout.group
+  Layout.group Layout.Horizontal
     { draw: "lightgray"
     , stroke: "solid"
     , thickness: 4.0
     -- , margin: "-2pt"
-    }
-    Layout.Horizontal do
-    traverse task ts
+    } do
+    Layout.row do
+      traverse task ts
 
 connect :: Unchecked Task ** Unchecked Task -> Signal (Unchecked Task ** Unchecked Task)
 connect (t1 ** t2) =
   Layout.column do
     t1' <- task t1
-    display <| Layout.line { draw: "lightgray", stroke: "solid", thickness: 1.0 } Layout.Vertical 2.0
-    display <| Layout.head { draw: "lightgray", stroke: "solid", thickness: 1.0 } Layout.Down
+    display <| Layout.line Layout.Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+    display <| Layout.head Layout.Down { draw: "lightgray", stroke: "solid", thickness: 1.0 }
     t2' <- task t2
     done (t1' ** t2')
 
 ---- Widgets -------------------------------------------------------------------
 -- | [i a]^m
-box :: forall a. Icon -> Message -> a -> Widget a
-box i m a =
-  Layout.element
-    { backgroundColor: "lightgray"
-    , borderRadius: "0.5pc"
-    , minWidth: "10pc"
-    , minHeight: "1pc"
-    , padding: "6pt"
-    , margin: "0 1pc"
-    }
-    (merge [ i, Layout.text m ])
+box :: Icon -> Message -> Widget Message
+box i m =
+  Layout.box 0.5 10.0 1.0
+    { fill: "lightgray"
+    , draw: "none"
+    , stroke: "none"
+    , thickness: 0.0
+    , padding: Layout.All 0.5
+    , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
+    } do
+    Layout.row do
+      merge [ i, Input.textbox m ]
 
 -- | a *--* b
 couple :: forall a b. Mode -> (a -> Widget a) -> (b -> Widget b) -> (a ** b) -> Widget (a ** b)
 couple m f g (a ** b) =
-  Layout.row (merge [ f a ||> Left, line, g b ||> Right ])
-    ||> case _ of
-        Left a' -> a' ** b
-        Right b' -> a ** b'
+  Layout.row do
+    r <- merge [ f a ||> Left, line, g b ||> Right ]
+    done case r of
+      Left a' -> a' ** b
+      Right b' -> a ** b'
   where
   line = case m of
     Reading -> Layout.row <| merge [ dot, connection ]
     Writing -> Layout.row <| merge [ connection, dot ]
     Mutating -> Layout.row <| merge [ dot, connection, dot ]
 
-  dot = Layout.circle { fill: "black", draw: "black", stroke: "solid", thickness: 0.0 } 0.33 empty
+  dot = Layout.circle 0.33 { fill: "black", draw: "black", stroke: "solid", thickness: 0.0, margin: Layout.All 0.0, padding: Layout.All 0.0 } empty
 
-  connection = Layout.line { draw: "black", stroke: "solid", thickness: 2.0 } Layout.Horizontal 4.0
+  connection = Layout.line Layout.Horizontal 4.0 { draw: "black", stroke: "solid", thickness: 2.0 }
 
 data Mode
   = Reading
