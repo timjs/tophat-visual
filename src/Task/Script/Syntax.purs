@@ -28,6 +28,8 @@ module Task.Script.Syntax
   ) where
 
 import Preload
+import Data.Doc as Doc
+import Data.Doc (Doc, class Display, display)
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 
@@ -40,7 +42,7 @@ showRow beg end sep as =
   as
     |> HashMap.toArrayBy check
     |> intercalate ", "
-    |> inbetween beg end
+    |> enclose beg end
   where
   check l x =
     let
@@ -61,7 +63,7 @@ type Labels
   = HashSet Label
 
 showLabels :: HashSet Label -> String
-showLabels = HashSet.toArray >> intercalate "," >> inbetween '{' '}'
+showLabels = HashSet.toArray >> intercalate "," >> enclose '{' '}'
 
 type Name
   = String
@@ -88,7 +90,7 @@ instance showType :: Show Type where
   show = case _ of
     TFunction t1 t2 ->
       unwords [ show t1, "->", show t2 ]
-        |> inbetween '(' ')'
+        |> enclose '(' ')'
     TList t -> unwords [ "List", show t ]
     TRecord ts -> showFields ":" ts
     TVariant ts -> showVariants ts
@@ -281,38 +283,39 @@ derive instance eqTask :: Eq t => Eq (Task t)
 
 derive instance functorTask :: Functor Task
 
-instance showTask :: Show t => Show (Task t) where
-  show = case _ of
-    Enter t m -> unwords [ "enter", show t, quote m ]
-    Update m e -> unwords [ "update", quote m, show e ]
-    Change m e -> unwords [ "change", quote m, show e ]
-    View m e -> unwords [ "view", quote m, show e ]
-    Watch m e -> unwords [ "watch", quote m, show e ]
-    Lift e -> unwords [ "done", show e ]
-    Pair ss -> unwords [ "pair", inner ss ]
-    Choose ss -> unwords [ "choose", inner ss ]
-    Branch bs -> unwords [ "branch", inner' bs ]
-    Select bs -> unwords [ "select", inner'' bs ]
-    Step m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
-    Execute n as -> unwords [ n, show as ]
-    Hole as -> unwords [ "?", show as ]
-    Share e -> unwords [ "share", show e ]
-    Assign e1 e2 -> unwords [ show e1, ":=", show e2 ]
+instance showTask :: Display t => Show (Task t) where
+  show = display >> Doc.render
+
+instance displayTask :: Display t => Display (Task t) where
+  display = case _ of
+    Enter t m -> Doc.words [ Doc.text "enter", Doc.show t, Doc.quotes (Doc.text m) ]
+    Update m e -> Doc.words [ Doc.text "update", Doc.quotes (Doc.text m), Doc.show e ]
+    Change m e -> Doc.words [ Doc.text "change", Doc.quotes (Doc.text m), Doc.show e ]
+    View m e -> Doc.words [ Doc.text "view", Doc.quotes (Doc.text m), Doc.show e ]
+    Watch m e -> Doc.words [ Doc.text "watch", Doc.quotes (Doc.text m), Doc.show e ]
+    Lift e -> Doc.words [ Doc.text "done", Doc.show e ]
+    Pair ss -> Doc.lines [ Doc.text "pair", inner ss ]
+    Choose ss -> Doc.lines [ Doc.text "choose", inner ss ]
+    Branch bs -> Doc.lines [ Doc.text "branch", inner' bs ]
+    Select bs -> Doc.lines [ Doc.text "select", inner'' bs ]
+    Step m t s -> Doc.lines [ Doc.words [ Doc.show m, Doc.text "<-", display t ], display s ]
+    Execute n as -> Doc.words [ Doc.text n, Doc.show as ]
+    Hole as -> Doc.words [ Doc.text "?", Doc.show as ]
+    Share e -> Doc.words [ Doc.text "share", Doc.show e ]
+    Assign e1 e2 -> Doc.words [ Doc.show e1, Doc.text ":=", Doc.show e2 ]
     where
+    -- inner :: Array t -> Doc
     inner =
-      map show
-        >> unlines
-        >> inbetween '\n' '\n'
-        >> inbetween '[' ']'
+      map display
+        >> Doc.lines
+        >> Doc.indent
 
     inner' =
-      map (\(e ** s) -> unlines [ unwords [ show e, "|->" ], show s ])
-        >> unlines
-        >> inbetween '\n' '\n'
-        >> inbetween '[' ']'
+      map (\(e ** s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+        >> Doc.lines
+        >> Doc.indent
 
     inner'' =
-      map (\(l ** e ** s) -> unlines [ unwords [ l, "?", show e, "|->" ], show s ])
-        >> unlines
-        >> inbetween '\n' '\n'
-        >> inbetween '[' ']'
+      map (\(l ** e ** s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+        >> Doc.lines
+        >> Doc.indent

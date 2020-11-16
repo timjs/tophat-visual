@@ -6,7 +6,7 @@ import Concur.Dom (Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
-import Concur.Dom.Layout (Sided, Direction(..), Orientation(..))
+import Concur.Dom.Layout (ShapeStyle, Sided(..), Direction(..), Orientation(..))
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Task.Script.Context (basics)
@@ -19,8 +19,8 @@ main :: Unchecked Task -> Widget (Unchecked Task)
 main u =
   repeat u \u' ->
     Layout.column
-      [ Layout.text <| show u'
-      , renderTask u'
+      [ renderTask u'
+      , Layout.code <| show u'
       ]
 
 renderTask :: Unchecked Task -> Widget (Unchecked Task)
@@ -95,21 +95,14 @@ renderTask u@(Unchecked t) =
     ]
 
 ---- Styles --------------------------------------------------------------------
-style_box ::
-  { draw :: String
-  , fill :: String
-  , margin :: Sided Number
-  , padding :: Sided Number
-  , stroke :: String
-  , thickness :: Number
-  }
+style_box :: ShapeStyle ()
 style_box =
   { fill: "lightgray"
   , draw: "lightgray"
   , stroke: "solid"
   , thickness: 4.0
-  , padding: Layout.All 0.5
-  , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
+  , padding: All 0.5
+  , margin: Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
   }
 
 ---- Widgets -------------------------------------------------------------------
@@ -181,7 +174,7 @@ renderShare m a b = do
     Writing -> Layout.row [ connection, dot ]
     Mutating -> Layout.row [ dot, connection, dot ]
 
-  dot = Layout.circle 0.33 { fill: "black", draw: "black", stroke: "solid", thickness: 0.0, margin: Layout.All 0.0, padding: Layout.All 0.0 } empty
+  dot = Layout.circle 0.33 { fill: "black", draw: "black", stroke: "solid", thickness: 0.0, margin: All 0.0, padding: All 0.0 } empty
 
   connection = Layout.line Layout.Horizontal 4.0 { draw: "black", stroke: "solid", thickness: 2.0 }
 

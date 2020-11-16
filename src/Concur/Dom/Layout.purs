@@ -4,15 +4,19 @@ module Concur.Dom.Layout
   , column
   -- # Text
   , text
+  , code
   , lines
   -- # Lines
+  , LineStyle
   , Orientation(..)
   , Direction(..)
   , Sided(..)
   , Sized(..)
+  , Color
   , line
   , head
   -- # Shapes
+  , ShapeStyle
   , group
   , box
   , rectangle
@@ -51,6 +55,9 @@ style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center
 --     }
 text :: forall a. String -> Widget a
 text = Node.text
+
+code :: forall a. String -> Widget a
+code s = Node.pre [] [ Node.text s ]
 
 lines :: forall a. Array String -> Widget a
 lines xs = column <| map Node.text xs
@@ -139,7 +146,12 @@ data Sized a
   | Between a a
 
 type ShapeStyle r
-  = LineStyle ( fill :: Color, margin :: Sided Number, padding :: Sided Number | r )
+  = LineStyle
+      ( fill :: Color
+      , margin :: Sided Number
+      , padding :: Sided Number
+      | r
+      )
 
 group :: forall a r. Orientation -> LineStyle r -> Array (Widget a) -> Widget a
 group orientation { draw, stroke, thickness } =

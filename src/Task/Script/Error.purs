@@ -14,6 +14,8 @@ module Task.Script.Error
   ) where
 
 import Preload
+import Data.Doc (class Display, display)
+import Data.Doc as Doc
 import Task.Script.Syntax (Label, Labels, Match, Name, Row, Task, Type, showLabels)
 import Task.Script.Context (Context)
 
@@ -23,19 +25,22 @@ data Unchecked f
 
 --NOTE: below instance is infinite, we create one for Tasks only
 -- instance showUnchecked :: Show (f (Unchecked f)) => Show (Unchecked f) where
+instance displayUnchecked :: Display (Unchecked Task) where
+  display (Unchecked x) = display x
+
 instance showUnchecked :: Show (Unchecked Task) where
-  show (Unchecked x) = show x
+  show = display >> Doc.render
 
 data Checked f
   = Fail Error (f (Unchecked f))
   | Bury (f (Checked f))
   | Pass Type (f (Checked f))
 
-instance showChecked :: Show (Checked Task) where
-  show = case _ of
-    Fail e u -> unwords [ "(!", show u, ":", show e, "!)" ]
-    Bury c -> unwords [ "(?", show c, "?)" ]
-    Pass a c -> unwords [ "(", show c, ":", show a, ")" ]
+instance displayChecked :: Display (Checked Task) where
+  display = case _ of
+    Fail e u -> Doc.words [ Doc.text "(!", display u, Doc.text ":", Doc.show e, Doc.text "!)" ]
+    Bury c -> Doc.words [ Doc.text "(?", display c, Doc.text "?)" ]
+    Pass a c -> Doc.words [ Doc.text "(", display c, Doc.text ":", Doc.show a, Doc.text ")" ]
 
 lift :: forall f. f (Unchecked f) -> f (Checked f) -> Error ++ Type -> Checked f
 lift u c = case _ of

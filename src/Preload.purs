@@ -17,7 +17,7 @@ module Preload
   , (??)
   , withDefault
   -- Strings
-  , inbetween
+  , enclose
   , quote
   , indent
   -- Arrays
@@ -179,11 +179,11 @@ withDefault :: forall a. Reexport.Maybe a -> a -> a
 withDefault = Reexport.flip fromMaybe
 
 ---- Strings -------------------------------------------------------------------
-inbetween :: Char -> Char -> String -> String
-inbetween a b s = String.singleton a ++ s ++ String.singleton b
+enclose :: Char -> Char -> String -> String
+enclose a b s = String.singleton a ++ s ++ String.singleton b
 
 quote :: String -> String
-quote = inbetween '"' '"'
+quote = enclose '"' '"'
 
 indent :: Int -> String -> String
 indent n s = Reexport.fold (Reexport.replicate n "  " :: Array String) ++ s
