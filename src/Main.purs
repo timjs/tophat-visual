@@ -8,7 +8,5 @@ import Task.Script.Renderer as Renderer
 import Test.Selection as Test
 
 main :: Effect Unit
--- main = runWidgetInDom "root" <| dynamic <| Renderer.task Example.request_subsidy
-main = runWidgetInDom "root" <| Test.main
-
--- main = runWidgetInDom "root" <| Renderer.main Example.request_subsidy
+-- main = runWidgetInDom "root" <| Test.main
+main = runWidgetInDom "root" <| Renderer.main Example.request_subsidy

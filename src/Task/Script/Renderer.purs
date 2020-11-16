@@ -1,153 +1,185 @@
 module Task.Script.Renderer where
 
 import Preload hiding (group)
-import Concur (display, loop, merge, dynamic)
-import Concur.Dom (Signal, Widget)
+import Concur (list', repeat)
+import Concur.Dom (Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
+import Concur.Dom.Layout (Sided, Direction(..), Orientation(..))
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
-import Data.String as String
-import Data.String.Pattern (Pattern(..))
 import Task.Script.Context (basics)
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (BasicType, Message, Task(..))
+import Task.Script.Syntax (BasicType, Expression, Message, Name, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
-main :: forall a. Unchecked Task -> Widget a
+-- main :: forall a. Unchecked Task -> Widget (Unchecked Task)
+main :: Unchecked Task -> Widget (Unchecked Task)
 main u =
-  dynamic
-    <| Layout.column do
-        u' <- task u
-        display <| Layout.text (show u')
+  repeat u \u' ->
+    Layout.column
+      [ Layout.text <| show u'
+      , renderTask u'
+      ]
 
-task :: Unchecked Task -> Signal (Unchecked Task)
-task u@(Unchecked t) =
-  Layout.column do
-    -- display <| Layout.text (show u)
-    case t of
-      ---- Editors
-      Enter b m ->
-        loop b (selection Icon.pen)
-          ||> \b' -> Unchecked (Enter b' m)
-      Update m e ->
-        loop m (box Icon.edit)
-          ||> \m' -> Unchecked (Update m' e)
-      Change m e ->
-        loop (m ** "") (couple Mutating (box Icon.edit) (box Icon.database))
-          ||> \(m' ** _) -> Unchecked (Change m' e)
-      View m e ->
-        loop m (box Icon.eye)
-          ||> \m' -> Unchecked (View m' e)
-      Watch m e ->
-        loop (m ** "") (couple Reading (box Icon.eye) (box Icon.database))
-          ||> \(m' ** _) -> Unchecked (Watch m' e)
-      ---- Combinators
-      Lift e ->
-        loop "" (box Icon.check_square)
-          ||> \m' -> Unchecked (Lift e)
-      Pair ts ->
-        group ts
-          ||> \ts' -> Unchecked (Pair ts')
-      Choose ts ->
-        group ts
-          ||> \ts' -> Unchecked (Choose ts')
-      Branch bs ->
-        group (map snd bs) ||> Array.zip (map fst bs)
-          ||> \bs' -> Unchecked (Branch bs')
-      Select bs ->
-        group (map trd bs) ||> Array.zip (map fst2 bs) ||> map swap
-          ||> \bs' -> Unchecked (Select bs')
-        where
-        fst2 (x ** y ** z) = x ** y
+renderTask :: Unchecked Task -> Widget (Unchecked Task)
+renderTask u@(Unchecked t) =
+  Layout.column
+    [ case t of
+        ---- Editors
+        Enter b m -> do
+          b' <- selectType Icon.pen b
+          done <| Unchecked (Enter b' m)
+        Update m e -> do
+          m' <- editMessage Icon.edit m
+          done <| Unchecked (Update m' e)
+        Change m e -> do
+          r <- renderShare Mutating (editMessage Icon.edit m) (editExpression Icon.database e)
+          let
+            m' ** e' = consolidate m e r
+          done <| Unchecked (Change m' e')
+        View m e -> do
+          m' <- editMessage Icon.eye m
+          done <| Unchecked (View m' e)
+        Watch m e -> do
+          r <- renderShare Reading (editMessage Icon.eye m) (editExpression Icon.database e)
+          let
+            m' ** e' = consolidate m e r
+          done <| Unchecked (Watch m' e')
+        ---- Combinators
+        Lift e -> do
+          e' <- editExpression Icon.check_square e
+          done <| Unchecked (Lift e)
+        Pair ts -> do
+          ts' <- renderGroup ts
+          done <| Unchecked (Pair ts')
+        Choose ts -> do
+          ts' <- renderGroup ts
+          done <| Unchecked (Choose ts')
+        Branch bs -> do
+          ts' <- renderGroup (map snd bs)
+          let
+            bs' = Array.zip (map fst bs) ts'
+          done <| Unchecked (Branch bs')
+        Select bs -> do
+          ts' <- renderGroup (map trd bs)
+          let
+            bs' = Array.zip (map fst2 bs) ts' |> map swap
+          done <| Unchecked (Select bs')
+          where
+          fst2 (x ** y ** z) = x ** y
 
-        swap ((x ** y) ** z) = x ** (y ** z)
-      Step m t1 t2 ->
-        connect (t1 ** t2)
-          ||> \(t1' ** t2') -> Unchecked (Step m t1' t2')
-      ---- Extras
-      Execute n a ->
-        loop n (box Icon.none)
-          ||> \n' -> Unchecked (Execute n' a)
-      Hole a ->
-        loop "" (box Icon.question)
-          ||> \m' -> Unchecked (Hole a)
-      ---- Shares
-      Share e ->
-        loop "" (box Icon.retweet)
-          ||> \m' -> Unchecked (Share e)
-      Assign e1 e2 ->
-        loop ("" ** "") (couple Writing (box Icon.retweet) (box Icon.database))
-          ||> \(_ ** _) -> Unchecked (Assign e1 e2)
+          swap ((x ** y) ** z) = x ** (y ** z)
+        Step m t1 t2 -> do
+          r <- renderStep t1 t2
+          let
+            t1' ** t2' = consolidate t1 t2 r
+          done <| Unchecked (Step m t1' t2')
+        ---- Extras
+        Execute n a -> do
+          n' <- selectTask n
+          done <| Unchecked (Execute n' a)
+        Hole a -> do
+          _ <- editMessage Icon.question ""
+          done <| Unchecked (Hole a)
+        ---- Shares
+        Share e -> do
+          e' <- editExpression Icon.retweet e
+          done <| Unchecked (Share e')
+        Assign e1 e2 -> do
+          r <- renderShare Writing (editExpression Icon.retweet e1) (editExpression Icon.database e2)
+          let
+            e1' ** e2' = consolidate e1 e2 r
+          done <| Unchecked (Assign e1' e2')
+    ]
 
-group :: Array (Unchecked Task) -> Signal (Array (Unchecked Task))
-group ts =
-  -- Layout.column
-  --   [ bar
-  --   , bar
-  --   ]
-  -- where
-  -- bar = Layout.line { draw: "lightgray", stroke: "solid", thickness: 4.0 } Layout.Horizontal 60.0
-  Layout.group Layout.Horizontal
-    { draw: "lightgray"
-    , stroke: "solid"
-    , thickness: 4.0
-    -- , margin: "-2pt"
-    } do
-    Layout.row do
-      traverse task ts
-
-connect :: Unchecked Task ** Unchecked Task -> Signal (Unchecked Task ** Unchecked Task)
-connect (t1 ** t2) =
-  Layout.column do
-    t1' <- task t1
-    display <| Layout.line Layout.Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
-    display <| Layout.head Layout.Down { draw: "lightgray", stroke: "solid", thickness: 1.0 }
-    t2' <- task t2
-    done (t1' ** t2')
+---- Styles --------------------------------------------------------------------
+style_box ::
+  { draw :: String
+  , fill :: String
+  , margin :: Sided Number
+  , padding :: Sided Number
+  , stroke :: String
+  , thickness :: Number
+  }
+style_box =
+  { fill: "lightgray"
+  , draw: "lightgray"
+  , stroke: "solid"
+  , thickness: 4.0
+  , padding: Layout.All 0.5
+  , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
+  }
 
 ---- Widgets -------------------------------------------------------------------
--- | [i a]^m
-box :: Icon -> Message -> Widget Message
-box i m =
-  Layout.box 0.5 10.0 1.0
-    { fill: "lightgray"
-    , draw: "none"
-    , stroke: "none"
-    , thickness: 0.0
-    , padding: Layout.All 0.5
-    , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
-    } do
-    Layout.row do
-      merge [ i, Input.entry m m ]
+type Both a
+  = Either a a
 
-selection :: Icon -> BasicType -> Widget BasicType
-selection i x =
-  Layout.box 0.5 10.0 1.0
-    { fill: "lightgray"
-    , draw: "none"
-    , stroke: "none"
-    , thickness: 0.0
-    , padding: Layout.All 0.5
-    , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
-    } do
-    Layout.row do
-      merge [ i, Input.picker basics ]
+consolidate :: forall a b. a -> b -> Either a b -> a ** b
+consolidate x y = case _ of
+  Left x' -> x' ** y
+  Right y' -> x ** y'
 
--- | a *--* b
-couple :: forall a b. Mode -> (a -> Widget a) -> (b -> Widget b) -> (a ** b) -> Widget (a ** b)
-couple m f g (a ** b) =
-  Layout.row do
-    r <- merge [ f a ||> Left, line, g b ||> Right ]
-    done case r of
-      Left a' -> a' ** b
-      Right b' -> a ** b'
+-- | [[ t ]]
+renderBox :: forall a. Array (Widget a) -> Widget a
+renderBox inner = Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
+
+-- | ============
+-- |  t1 ... tn
+-- | ===========
+renderGroup :: Array (Unchecked Task) -> Widget (Array (Unchecked Task))
+renderGroup ts =
+  Layout.group Horizontal style_box
+    [ Layout.row [ list' renderTask ts ] ]
+
+-- |    t1
+-- |    |
+-- | ..t2..
+renderStep :: Unchecked Task -> Unchecked Task -> Widget (Both (Unchecked Task))
+renderStep t1 t2 = do
+  Layout.column
+    [ renderTask t1 ||> Left
+    , Layout.line Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+    , Layout.head Downward { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+    , renderTask t2 ||> Right
+    ]
+
+-- | [[ i m ]]
+editMessage :: Icon -> Message -> Widget Message
+editMessage i m =
+  renderBox
+    [ i, Input.entry m m ]
+
+-- | [[ i b ]]
+selectTask :: Name -> Widget Name
+selectTask b =
+  --FIXME how to select default value?
+  renderBox
+    [ Input.picker [] ]
+
+-- | [[ i b ]]
+selectType :: Icon -> BasicType -> Widget BasicType
+selectType i b =
+  --FIXME how to select default value?
+  renderBox
+    [ i, Input.picker basics ]
+
+-- | [[ i e ]]
+editExpression :: Icon -> Expression -> Widget Expression
+editExpression i e =
+  renderBox
+    [ i, Layout.text <| show e ]
+
+-- | x *--* y
+renderShare :: forall a b. Mode -> Widget a -> Widget b -> Widget (Either a b)
+renderShare m a b = do
+  Layout.row [ a ||> Left, line, b ||> Right ]
   where
   line = case m of
-    Reading -> Layout.row <| merge [ dot, connection ]
-    Writing -> Layout.row <| merge [ connection, dot ]
-    Mutating -> Layout.row <| merge [ dot, connection, dot ]
+    Reading -> Layout.row [ dot, connection ]
+    Writing -> Layout.row [ connection, dot ]
+    Mutating -> Layout.row [ dot, connection, dot ]
 
   dot = Layout.circle 0.33 { fill: "black", draw: "black", stroke: "solid", thickness: 0.0, margin: Layout.All 0.0, padding: Layout.All 0.0 } empty
 
