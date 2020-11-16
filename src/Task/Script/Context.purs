@@ -3,6 +3,7 @@ module Task.Script.Context
   , toplevel
   -- # Types
   , (:->)
+  , basics
   , b_bool
   , b_int
   , b_string
@@ -34,6 +35,9 @@ toplevel =
 
 ---- Types ---------------------------------------------------------------------
 infixr 3 TFunction as :->
+
+basics :: Array BasicType
+basics = [ b_bool, b_int, b_string ]
 
 b_bool :: BasicType
 b_bool = BPrimitive TBool

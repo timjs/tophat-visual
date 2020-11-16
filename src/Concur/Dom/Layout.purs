@@ -6,6 +6,7 @@ module Concur.Dom.Layout
   , column
   -- # Text
   , text
+  , lines
   -- # Lines
   , Orientation(..)
   , Direction(..)
@@ -23,7 +24,7 @@ module Concur.Dom.Layout
   ) where
 
 import Preload
-import Concur (class Lift, class Shift)
+import Concur (class Lift, class Shift, class Merge, merge)
 import Concur.Dom (Dom, Attr, Widget)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
@@ -63,6 +64,9 @@ style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center
 --     }
 text :: forall m a. Lift Dom m => String -> m a
 text = Node.text
+
+lines :: forall m a. Merge m => Lift Dom m => Array String -> m a
+lines xs = column <| merge <| map Node.text xs
 
 ---- Lines ---------------------------------------------------------------------
 data Orientation

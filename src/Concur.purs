@@ -86,7 +86,7 @@ list render elements = do
         Nothing -> Array.deleteAt index elements ?? elements
         Just element' -> Array.updateAt index element' elements ?? elements
   where
-  indexedElements = Array.mapWithIndex (\index element -> (index ** _) <|| render element) <| elements
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ** _) <|| render element)
 
 {-
 import Concur.Core (Widget, orr)

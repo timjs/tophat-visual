@@ -4,6 +4,7 @@ body {
 
 input {
   display      : block;
+  font         : initial;
   width        : auto;
   border       : none;
   border-bottom: 1pt solid black;
@@ -25,11 +26,7 @@ select {
   margin               : 0;
   font                 : initial;
   padding              : 0pc;
-  /* background        : lightgray; */
+  background           : transparent;
 
-  /* border-bottom     : 1pt solid black; */
-}
-
-select:active {
-  border-bottom: 1pt solid red;
+  border-bottom: 1pt solid black;
 }

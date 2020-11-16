@@ -1,73 +1,85 @@
 module Task.Script.Renderer where
 
 import Preload hiding (group)
-import Concur (display, infinite, merge)
+import Concur (display, infinite, merge, dynamic)
 import Concur.Dom (Signal, Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
+import Data.String as String
+import Data.String.Pattern (Pattern(..))
+import Task.Script.Context (basics)
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (Message, Task(..))
+import Task.Script.Syntax (BasicType, Message, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
+main :: forall a. Unchecked Task -> Widget a
+main u =
+  dynamic
+    <| Layout.column do
+        u' <- task u
+        display <| Layout.text (show u')
+
 task :: Unchecked Task -> Signal (Unchecked Task)
 task u@(Unchecked t) =
-  Layout.column case t of
-    ---- Editors
-    Enter b m ->
-      infinite m (box Icon.pen)
-        ||> \m' -> Unchecked (Enter b m')
-    Update m e ->
-      infinite m (box Icon.edit)
-        ||> \m' -> Unchecked (Update m' e)
-    Change m e ->
-      infinite (m ** "") (couple Mutating (box Icon.edit) (box Icon.database))
-        ||> \(m' ** _) -> Unchecked (Change m' e)
-    View m e ->
-      infinite m (box Icon.eye)
-        ||> \m' -> Unchecked (View m' e)
-    Watch m e ->
-      infinite (m ** "") (couple Reading (box Icon.eye) (box Icon.database))
-        ||> \(m' ** _) -> Unchecked (Watch m' e)
-    ---- Combinators
-    Lift e ->
-      infinite "" (box Icon.check_square)
-        ||> \m' -> Unchecked (Lift e)
-    Pair ts ->
-      group ts
-        ||> \ts' -> Unchecked (Pair ts')
-    Choose ts ->
-      group ts
-        ||> \ts' -> Unchecked (Choose ts')
-    Branch bs ->
-      group (map snd bs) ||> Array.zip (map fst bs)
-        ||> \bs' -> Unchecked (Branch bs')
-    Select bs ->
-      group (map trd bs) ||> Array.zip (map fst2 bs) ||> map swap
-        ||> \bs' -> Unchecked (Select bs')
-      where
-      fst2 (x ** y ** z) = x ** y
+  Layout.column do
+    -- display <| Layout.text (show u)
+    case t of
+      ---- Editors
+      Enter b m ->
+        infinite b (selection Icon.pen)
+          ||> \b' -> Unchecked (Enter b' m)
+      Update m e ->
+        infinite m (box Icon.edit)
+          ||> \m' -> Unchecked (Update m' e)
+      Change m e ->
+        infinite (m ** "") (couple Mutating (box Icon.edit) (box Icon.database))
+          ||> \(m' ** _) -> Unchecked (Change m' e)
+      View m e ->
+        infinite m (box Icon.eye)
+          ||> \m' -> Unchecked (View m' e)
+      Watch m e ->
+        infinite (m ** "") (couple Reading (box Icon.eye) (box Icon.database))
+          ||> \(m' ** _) -> Unchecked (Watch m' e)
+      ---- Combinators
+      Lift e ->
+        infinite "" (box Icon.check_square)
+          ||> \m' -> Unchecked (Lift e)
+      Pair ts ->
+        group ts
+          ||> \ts' -> Unchecked (Pair ts')
+      Choose ts ->
+        group ts
+          ||> \ts' -> Unchecked (Choose ts')
+      Branch bs ->
+        group (map snd bs) ||> Array.zip (map fst bs)
+          ||> \bs' -> Unchecked (Branch bs')
+      Select bs ->
+        group (map trd bs) ||> Array.zip (map fst2 bs) ||> map swap
+          ||> \bs' -> Unchecked (Select bs')
+        where
+        fst2 (x ** y ** z) = x ** y
 
-      swap ((x ** y) ** z) = x ** (y ** z)
-    Step m t1 t2 ->
-      connect (t1 ** t2)
-        ||> \(t1' ** t2') -> Unchecked (Step m t1' t2')
-    ---- Extras
-    Execute n a ->
-      infinite n (box Icon.none)
-        ||> \n' -> Unchecked (Execute n' a)
-    Hole a ->
-      infinite "" (box Icon.question)
-        ||> \m' -> Unchecked (Hole a)
-    ---- Shares
-    Share e ->
-      infinite "" (box Icon.retweet)
-        ||> \m' -> Unchecked (Share e)
-    Assign e1 e2 ->
-      infinite ("" ** "") (couple Writing (box Icon.retweet) (box Icon.database))
-        ||> \(_ ** _) -> Unchecked (Assign e1 e2)
+        swap ((x ** y) ** z) = x ** (y ** z)
+      Step m t1 t2 ->
+        connect (t1 ** t2)
+          ||> \(t1' ** t2') -> Unchecked (Step m t1' t2')
+      ---- Extras
+      Execute n a ->
+        infinite n (box Icon.none)
+          ||> \n' -> Unchecked (Execute n' a)
+      Hole a ->
+        infinite "" (box Icon.question)
+          ||> \m' -> Unchecked (Hole a)
+      ---- Shares
+      Share e ->
+        infinite "" (box Icon.retweet)
+          ||> \m' -> Unchecked (Share e)
+      Assign e1 e2 ->
+        infinite ("" ** "") (couple Writing (box Icon.retweet) (box Icon.database))
+          ||> \(_ ** _) -> Unchecked (Assign e1 e2)
 
 group :: Array (Unchecked Task) -> Signal (Array (Unchecked Task))
 group ts =
@@ -109,6 +121,19 @@ box i m =
     } do
     Layout.row do
       merge [ i, Input.inputbox "" m m ]
+
+selection :: Icon -> BasicType -> Widget BasicType
+selection i x =
+  Layout.box 0.5 10.0 1.0
+    { fill: "lightgray"
+    , draw: "none"
+    , stroke: "none"
+    , thickness: 0.0
+    , padding: Layout.All 0.5
+    , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
+    } do
+    Layout.row do
+      merge [ i, Input.selectionbox "" basics ]
 
 -- | a *--* b
 couple :: forall a b. Mode -> (a -> Widget a) -> (b -> Widget b) -> (a ** b) -> Widget (a ** b)
