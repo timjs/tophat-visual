@@ -21,6 +21,7 @@ module Preload
   , quote
   , indent
   -- Arrays
+  , Idx
   , Slice
   , view
   , slice
@@ -188,6 +189,9 @@ indent :: Int -> String -> String
 indent n s = Reexport.fold (Reexport.replicate n "  " :: Array String) ++ s
 
 ---- Arrays --------------------------------------------------------------------
+type Idx
+  = Int
+
 type Slice
   = Slice.ArrayView
 
