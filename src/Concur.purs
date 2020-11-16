@@ -6,6 +6,7 @@ module Concur
   -- # Widgets
   , combine
   , merge
+  , repeat
   -- # Signals
   , dynamic
   , loop
@@ -33,19 +34,6 @@ import Data.Lens (Lens')
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
----- Classes -------------------------------------------------------------------
-class (Internal.ShiftMap s t) <= Shift s t
-
-instance shiftAll :: (Internal.ShiftMap s t) => Shift s t
-
-class (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) <= Lift v m
-
-instance liftAll :: (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) => Lift v m
-
-class (Internal.MultiAlternative f) <= Merge f
-
-instance mergeAll :: (Internal.MultiAlternative f) => Merge f
-
 ---- Widgets -------------------------------------------------------------------
 -- | Combine multiple widgets showing them in parallel, until all finish, and collect their outputs.
 combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
@@ -54,6 +42,12 @@ combine = Internal.andd
 -- | Merge multiple widgets showing them in parallel, until one finishes.
 merge :: forall a m. Merge m => Array (m a) -> m a
 merge = Internal.orr
+
+-- | Repeat a widget indefinitely.
+repeat :: forall m a. Bind m => a -> (a -> m a) -> m a
+repeat x w = do
+  x' <- w x
+  repeat x' w
 
 ---- Signals -------------------------------------------------------------------
 -- | Turn a (closed) signal into a widget.
@@ -88,6 +82,19 @@ list render elements = do
         Just element' -> Array.updateAt index element' elements ?? elements
   where
   indexedElements = elements |> Array.mapWithIndex (\index element -> (index ** _) <|| render element)
+
+---- Classes -------------------------------------------------------------------
+class (Internal.ShiftMap s t) <= Shift s t
+
+instance shiftAll :: (Internal.ShiftMap s t) => Shift s t
+
+class (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) <= Lift v m
+
+instance liftAll :: (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) => Lift v m
+
+class (Internal.MultiAlternative f) <= Merge f
+
+instance mergeAll :: (Internal.MultiAlternative f) => Merge f
 
 {-
 import Concur.Core (Widget, orr)
