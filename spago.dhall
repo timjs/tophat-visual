@@ -18,6 +18,7 @@ You can edit this file as you like.
   , "maybe"
   , "newtype"
   , "numbers"
+  , "pprint"
   , "psci-support"
   , "run"
   , "strings"

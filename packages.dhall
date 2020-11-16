@@ -123,6 +123,18 @@ let upstream =
 
 let overrides = {=}
 
-let additions = {=}
+let additions =
+  { pprint =
+      { dependencies =
+          [ "arrays"
+          , "strings"
+          , "unfoldable"
+          ]
+      , repo =
+          "https://github.com/paf31/purescript-pprint"
+      , version =
+          "v5.0.0"
+      }
+  }
 
 in  upstream // overrides // additions
