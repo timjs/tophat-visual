@@ -8,8 +8,8 @@ module Concur
   , merge
   -- # Signals
   , dynamic
-  , infinite
   , loop
+  , fix
   -- # Wires
   , Wire
   , local
@@ -60,12 +60,12 @@ dynamic :: forall m a b. Monad m => Cofree m a -> m b
 dynamic = Internal.dyn
 
 -- | Create a signal which ininitely loops over the value of a widget, starting with the initial one.
-infinite :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
-infinite = Internal.loopW
+loop :: forall m a. Monad m => a -> (a -> m a) -> Cofree m a
+loop = Internal.loopW
 
--- | Loop a signal so that the return value is passed to the beginning again.
-loop :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
-loop = Internal.loopS
+-- | fix a signal so that the return value is passed to the beginning again.
+fix :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
+fix = Internal.loopS
 
 ---- Wires ---------------------------------------------------------------------
 type Wire m a
@@ -92,8 +92,8 @@ list render elements = do
 import Concur.Core (Widget, orr)
 import qualified Data.List.Index as List
 
-infinite :: Monad m => (a -> m a) -> a -> m void
-infinite f = g
+loop :: Monad m => (a -> m a) -> a -> m void
+loop f = g
   where
     g x = f x >>= g
 

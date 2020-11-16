@@ -1,7 +1,7 @@
 module Task.Script.Renderer where
 
 import Preload hiding (group)
-import Concur (display, infinite, merge, dynamic)
+import Concur (display, loop, merge, dynamic)
 import Concur.Dom (Signal, Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
@@ -29,23 +29,23 @@ task u@(Unchecked t) =
     case t of
       ---- Editors
       Enter b m ->
-        infinite b (selection Icon.pen)
+        loop b (selection Icon.pen)
           ||> \b' -> Unchecked (Enter b' m)
       Update m e ->
-        infinite m (box Icon.edit)
+        loop m (box Icon.edit)
           ||> \m' -> Unchecked (Update m' e)
       Change m e ->
-        infinite (m ** "") (couple Mutating (box Icon.edit) (box Icon.database))
+        loop (m ** "") (couple Mutating (box Icon.edit) (box Icon.database))
           ||> \(m' ** _) -> Unchecked (Change m' e)
       View m e ->
-        infinite m (box Icon.eye)
+        loop m (box Icon.eye)
           ||> \m' -> Unchecked (View m' e)
       Watch m e ->
-        infinite (m ** "") (couple Reading (box Icon.eye) (box Icon.database))
+        loop (m ** "") (couple Reading (box Icon.eye) (box Icon.database))
           ||> \(m' ** _) -> Unchecked (Watch m' e)
       ---- Combinators
       Lift e ->
-        infinite "" (box Icon.check_square)
+        loop "" (box Icon.check_square)
           ||> \m' -> Unchecked (Lift e)
       Pair ts ->
         group ts
@@ -68,17 +68,17 @@ task u@(Unchecked t) =
           ||> \(t1' ** t2') -> Unchecked (Step m t1' t2')
       ---- Extras
       Execute n a ->
-        infinite n (box Icon.none)
+        loop n (box Icon.none)
           ||> \n' -> Unchecked (Execute n' a)
       Hole a ->
-        infinite "" (box Icon.question)
+        loop "" (box Icon.question)
           ||> \m' -> Unchecked (Hole a)
       ---- Shares
       Share e ->
-        infinite "" (box Icon.retweet)
+        loop "" (box Icon.retweet)
           ||> \m' -> Unchecked (Share e)
       Assign e1 e2 ->
-        infinite ("" ** "") (couple Writing (box Icon.retweet) (box Icon.database))
+        loop ("" ** "") (couple Writing (box Icon.retweet) (box Icon.database))
           ||> \(_ ** _) -> Unchecked (Assign e1 e2)
 
 group :: Array (Unchecked Task) -> Signal (Array (Unchecked Task))
