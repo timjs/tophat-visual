@@ -9,18 +9,18 @@ import Concur.Dom.Node as Node
 selection :: Array String -> String -> Widget String
 selection xs s = do
   Node.div'
-    [ Input.picker xs
+    [ Input.picker xs s
     , Node.text <| show { content: xs, selection: s }
     ]
 
 selection_ :: String -> Array String -> Signal String
 selection_ s xs = do
-  x <- hold s (Input.picker xs)
+  x <- hold s (Input.picker xs s)
   display <| Node.text <| show { content: xs, selection: x }
   done x
 
 main :: Widget String
-main = repeat "A" <| selection [ "A", "B", "C", "D" ]
+main = repeat "B" <| selection [ "A", "B", "C", "D" ]
 
 main_ :: forall a. Widget a
 main_ = dynamic <| selection_ "A" [ "A", "B", "C", "D" ]

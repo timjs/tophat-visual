@@ -153,17 +153,17 @@ editMessage i m =
 
 -- | [[ i b ]]
 selectTask :: Name -> Widget Name
-selectTask b =
+selectTask n =
   --FIXME how to select default value?
   renderBox
-    [ Input.picker [] ]
+    [ Input.picker [] n ]
 
 -- | [[ i b ]]
 selectType :: Icon -> BasicType -> Widget BasicType
 selectType i b =
   --FIXME how to select default value?
   renderBox
-    [ i, Input.picker basics ]
+    [ i, Input.picker basics b ]
 
 -- | [[ i e ]]
 editExpression :: Icon -> Expression -> Widget Expression

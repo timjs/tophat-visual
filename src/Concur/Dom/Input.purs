@@ -40,6 +40,24 @@ toggle checked = do
     ]
   done (not checked)
 
+picker :: forall a. Show a => Eq a => Array a -> a -> Widget a
+picker options default = do
+  result <-
+    Node.select
+      [ Attr.onChange ]
+      (Array.mapWithIndex go options)
+  case intValue result |= Array.index options of
+    Just x -> done x
+    Nothing -> picker options default
+  where
+  -- go :: Show a => Int -> a -> Widget a
+  go i x =
+    Node.option
+      [ Attr.selected (x == default)
+      , Attr.value <| show i
+      ]
+      [ Node.text <| show x ]
+
 -- | Text entry showing `value` and `placeholder` when `value` is empty.
 -- |
 -- | Commits when hitting the enter-key.
@@ -70,19 +88,6 @@ entry placeholder value = do
         done value
       else
         entry placeholder value
-
-picker :: forall a. Show a => Array a -> Widget a
-picker options = do
-  result <-
-    Node.select
-      [ Attr.onChange ]
-      (Array.mapWithIndex go options)
-  case intValue result |= Array.index options of
-    Just x -> done x
-    Nothing -> picker options
-  where
-  -- go :: Show a => Int -> a -> Widget a
-  go i x = Node.option [ Attr.value <| show i ] [ Node.text <| show x ]
 
 ---- Derived -------------------------------------------------------------------
 textbox :: String -> Widget String
