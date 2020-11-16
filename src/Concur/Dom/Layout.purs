@@ -1,8 +1,6 @@
 module Concur.Dom.Layout
-  -- # Actions
-  ( area
   -- # Boxes
-  , row
+  ( row
   , column
   -- # Text
   , text
@@ -24,30 +22,19 @@ module Concur.Dom.Layout
   ) where
 
 import Preload
-import Concur (class Lift, class Shift, class Merge, merge)
-import Concur.Dom (Dom, Attr, Widget)
+import Concur.Dom (Widget)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Record as Record
 
----- Actions -------------------------------------------------------------------
-area :: forall m a. Shift Widget m => Array (Attr a) -> m a -> m a
-area = Node.div_
-
 ---- Boxes ---------------------------------------------------------------------
-element :: forall m a s. Shift Widget m => Record s -> m a -> m a
-element s = Node.div_ [ Attr.style s ]
+element :: forall a s. Record s -> Array (Widget a) -> Widget a
+element s = Node.div [ Attr.style s ]
 
--- row :: forall a. Array (Widget a) -> Widget a
--- row :: forall m a. MultiAlternative m => Lift Dom m => Array (m a) -> m a
--- row = merge >> element ({ flexDirection: "row" } /\ style_flexelement)
-row :: forall m a. Shift Widget m => m a -> m a
+row :: forall a. Array (Widget a) -> Widget a
 row = element ({ flexDirection: "row" } /\ style_flexbox)
 
--- column :: forall a. Array (Widget a) -> Widget a
--- column :: forall m a. MultiAlternative m => Lift Dom m => Array (m a) -> m a
--- column = merge >> element ({ flexDirection: "column" } /\ style_flexbox)
-column :: forall m a. Shift Widget m => m a -> m a
+column :: forall a. Array (Widget a) -> Widget a
 column = element ({ flexDirection: "column" } /\ style_flexbox)
 
 style_flexbox :: { alignItems :: String, display :: String, justifyContent :: String }
@@ -62,11 +49,11 @@ style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center
 --     , decoration :: Line
 --     | r
 --     }
-text :: forall m a. Lift Dom m => String -> m a
+text :: forall a. String -> Widget a
 text = Node.text
 
-lines :: forall m a. Merge m => Lift Dom m => Array String -> m a
-lines xs = column <| merge <| map Node.text xs
+lines :: forall a. Array String -> Widget a
+lines xs = column <| map Node.text xs
 
 ---- Lines ---------------------------------------------------------------------
 data Orientation
@@ -74,10 +61,10 @@ data Orientation
   | Vertical
 
 data Direction
-  = Up
-  | Down
-  | Left
-  | Right
+  = Upward
+  | Downward
+  | Forward
+  | Backward
 
 type Color
   = String
@@ -92,7 +79,7 @@ type LineStyle r
     | r
     }
 
-line :: forall m a r. Lift Dom m => Orientation -> Number -> LineStyle r -> m a
+line :: forall a r. Orientation -> Number -> LineStyle r -> Widget a
 line orientation length { draw, stroke, thickness } =
   element
     ( { position: "relative"
@@ -114,7 +101,7 @@ line orientation length { draw, stroke, thickness } =
       , height: length |> pc
       }
 
-head :: forall m a r. Lift Dom m => Direction -> LineStyle r -> m a
+head :: forall a r. Direction -> LineStyle r -> Widget a
 head direction { draw, stroke, thickness } =
   element
     ( { width: 0.0 |> pc
@@ -154,7 +141,7 @@ data Sized a
 type ShapeStyle r
   = LineStyle ( fill :: Color, margin :: Sided Number, padding :: Sided Number | r )
 
-group :: forall m a r. Shift Widget m => Orientation -> LineStyle r -> m a -> m a
+group :: forall a r. Orientation -> LineStyle r -> Array (Widget a) -> Widget a
 group orientation { draw, stroke, thickness } =
   element
     { borderColor: draw
@@ -167,13 +154,13 @@ group orientation { draw, stroke, thickness } =
     Horizontal -> unwords [ thickness |> pt, "0" ]
     Vertical -> unwords [ "0", thickness |> pt ]
 
-box :: forall m a r. Shift Widget m => Number -> Number -> Number -> ShapeStyle r -> m a -> m a
+box :: forall a r. Number -> Number -> Number -> ShapeStyle r -> Array (Widget a) -> Widget a
 box round width height { fill, draw, stroke, thickness, margin, padding } =
   element
     { width: width |> pc
     , height: height |> pc
     , backgroundColor: fill
-    , borderRadius: round |> ct
+    , borderRadius: round |> pc
     , borderColor: draw
     , borderStyle: stroke
     , borderWidth: thickness |> pt
@@ -181,22 +168,22 @@ box round width height { fill, draw, stroke, thickness, margin, padding } =
     , padding: padding |> map pc |> convert
     }
 
-rectangle :: forall m a r. Shift Widget m => Number -> Number -> ShapeStyle r -> m a -> m a
+rectangle :: forall a r. Number -> Number -> ShapeStyle r -> Array (Widget a) -> Widget a
 rectangle = box 0.0
 
-square :: forall m a r. Shift Widget m => Number -> ShapeStyle r -> m a -> m a
+square :: forall a r. Number -> ShapeStyle r -> Array (Widget a) -> Widget a
 square size = rectangle size size
 
-circle :: forall m a r. Shift Widget m => Number -> ShapeStyle r -> m a -> m a
+circle :: forall a r. Number -> ShapeStyle r -> Array (Widget a) -> Widget a
 circle radius = box 50.0 diameter diameter
   where
   diameter = radius * 2.0
 
-diamond :: forall m a r. Shift Widget m => Number -> Number -> ShapeStyle r -> m a -> m a
-diamond width height style inner = rotate 45.0 (rectangle width height style (rotate (-45.0) inner))
+diamond :: forall a r. Number -> Number -> ShapeStyle r -> Array (Widget a) -> Widget a
+diamond width height style inner = rotate 45.0 [ rectangle width height style [ rotate (-45.0) inner ] ]
 
 ---- Transformations -----------------------------------------------------------
-rotate :: forall m a. Shift Widget m => Number -> m a -> m a
+rotate :: forall a. Number -> Array (Widget a) -> Widget a
 rotate degrees =
   element
     { transform: "rotate(" ++ show degrees ++ "deg)" }
