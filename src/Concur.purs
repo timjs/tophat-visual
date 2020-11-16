@@ -33,6 +33,7 @@ import Data.Lens (Lens')
 import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
+---- Classes -------------------------------------------------------------------
 class (Internal.ShiftMap s t) <= Shift s t
 
 instance shiftAll :: (Internal.ShiftMap s t) => Shift s t

@@ -59,7 +59,7 @@ tree (Tree name children) = do
 title :: String -> Widget String
 title old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
-  new <- Node.div' [ Input.inputbox "label" old old, Input.button "Cancel" ||- old ]
+  new <- Node.div' [ Input.entry old old, Input.button "Cancel" ||- old ]
   done
     <| if new == "" then
         old

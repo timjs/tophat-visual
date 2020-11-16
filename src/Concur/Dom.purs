@@ -13,8 +13,7 @@ module Concur.Dom
   ) where
 
 import Preload
-import Concur.Core.FRP (Signal) as Concur
-import Concur.Core.Types (Widget) as Concur
+import Concur (Widget, Signal) as Concur
 import Concur.React (HTML) as React
 import Concur.React.Props (ReactProps, unsafeTargetValue) as React
 import Concur.React.Run (runWidgetInDom) as React

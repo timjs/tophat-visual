@@ -120,7 +120,7 @@ box i m =
     , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
     } do
     Layout.row do
-      merge [ i, Input.inputbox "" m m ]
+      merge [ i, Input.entry m m ]
 
 selection :: Icon -> BasicType -> Widget BasicType
 selection i x =
@@ -133,7 +133,7 @@ selection i x =
     , margin: Layout.Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
     } do
     Layout.row do
-      merge [ i, Input.selectionbox "" basics ]
+      merge [ i, Input.picker basics ]
 
 -- | a *--* b
 couple :: forall a b. Mode -> (a -> Widget a) -> (b -> Widget b) -> (a ** b) -> Widget (a ** b)

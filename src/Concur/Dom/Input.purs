@@ -1,10 +1,9 @@
 module Concur.Dom.Input
   -- # Inputs
   ( button
-  , checkbox
-  , textbox
-  , inputbox
-  , selectionbox
+  , toggle
+  , entry
+  , picker
   ) where
 
 import Preload
@@ -13,10 +12,17 @@ import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Data.Array as Array
 
----- Input ---------------------------------------------------------------------
+-- [normal|radio|image]button, toggle/switch/checkbox, slider, stepper, [normal|date|time|file|color|...]picker, entry/entry
+---- Controls ------------------------------------------------------------------
 button :: String -> Widget Unit
 button label = do
-  result <- Node.button [ Nothing -|| Attr.onClick, Just <|| Attr.onKeyDown ] [ Node.text label ]
+  result <-
+    Node.input
+      [ Attr._type "button"
+      , Attr.value label
+      , Attr.onClick ||- Nothing
+      , Attr.onKeyDown ||> Just
+      ]
   case result of
     Nothing -> done unit
     Just key ->
@@ -25,32 +31,25 @@ button label = do
       else
         button label
 
-checkbox :: String -> Bool -> Widget Bool
-checkbox label checked = do
-  Node.div'
-    [ Node.input [ Attr._type "checkbox", Attr.checked checked, unit -|| Attr.onInput ]
-    , Node.label [] [ Node.text label ]
+toggle :: Bool -> Widget Bool
+toggle checked = do
+  Node.input
+    [ Attr._type "checkbox"
+    , Attr.checked checked
+    , Attr.onInput ||- unit
     ]
   done (not checked)
 
-textbox :: String -> Widget String
-textbox value = do
-  Node.div [ void Attr.onClick ] [ Node.text value ]
-  new <- Node.div' [ inputbox "label" value value, button "Cancel" ||- value ]
-  --XXX inconsistent formatting when compared to `case-of`...
-  done
-    if new == "" then
-      value
-    else
-      new
-
-inputbox :: String -> String -> String -> Widget String
-inputbox label placeholder value = do
+-- | Text entry showing `value` and `placeholder` when `value` is empty.
+-- |
+-- | Commits when hitting the enter-key.
+entry :: String -> String -> Widget String
+entry placeholder value = do
   result <-
     Node.input
-      [ Attr.autoFocus true
-      , Attr._type "text"
-      , Attr.label label
+      [ Attr._type "text"
+      -- , Attr.autoFocus true
+      -- , Attr.label label
       , Attr.value value
       , Attr.placeholder placeholder
       , Attr.style
@@ -61,28 +60,38 @@ inputbox label placeholder value = do
           , width: "auto"
           , height: "auto"
           }
-      , Left <|| Attr.onInput
-      , Right <|| Attr.onKeyDown
+      , Attr.onInput ||> Left
+      , Attr.onKeyDown ||> Right
       ]
   case result of
-    Left event -> inputbox label placeholder (stringValue event)
+    Left event -> entry placeholder (stringValue event)
     Right key ->
       if Attr.isEnterEvent key then
         done value
       else
-        inputbox label placeholder value
+        entry placeholder value
 
-selectionbox :: forall a. Show a => String -> Array a -> Widget a
-selectionbox label options = do
-  r <-
+picker :: forall a. Show a => Array a -> Widget a
+picker options = do
+  result <-
     Node.select
-      [ Attr.label label
-      , Attr.onChange
-      ]
+      [ Attr.onChange ]
       (Array.mapWithIndex go options)
-  case intValue r |= Array.index options of
+  case intValue result |= Array.index options of
     Just x -> done x
-    Nothing -> selectionbox label options
+    Nothing -> picker options
   where
   -- go :: Show a => Int -> a -> Widget a
   go i x = Node.option [ Attr.value <| show i ] [ Node.text <| show x ]
+
+---- Derived -------------------------------------------------------------------
+textbox :: String -> Widget String
+textbox value = do
+  Node.div [ void Attr.onClick ] [ Node.text value ]
+  new <- Node.div' [ entry value value, button "Cancel" ||- value ]
+  --XXX inconsistent formatting when compared to `case-of`...
+  done
+    if new == "" then
+      value
+    else
+      new

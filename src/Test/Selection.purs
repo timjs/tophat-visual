@@ -9,17 +9,16 @@ import Concur.Dom.Node as Node
 selection :: Array String -> String -> Widget String
 selection xs s = do
   Node.div'
-    [ Input.selectionbox "Try this" xs
+    [ Input.picker xs
     , Node.text <| show { content: xs, selection: s }
     ]
 
 selection_ :: String -> Array String -> Signal String
 selection_ s xs = do
-  x <- hold s (Input.selectionbox "Try this" xs)
+  x <- hold s (Input.picker xs)
   display <| Node.text <| show { content: xs, selection: x }
   done x
 
--- main :: forall a. Widget a
 main :: Widget String
 main = loop "A" <| selection [ "A", "B", "C", "D" ]
 
