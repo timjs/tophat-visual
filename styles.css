@@ -30,3 +30,7 @@ select {
 
   border-bottom: 1pt solid black;
 }
+
+pre {
+  font-family: Fira Code;
+}
