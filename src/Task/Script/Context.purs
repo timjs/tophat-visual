@@ -6,6 +6,7 @@ module Task.Script.Context
   -- # Types
   , (:->)
   , listOf
+  , recordOf'
   , recordOf
   , taskOf
   ) where
@@ -50,8 +51,11 @@ infixr 3 TFunction as :->
 listOf :: BasicType -> Type
 listOf = BList >> ofBasic
 
+recordOf' :: Array (String ** BasicType) -> BasicType
+recordOf' = from >> BRecord
+
 recordOf :: Array (String ** BasicType) -> Type
-recordOf = from >> map ofBasic >> TRecord
+recordOf = recordOf' >> ofBasic
 
 taskOf :: Array (String ** BasicType) -> Type
 taskOf = from >> map ofBasic >> TTask

@@ -1,63 +1,70 @@
 module Task.Script.Example.Subsidy where
 
 import Preload
-import Task.Script.Context (Context, Typtext, listOf, recordOf, taskOf, (:->))
+import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Error (Unchecked(..))
 import Task.Script.Syntax (Argument(..), BasicType(..), Expression(..), Match(..), Task(..))
 
----- Types ---------------------------------------------------------------------
-t_citizen :: BasicType
-t_citizen =
-  BRecord
-    <| from
-        [ "ssn" ** BName "Nat"
-        , "name" ** BName "String"
-        , "address" ** BName "Address"
-        ]
+---- Context -------------------------------------------------------------------
+types :: Typtext
+types =
+  from
+    [ "Citizen"
+        ** recordOf'
+            [ "ssn" ** BName "Nat"
+            , "name" ** BName "String"
+            , "address" ** BName "Address"
+            ]
+    , "Company"
+        ** recordOf'
+            [ "coc" ** BName "Nat"
+            , "name" ** BName "String"
+            , "address" ** BName "Address"
+            ]
+    , "Address"
+        ** recordOf'
+            [ "street" ** BName "String"
+            , "house_number" ** BName "Nat"
+            , "postal_code" ** BName "Nat"
+            , "city" ** BName "String"
+            ]
+    , "Documents"
+        ** recordOf'
+            [ "invoice_amount" ** BName "Nat"
+            , "invoice_date" ** BName "Date"
+            , "roof_photos" ** BList (BName "String")
+            ]
+    , "Declaration"
+        ** recordOf'
+            [ "roof_photos" ** BList (BName "String")
+            , "date" ** BName "Date"
+            ]
+    , "Dossier"
+        ** recordOf'
+            [ "documents" ** BName "Documents"
+            , "declaration" ** BName "Declaration"
+            ]
+    ]
 
-t_company :: BasicType
-t_company =
-  BRecord
-    <| from
-        [ "coc" ** BName "Nat"
-        , "name" ** BName "String"
-        , "address" ** BName "Address"
-        ]
-
-t_address :: BasicType
-t_address =
-  BRecord
-    <| from
-        [ "street" ** BName "String"
-        , "house_number" ** BName "Nat"
-        , "postal_code" ** BName "Nat"
-        , "city" ** BName "String"
-        ]
-
-t_documents :: BasicType
-t_documents =
-  BRecord
-    <| from
-        [ "invoice_amount" ** BName "Nat"
-        , "invoice_date" ** BName "Date"
-        , "roof_photos" ** BList (BName "String")
-        ]
-
-t_declaration :: BasicType
-t_declaration =
-  BRecord
-    <| from
-        [ "roof_photos" ** BList (BName "String")
-        , "date" ** BName "Date"
-        ]
-
-t_dossier :: BasicType
-t_dossier =
-  BRecord
-    <| from
-        [ "documents" ** BName "Documents"
-        , "declaration" ** BName "Declaration"
-        ]
+context :: Context
+context =
+  from
+    [ "check_conditions"
+        ** recordOf [ "details" ** BName "Citizen" ]
+        :-> taskOf [ "approved" ** BName "Bool" ]
+    , "provide_documents"
+        ** recordOf [ "details" ** BName "Citizen" ]
+        :-> taskOf [ "documents" ** BName "Documents" ]
+    , "select_contractor"
+        ** recordOf []
+        :-> taskOf [ "contractor" ** BName "Company" ]
+    , "provide_declaration"
+        ** recordOf [ "contractor" ** BName "Company", "details" ** BName "Citizen" ]
+        :-> taskOf [ "declaration" ** BName "Declaration" ]
+    , "submit_request"
+        ** recordOf [ "dossier" ** BName "Dossier" ]
+        :-> taskOf []
+    ]
 
 ---- Tasks ---------------------------------------------------------------------
 {-
@@ -105,35 +112,3 @@ request_subsidy =
                   <| Execute "submit_request" (ARecord <| from [ "dossier" ** Record (from [ "declaration" ** Variable "declaration", "documents" ** Variable "documents" ]) ])
               )
         ]
-
----- Context -------------------------------------------------------------------
-context :: Context
-context =
-  from
-    [ "check_conditions"
-        ** recordOf [ "details" ** BName "Citizen" ]
-        :-> taskOf [ "approved" ** BName "Bool" ]
-    , "provide_documents"
-        ** recordOf [ "details" ** BName "Citizen" ]
-        :-> taskOf [ "documents" ** BName "Documents" ]
-    , "select_contractor"
-        ** recordOf []
-        :-> taskOf [ "contractor" ** BName "Company" ]
-    , "provide_declaration"
-        ** recordOf [ "contractor" ** BName "Company", "details" ** BName "Citizen" ]
-        :-> taskOf [ "declaration" ** BName "Declaration" ]
-    , "submit_request"
-        ** recordOf [ "dossier" ** BName "Dossier" ]
-        :-> taskOf []
-    ]
-
-typtext :: Typtext
-typtext =
-  from
-    [ "Citizen" ** t_citizen
-    , "Company" ** t_company
-    , "Address" ** t_address
-    , "Documents" ** t_documents
-    , "Declaration" ** t_declaration
-    , "Dossier" ** t_dossier
-    ]
