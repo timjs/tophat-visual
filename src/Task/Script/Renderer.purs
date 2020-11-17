@@ -9,159 +9,143 @@ import Concur.Dom.Input as Input
 import Concur.Dom.Layout (ShapeStyle, Sided(..), Direction(..), Orientation(..))
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
-import Task.Script.Context (basics)
+import Data.HashMap as HashMap
+import Task.Script.Context (Typtext, types)
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (BasicType, Expression, Message, Name, Task(..))
+import Task.Script.Syntax (Expression, Message, Name, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
--- main :: forall a. Unchecked Task -> Widget (Unchecked Task)
-main :: Unchecked Task -> Widget (Unchecked Task)
-main u =
+main :: Typtext -> Unchecked Task -> Widget (Unchecked Task)
+main g u =
   repeat u \u' ->
     Layout.column
-      [ renderTask u'
+      [ renderTask g u'
       , Layout.code <| show u'
       ]
 
-renderTask :: Unchecked Task -> Widget (Unchecked Task)
-renderTask u@(Unchecked t) =
-  Layout.column
-    [ case t of
-        ---- Editors
-        Enter b m -> do
-          b' <- selectType Icon.pen b
-          done <| Unchecked (Enter b' m)
-        Update m e -> do
-          m' <- editMessage Icon.edit m
-          done <| Unchecked (Update m' e)
-        Change m e -> do
-          r <- renderShare Mutating (editMessage Icon.edit m) (editExpression Icon.database e)
-          let
-            m' ** e' = consolidate m e r
-          done <| Unchecked (Change m' e')
-        View m e -> do
-          m' <- editMessage Icon.eye m
-          done <| Unchecked (View m' e)
-        Watch m e -> do
-          r <- renderShare Reading (editMessage Icon.eye m) (editExpression Icon.database e)
-          let
-            m' ** e' = consolidate m e r
-          done <| Unchecked (Watch m' e')
-        ---- Combinators
-        Lift e -> do
-          e' <- editExpression Icon.check_square e
-          done <| Unchecked (Lift e)
-        Pair ts -> do
-          ts' <- renderGroup ts
-          done <| Unchecked (Pair ts')
-        Choose ts -> do
-          ts' <- renderGroup ts
-          done <| Unchecked (Choose ts')
-        Branch bs -> do
-          ts' <- renderGroup (map snd bs)
-          let
-            bs' = Array.zip (map fst bs) ts'
-          done <| Unchecked (Branch bs')
-        Select bs -> do
-          ts' <- renderGroup (map trd bs)
-          let
-            bs' = Array.zip (map fst2 bs) ts' |> map swap
-          done <| Unchecked (Select bs')
-          where
-          fst2 (x ** y ** z) = x ** y
+renderTask :: Typtext -> Unchecked Task -> Widget (Unchecked Task)
+renderTask g u = Layout.column [ renderTask' u ]
+  where
+  renderTask' :: Unchecked Task -> Widget (Unchecked Task)
+  renderTask' u@(Unchecked t) = case t of
+    ---- Editors
+    Enter b m -> do
+      b' <- selectType Icon.pen b
+      done <| Unchecked (Enter b' m)
+    Update m e -> do
+      m' <- editMessage Icon.edit m
+      done <| Unchecked (Update m' e)
+    Change m e -> do
+      r <- renderShare Mutating (editMessage Icon.edit m) (editExpression Icon.database e)
+      let
+        m' ** e' = consolidate m e r
+      done <| Unchecked (Change m' e')
+    View m e -> do
+      m' <- editMessage Icon.eye m
+      done <| Unchecked (View m' e)
+    Watch m e -> do
+      r <- renderShare Reading (editMessage Icon.eye m) (editExpression Icon.database e)
+      let
+        m' ** e' = consolidate m e r
+      done <| Unchecked (Watch m' e')
+    ---- Combinators
+    Lift e -> do
+      e' <- editExpression Icon.check_square e
+      done <| Unchecked (Lift e)
+    Pair ts -> do
+      ts' <- renderGroup ts
+      done <| Unchecked (Pair ts')
+    Choose ts -> do
+      ts' <- renderGroup ts
+      done <| Unchecked (Choose ts')
+    Branch bs -> do
+      ts' <- renderGroup (map snd bs)
+      let
+        bs' = Array.zip (map fst bs) ts'
+      done <| Unchecked (Branch bs')
+    Select bs -> do
+      ts' <- renderGroup (map trd bs)
+      let
+        bs' = Array.zip (map fst2 bs) ts' |> map assoc
+      done <| Unchecked (Select bs')
+      where
+      fst2 (x ** y ** z) = x ** y
 
-          swap ((x ** y) ** z) = x ** (y ** z)
-        Step m t1 t2 -> do
-          r <- renderStep t1 t2
-          let
-            t1' ** t2' = consolidate t1 t2 r
-          done <| Unchecked (Step m t1' t2')
-        ---- Extras
-        Execute n a -> do
-          n' <- selectTask n
-          done <| Unchecked (Execute n' a)
-        Hole a -> do
-          _ <- editMessage Icon.question ""
-          done <| Unchecked (Hole a)
-        ---- Shares
-        Share e -> do
-          e' <- editExpression Icon.retweet e
-          done <| Unchecked (Share e')
-        Assign e1 e2 -> do
-          r <- renderShare Writing (editExpression Icon.retweet e1) (editExpression Icon.database e2)
-          let
-            e1' ** e2' = consolidate e1 e2 r
-          done <| Unchecked (Assign e1' e2')
-    ]
+      assoc ((x ** y) ** z) = x ** (y ** z)
+    Step m t1 t2 -> do
+      r <- renderStep t1 t2
+      let
+        t1' ** t2' = consolidate t1 t2 r
+      done <| Unchecked (Step m t1' t2')
+    ---- Extras
+    Execute n a -> do
+      n' <- selectTask n
+      done <| Unchecked (Execute n' a)
+    Hole a -> do
+      _ <- editMessage Icon.question ""
+      done <| Unchecked (Hole a)
+    ---- Shares
+    Share e -> do
+      e' <- editExpression Icon.retweet e
+      done <| Unchecked (Share e')
+    Assign e1 e2 -> do
+      r <- renderShare Writing (editExpression Icon.retweet e1) (editExpression Icon.database e2)
+      let
+        e1' ** e2' = consolidate e1 e2 r
+      done <| Unchecked (Assign e1' e2')
 
----- Styles --------------------------------------------------------------------
-style_box :: ShapeStyle ()
-style_box =
-  { fill: "lightgray"
-  , draw: "lightgray"
-  , stroke: "solid"
-  , thickness: 4.0
-  , padding: All 0.5
-  , margin: Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
-  }
+  -- | ============
+  -- |  t1 ... tn
+  -- | ===========
+  renderGroup :: Array (Unchecked Task) -> Widget (Array (Unchecked Task))
+  renderGroup ts =
+    Layout.group Horizontal style_box
+      [ Layout.row [ list' renderTask' ts ] ]
 
----- Widgets -------------------------------------------------------------------
-type Both a
-  = Either a a
-
-consolidate :: forall a b. a -> b -> Either a b -> a ** b
-consolidate x y = case _ of
-  Left x' -> x' ** y
-  Right y' -> x ** y'
+  -- |    t1
+  -- |    |
+  -- | ..t2..
+  renderStep :: Unchecked Task -> Unchecked Task -> Widget (Both (Unchecked Task))
+  renderStep t1 t2 = do
+    Layout.column
+      [ renderTask' t1 ||> Left
+      , Layout.line Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+      , Layout.head Downward { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+      , renderTask' t2 ||> Right
+      ]
 
 -- | [[ t ]]
-renderBox :: forall a. Array (Widget a) -> Widget a
-renderBox inner = Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
-
--- | ============
--- |  t1 ... tn
--- | ===========
-renderGroup :: Array (Unchecked Task) -> Widget (Array (Unchecked Task))
-renderGroup ts =
-  Layout.group Horizontal style_box
-    [ Layout.row [ list' renderTask ts ] ]
-
--- |    t1
--- |    |
--- | ..t2..
-renderStep :: Unchecked Task -> Unchecked Task -> Widget (Both (Unchecked Task))
-renderStep t1 t2 = do
-  Layout.column
-    [ renderTask t1 ||> Left
-    , Layout.line Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
-    , Layout.head Downward { draw: "lightgray", stroke: "solid", thickness: 1.0 }
-    , renderTask t2 ||> Right
-    ]
+showBox :: forall a. Array (Widget a) -> Widget a
+showBox inner = Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
 
 -- | [[ i m ]]
 editMessage :: Icon -> Message -> Widget Message
 editMessage i m =
-  renderBox
+  showBox
     [ i, Input.entry m m ]
 
 -- | [[ i b ]]
 selectTask :: Name -> Widget Name
 selectTask n =
-  --FIXME how to select default value?
-  renderBox
+  showBox
     [ Input.picker [] n ]
 
 -- | [[ i b ]]
-selectType :: Icon -> BasicType -> Widget BasicType
+selectType :: Icon -> Name -> Widget Name
 selectType i b =
-  --FIXME how to select default value?
-  renderBox
-    [ i, Input.picker basics b ]
+  showBox
+    [ i
+    , Input.picker'
+        [ "Builtin" ** Array.sort (HashMap.keys types)
+        , "Project" ** Array.sort (HashMap.keys g)
+        ]
+        b
+    ]
 
 -- | [[ i e ]]
 editExpression :: Icon -> Expression -> Widget Expression
 editExpression i e =
-  renderBox
+  showBox
     [ i, Layout.text <| show e ]
 
 -- | x *--* y
@@ -182,3 +166,23 @@ data Mode
   = Reading
   | Writing
   | Mutating
+
+---- Styles --------------------------------------------------------------------
+style_box :: ShapeStyle ()
+style_box =
+  { fill: "lightgray"
+  , draw: "lightgray"
+  , stroke: "solid"
+  , thickness: 4.0
+  , padding: All 0.5
+  , margin: Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
+  }
+
+---- Widgets -------------------------------------------------------------------
+type Both a
+  = Either a a
+
+consolidate :: forall a b. a -> b -> Either a b -> a ** b
+consolidate x y = case _ of
+  Left x' -> x' ** y
+  Right y' -> x ** y'

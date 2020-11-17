@@ -78,6 +78,7 @@ annotate (Unchecked u) f = case f u of
 ---- Errors --------------------------------------------------------------------
 data Error
   = UnknownVariable Name
+  | UnknownTypeName Name
   | UnknownLabel Label Type
   | ArgumentError Type Type
   | VariantError Label Type Type
@@ -105,6 +106,7 @@ data Error
 instance showError :: Show Error where
   show = case _ of
     UnknownVariable x -> unwords [ "Unknown variable", x |> quote ]
+    UnknownTypeName n -> unwords [ "Unknown type name", n |> quote ]
     UnknownLabel l t -> unwords [ "Unknown label", l |> quote, "in variant type", show t ]
     -- VariableMismatch x t_exp t_act -> unwords ["Variable", quote x, "has type", show t_act, ", but it is expected to be a(n)", show t_exp]
     -- ConstantMismatch c t_exp t_act -> unwords ["Constant", quote (show c), "has type", show t_act, "but it is expected to be a(n)", show t_exp]

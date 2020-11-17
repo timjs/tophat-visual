@@ -19,27 +19,27 @@ module Task.Script.Checker
 import Preload
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
-import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Task.Script.Context (Context, Typtext)
 import Task.Script.Error (Error(..), Unchecked(..))
-import Task.Script.Context (Context)
+import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
 class Check a where
-  check :: Context -> a -> Error ++ Type
+  check :: Typtext -> Context -> a -> Error ++ Type
 
 instance checkExpression :: Check Expression where
-  check g = case _ of
+  check s g = case _ of
     ---- Basics
     Variable x -> HashMap.lookup x g |> note (UnknownVariable x)
     Lambda m t e -> do
       d <- match m t
-      t' <- check (g ++ d) e
+      t' <- check s (g ++ d) e
       done <| TFunction t t'
     Apply e1 e2 -> do
-      t1 <- check g e1
+      t1 <- check s g e1
       case t1 of
         TFunction t' t -> do
-          t2 <- check g e2
+          t2 <- check s g e2
           if t' == t2 then
             done t
           else
@@ -47,32 +47,32 @@ instance checkExpression :: Check Expression where
         _ -> throw <| FunctionNeeded t1
     ---- Branches
     IfThenElse e1 e2 e3 -> do
-      t1 <- check g e1
+      t1 <- check s g e1
       case t1 of
         TPrimitive TBool -> do
-          t2 <- check g e2
-          t3 <- check g e3
+          t2 <- check s g e2
+          t3 <- check s g e3
           if t2 == t3 then
             done t2
           else
             throw <| BranchError t2 t3
         _ -> throw <| BoolNeeded t1
     Case e0 bs -> do
-      t0 <- check g e0
+      t0 <- check s g e0
       case t0 of
         TVariant r -> do
           bs' <- merge r bs --NOTE be aware of order: r is a subset of bs
           ts <-
             for bs' \(t ** m ** e) -> do
               d <- match m t
-              check (g ++ d) e
+              check s (g ++ d) e
           smash ts
         _ -> throw <| VariantNeeded t0
     ---- Records & Variants
-    Record es -> traverse (check g) es ||> TRecord
+    Record es -> traverse (check s g) es ||> TRecord
     Variant l e t -> case t of
       TVariant r -> do
-        t_e <- check g e
+        t_e <- check s g e
         case HashMap.lookup l r of
           Just t' ->
             if t_e == t' then
@@ -84,8 +84,8 @@ instance checkExpression :: Check Expression where
     ---- Lists
     Nil t -> done <| TList t
     Cons e1 e2 -> do
-      t1 <- check g e1
-      t2 <- check g e2
+      t1 <- check s g e1
+      t2 <- check s g e2
       case t2 of
         TList t' ->
           if t2 == t' then
@@ -99,60 +99,60 @@ instance checkExpression :: Check Expression where
     Constant (S _) -> done <| TPrimitive TString
 
 instance checkArgument :: Check Argument where
-  check g (ARecord es) = traverse (check g) es ||> TRecord
+  check s g (ARecord es) = traverse (check s g) es ||> TRecord
 
 instance checkUnchecked :: Check (Unchecked Task) where
-  check g (Unchecked i) = check g i
+  check s g (Unchecked i) = check s g i
 
 instance checkTask :: Check t => Check (Task t) where
-  check g = case _ of
-    Enter b _ -> done (ofBasic b) ||> wrapValue
-    Update _ e -> check g e |= needBasic ||> wrapValue
-    Change _ e -> check g e |= outofReference ||> wrapValue
-    View _ e -> check g e |= needBasic ||> wrapValue
-    Watch _ e -> check g e |= outofReference ||> wrapValue
-    Lift e -> check g e |= outofRecord ||> TTask
+  check s g = case _ of
+    Enter b _ -> HashMap.lookup b s |> note (UnknownTypeName b) ||> ofBasic ||> wrapValue
+    Update _ e -> check s g e |= needBasic ||> wrapValue
+    Change _ e -> check s g e |= outofReference ||> wrapValue
+    View _ e -> check s g e |= needBasic ||> wrapValue
+    Watch _ e -> check s g e |= outofReference ||> wrapValue
+    Lift e -> check s g e |= outofRecord ||> TTask
     Pair ss -> traverse subcheck ss |= unite ||> TTask
     Choose ss -> traverse subcheck ss |= intersect ||> TTask
     Branch bs -> traverse subcheck' bs |= intersect ||> TTask
     Select bs -> traverse subcheck'' bs |= intersect ||> TTask
-    Step m t s -> do
-      t_t <- check g t
-      case t_t of
+    Step m u1 u2 -> do
+      t_u1 <- check s g u1
+      case t_u1 of
         TTask r -> do
           d <- match m (TRecord r)
-          check (g ++ d) s
-        _ -> throw <| TaskNeeded t_t
+          check s (g ++ d) u2
+        _ -> throw <| TaskNeeded t_u1
     Execute x a -> do
       t_x <- HashMap.lookup x g |> note (UnknownVariable x)
       case t_x of
         TFunction r' t -> do
-          t_a <- check g a
+          t_a <- check s g a
           if r' == t_a then
             done t
           else
             throw <| ArgumentError r' t_a
         _ -> throw <| FunctionNeeded t_x
     Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
-    Share e -> check g e |= outofBasic ||> TReference ||> wrapValue
+    Share e -> check s g e |= outofBasic ||> TReference ||> wrapValue
     Assign e1 e2 -> do
-      t1 <- check g e1
+      t1 <- check s g e1
       b1 <- outofReference t1
-      b2 <- check g e2
+      b2 <- check s g e2
       if b1 == b2 then
         done <| TRecord neutral
       else
         throw <| AssignError b1 b2
     where
-    subcheck s = check g s |= outofTask
+    subcheck t = check s g t |= outofTask
 
-    subcheck' (e ** s) = do
-      t_e <- check g e
+    subcheck' (e ** t) = do
+      t_e <- check s g e
       case t_e of
-        TPrimitive TBool -> subcheck s
+        TPrimitive TBool -> subcheck t
         _ -> throw <| BoolNeeded t_e
 
-    subcheck'' (_ ** e ** s) = subcheck' (e ** s)
+    subcheck'' (_ ** e ** t) = subcheck' (e ** t)
 
 ---- Matcher -------------------------------------------------------------------
 match :: Match -> Type -> Error ++ Context

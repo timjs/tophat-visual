@@ -1,15 +1,13 @@
 module Task.Script.Context
   ( Context
-  , toplevel
+  , builtins
+  , Typtext
+  , types
   -- # Types
   , (:->)
-  , basics
-  , b_bool
-  , b_int
-  , b_string
-  , b_list
-  , t_record
-  , t_task
+  , listOf
+  , recordOf
+  , taskOf
   ) where
 
 import Preload
@@ -19,8 +17,8 @@ import Task.Script.Syntax (BasicType(..), Name, PrimType(..), Type(..), ofBasic)
 type Context
   = HashMap Name Type
 
-toplevel :: Context
-toplevel =
+builtins :: Context
+builtins =
   from
     [ "not" ** TPrimitive TBool :-> TPrimitive TBool
     , "&&" ** TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
@@ -33,26 +31,27 @@ toplevel =
     , "/" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
     ]
 
+type Typtext
+  = HashMap Name BasicType
+
+types :: Typtext
+types =
+  from
+    [ "Bool" ** BPrimitive TBool
+    , "Int" ** BPrimitive TInt
+    , "Nat" ** BPrimitive TInt
+    , "Date" ** BPrimitive TInt
+    , "String" ** BPrimitive TString
+    ]
+
 ---- Types ---------------------------------------------------------------------
 infixr 3 TFunction as :->
 
-basics :: Array BasicType
-basics = [ b_bool, b_int, b_string ]
+listOf :: BasicType -> Type
+listOf = BList >> ofBasic
 
-b_bool :: BasicType
-b_bool = BPrimitive TBool
+recordOf :: Array (String ** BasicType) -> Type
+recordOf = from >> map ofBasic >> TRecord
 
-b_int :: BasicType
-b_int = BPrimitive TInt
-
-b_string :: BasicType
-b_string = BPrimitive TString
-
-b_list :: BasicType -> BasicType
-b_list t = BList t
-
-t_record :: Array (String ** BasicType) -> Type
-t_record = from >> map ofBasic >> TRecord
-
-t_task :: Array (String ** BasicType) -> Type
-t_task = from >> map ofBasic >> TTask
+taskOf :: Array (String ** BasicType) -> Type
+taskOf = from >> map ofBasic >> TTask

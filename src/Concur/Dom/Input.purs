@@ -4,6 +4,7 @@ module Concur.Dom.Input
   , toggle
   , entry
   , picker
+  , picker'
   ) where
 
 import Preload
@@ -57,6 +58,27 @@ picker options default = do
       , Attr.value <| show i
       ]
       [ Node.text <| show x ]
+
+-- | Preconditions:
+-- | * all elements are unique
+picker' :: Array (String ** Array String) -> String -> Widget String
+picker' groups default = do
+  result <-
+    Node.select
+      [ Attr.onChange ]
+      (map go groups)
+  done <| stringValue result
+  where
+  go (label ** options) =
+    Node.optgroup [ Attr.label label ]
+      (map go' options)
+
+  go' option =
+    Node.option
+      [ Attr.selected (option == default)
+      , Attr.value option
+      ]
+      [ Node.text option ]
 
 -- | Text entry showing `value` and `placeholder` when `value` is empty.
 -- |

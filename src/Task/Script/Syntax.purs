@@ -77,6 +77,7 @@ type Message
 ---- Types ---------------------------------------------------------------------
 data Type
   = TFunction Type Type
+  | TName Name
   | TList Type
   | TRecord (Row Type)
   | TVariant (Row Type)
@@ -91,6 +92,7 @@ instance showType :: Show Type where
     TFunction t1 t2 ->
       unwords [ show t1, "->", show t2 ]
         |> enclose '(' ')'
+    TName n -> n
     TList t -> unwords [ "List", show t ]
     TRecord ts -> showFields ":" ts
     TVariant ts -> showVariants ts
@@ -132,7 +134,8 @@ instance showPrimType :: Show PrimType where
     TString -> "String"
 
 data BasicType
-  = BList BasicType
+  = BName Name
+  | BList BasicType
   | BRecord (Row BasicType)
   | BVariant (Row BasicType)
   | BPrimitive PrimType
@@ -141,6 +144,7 @@ derive instance eqBasicType :: Eq BasicType
 
 instance showBasicType :: Show BasicType where
   show = case _ of
+    BName n -> n
     BList t -> unwords [ "List", show t ]
     BRecord ts -> showFields ":" ts
     BVariant ts -> showVariants ts
@@ -149,6 +153,7 @@ instance showBasicType :: Show BasicType where
 ofType :: Type -> Maybe BasicType
 ofType = case _ of
   TPrimitive p -> Just <| BPrimitive p
+  TName n -> Just <| BName n
   TList t
     | Just t' <- ofType t -> Just <| BList t'
     | otherwise -> Nothing
@@ -167,6 +172,7 @@ ofBasic = case _ of
   BList t -> TList <| ofBasic t
   BRecord r -> TRecord <| map ofBasic r
   BVariant r -> TVariant <| map ofBasic r
+  BName n -> TName n
   BPrimitive p -> TPrimitive p
 
 isBasic :: Type -> Bool
@@ -260,7 +266,7 @@ instance showMatch :: Show Match where
 --     Task' t -> show t
 data Task t
   -- Editors
-  = Enter BasicType Message
+  = Enter Name Message
   | Update Message Expression
   | Change Message Expression
   | View Message Expression
@@ -288,7 +294,7 @@ instance showTask :: Display t => Show (Task t) where
 
 instance displayTask :: Display t => Display (Task t) where
   display = case _ of
-    Enter t m -> Doc.words [ Doc.text "enter", Doc.show t, Doc.quotes (Doc.text m) ]
+    Enter t m -> Doc.words [ Doc.text "enter", Doc.text t, Doc.quotes (Doc.text m) ]
     Update m e -> Doc.words [ Doc.text "update", Doc.quotes (Doc.text m), Doc.show e ]
     Change m e -> Doc.words [ Doc.text "change", Doc.quotes (Doc.text m), Doc.show e ]
     View m e -> Doc.words [ Doc.text "view", Doc.quotes (Doc.text m), Doc.show e ]

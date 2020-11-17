@@ -2,7 +2,7 @@ module Task.Script.Example.Booking where
 
 import Preload
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
+import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
 
 ---- Types ---------------------------------------------------------------------
 t_nationality :: Type
@@ -60,7 +60,7 @@ t_booking =
 enter_passenger :: Unchecked Task
 enter_passenger =
   Unchecked
-    <| Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter (BPrimitive TString) "Passenger details")
+    <| Step (MRecord <| from [ "value" ** MBind "passengers" ]) (Unchecked <| Enter "String" "Passenger details")
     <| Unchecked
     <| Select
         [ "Continue"

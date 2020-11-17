@@ -9,4 +9,4 @@ import Test.Selection as Test
 
 main :: Effect Unit
 -- main = runWidgetInDom "root" <| Test.main
-main = runWidgetInDom "root" <| Renderer.main Example.request_subsidy
+main = runWidgetInDom "root" <| Renderer.main Example.typtext Example.request_subsidy
