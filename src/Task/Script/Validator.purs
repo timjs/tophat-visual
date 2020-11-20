@@ -6,52 +6,52 @@ import Preload
 import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
-import Task.Script.Error (Checked(..), Error(..), Unchecked(..), bury, sink, fail, extract, lift, pass)
+import Task.Script.Error (Checked(..), Error(..), Unchecked(..), withTypeOf, extract, bury, sink, fail, extract, lift, pass)
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row, Task(..), Type(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------
 validate :: Typtext -> Context -> Unchecked Task -> Checked Task
 validate s g (Unchecked i) = case i of
   ---- Editors
-  Enter n m -> lift i (Enter n m) (HashMap.lookup n s |> note (UnknownTypeName n) ||> ofBasic ||> wrapValue)
-  Update m e -> lift i (Update m e) (check s g e |= needBasic ||> wrapValue)
-  Change m e -> lift i (Change m e) (check s g e |= outofReference ||> wrapValue)
-  View m e -> lift i (View m e) (check s g e |= needBasic ||> wrapValue)
-  Watch m e -> lift i (Watch m e) (check s g e |= outofReference ||> wrapValue)
-  Lift e -> lift i (Lift e) (check s g e |= outofRecord ||> TTask)
+  Enter n m -> lift g i (Enter n m) (HashMap.lookup n s |> note (UnknownTypeName n) ||> ofBasic ||> wrapValue)
+  Update m e -> lift g i (Update m e) (check s g e |= needBasic ||> wrapValue)
+  Change m e -> lift g i (Change m e) (check s g e |= outofReference ||> wrapValue)
+  View m e -> lift g i (View m e) (check s g e |= needBasic ||> wrapValue)
+  Watch m e -> lift g i (Watch m e) (check s g e |= outofReference ||> wrapValue)
+  Lift e -> lift g i (Lift e) (check s g e |= outofRecord ||> TTask)
   ---- Combinators
-  Pair us -> sink (Pair cs) (traverse outofBranch cs |= unite ||> TTask)
+  Pair us -> sink g (Pair cs) (traverse outofBranch cs |= unite ||> TTask)
     where
     cs = map validate1 us
-  Choose us -> sink (Choose cs) (traverse outofBranch cs |= intersect ||> TTask)
+  Choose us -> sink g (Choose cs) (traverse outofBranch cs |= intersect ||> TTask)
     where
     cs = map validate1 us
-  Branch us -> sink (Branch cs) (traverse (snd >> outofBranch) cs |= intersect ||> TTask)
+  Branch us -> sink g (Branch cs) (traverse (snd >> outofBranch) cs |= intersect ||> TTask)
     where
     cs = map validate2 us
-  Select us -> sink (Select cs) (traverse (snd >> snd >> outofBranch) cs |= intersect ||> TTask)
+  Select us -> sink g (Select cs) (traverse (snd >> snd >> outofBranch) cs |= intersect ||> TTask)
     where
     cs = map validate3 us
-  Step m u1@(Unchecked i1) u2@(Unchecked i2) -> case c1 of
-    Pass t1 _ -> case t1 of
+  Step m u1@(Unchecked i1) u2@(Unchecked i2) ->
+    withTypeOf c1 (Step m c1 c2) \t1 -> case t1 of
       TTask r1 -> case match m (TRecord r1) of
-        Left e2 -> fail i e2
-        Right d -> case c2' of
-          Pass t2 _ -> case t2 of
-            TTask r2 -> pass (Step m c1 c2') (TTask r2)
-            _ -> bury (Step m c1 (fail i2 <| TaskNeeded t2))
-          _ -> bury (Step m c1 c2')
+        Left e2 -> fail g i e2
+        Right d ->
+          withTypeOf c2' (Step m c1 c2') \t2 -> case t2 of
+            TTask r2 -> pass g' (Step m c1 c2') (TTask r2)
+            _ -> bury (Step m c1 (fail g' i2 <| TaskNeeded t2))
           where
-          c2' = validate s (g ++ d) u2
-      _ -> bury (Step m (fail i1 <| TaskNeeded t1) c2)
-    _ -> bury (Step m c1 c2)
+          c2' = validate s g' u2
+
+          g' = g ++ d
+      _ -> bury (Step m (fail g i1 <| TaskNeeded t1) c2)
     where
     c1 = validate s g u1
 
     c2 = validate s g u2 --NOTE: this is a first approximation, complete checking is in `c2'`
   ---- Builtins
   Execute n a ->
-    lift i (Execute n a) do
+    lift g i (Execute n a) do
       t_n <- HashMap.lookup n g |> note (UnknownVariable n)
       case t_n of
         TFunction r' t -> do
@@ -61,14 +61,14 @@ validate s g (Unchecked i) = case i of
           else
             throw <| ArgumentError r' t_a
         _ -> throw <| FunctionNeeded t_n
-  Hole _ -> fail i (HoleFound g) --TODO: how to handle holes?
+  Hole _ -> fail g i (HoleFound g) --TODO: how to handle holes?
   Share e ->
-    lift i (Share e) do
+    lift g i (Share e) do
       t <- check s g e
       b <- outofBasic t
       done <| wrapValue (TReference b)
   Assign e1 e2 ->
-    lift i (Assign e1 e2) do
+    lift g i (Assign e1 e2) do
       t1 <- check s g e1
       b1 <- outofReference t1
       b2 <- check s g e2
@@ -79,9 +79,9 @@ validate s g (Unchecked i) = case i of
   where
   validate1 :: Unchecked Task -> Checked Task
   validate1 u@(Unchecked i') = case validate s g u of --XXX crashes when eta expanded
-    Pass t j -> case t of
-      TTask _ -> pass j t
-      _ -> fail i' <| TaskNeeded t
+    Pass g t j -> case t of
+      TTask _ -> pass g j t
+      _ -> fail g i' <| TaskNeeded t
     c -> c
 
   -- | Validate a branch consisting of a boolean expression and an unchecked task.
@@ -94,8 +94,8 @@ validate s g (Unchecked i) = case i of
     e
       ** case check s g e of
           Right (TPrimitive TBool) -> validate1 u
-          Right t -> fail i' <| BoolNeeded t
-          Left x -> fail i' x
+          Right t -> fail g i' <| BoolNeeded t
+          Left x -> fail g i' x
 
   validate3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
   validate3 (l ** e ** u) = l ** validate2 (e ** u)

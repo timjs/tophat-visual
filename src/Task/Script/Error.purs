@@ -8,7 +8,8 @@ module Task.Script.Error
   , fail
   , bury
   , extract
-  , annotate
+  , withTypeOf
+  -- , annotate
   -- # Errors
   , Error(..)
   ) where
@@ -32,48 +33,56 @@ instance showUnchecked :: Show (Unchecked Task) where
   show = display >> Doc.render
 
 data Checked f
-  = Fail Error (f (Unchecked f))
+  = Fail Context Error (f (Unchecked f))
   | Bury (f (Checked f))
-  | Pass Type (f (Checked f))
+  | Pass Context Type (f (Checked f))
 
 instance displayChecked :: Display (Checked Task) where
   display = case _ of
-    Fail e u -> Doc.words [ Doc.text "(!", display u, Doc.text ":", Doc.show e, Doc.text "!)" ]
+    Fail _ e u -> Doc.words [ Doc.text "(!", display u, Doc.text ":", Doc.show e, Doc.text "!)" ]
     Bury c -> Doc.words [ Doc.text "(?", display c, Doc.text "?)" ]
-    Pass a c -> Doc.words [ Doc.text "(", display c, Doc.text ":", Doc.show a, Doc.text ")" ]
+    Pass _ a c -> Doc.words [ Doc.text "(", display c, Doc.text ":", Doc.show a, Doc.text ")" ]
 
 instance showChecked :: Show (Checked Task) where
   show = display >> Doc.render
 
-lift :: forall f. f (Unchecked f) -> f (Checked f) -> Error ++ Type -> Checked f
-lift u c = case _ of
-  Left e -> Fail e u
-  Right a -> Pass a c
+lift :: forall f. Context -> f (Unchecked f) -> f (Checked f) -> Error ++ Type -> Checked f
+lift g u c = case _ of
+  Left e -> Fail g e u
+  Right a -> Pass g a c
 
-sink :: forall f. f (Checked f) -> Error ++ Type -> Checked f
-sink c = case _ of
+sink :: forall f. Context -> f (Checked f) -> Error ++ Type -> Checked f
+sink g c = case _ of
   Left e -> Bury c
-  Right a -> Pass a c
+  Right a -> Pass g a c
 
-fail :: forall f. f (Unchecked f) -> Error -> Checked f
-fail u e = Fail e u
+fail :: forall f. Context -> f (Unchecked f) -> Error -> Checked f
+fail g u e = Fail g e u
 
-pass :: forall f. f (Checked f) -> Type -> Checked f
-pass c a = Pass a c
+pass :: forall f. Context -> f (Checked f) -> Type -> Checked f
+pass g c a = Pass g a c
 
 bury :: forall f. f (Checked f) -> Checked f
 bury = Bury
 
-extract :: Checked Task -> Error ++ Type
+extract :: forall f. Checked f -> Error ++ Type
 extract = case _ of
-  Pass t _ -> Right t
+  Pass _ t _ -> Right t
   _ -> Left UndeterminedType
 
-annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
-annotate (Unchecked u) f = case f u of
-  Left x -> Fail x u
-  Right (c ** t) -> Pass t c
+withTypeOf :: forall f. Checked f -> f (Checked f) -> (Type -> Checked f) -> Checked f
+withTypeOf c b f = case c of
+  Pass g t _ -> f t
+  _ -> Bury b
 
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
+-- annotate (Unchecked u) f = case f u of
+--   Left x -> Fail x u
+--   Right (c ** t) -> Pass t c
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
+-- annotate (Unchecked u) f = case f u of
+--   Left x -> Fail x u
+--   Right (c ** t) -> Pass t c
 -- replace :: Error -> Checked Task -> Checked Task
 -- replace x = case _ of
 --   Fail _ c -> Fail x c
