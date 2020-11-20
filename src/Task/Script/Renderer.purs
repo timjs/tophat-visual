@@ -12,7 +12,7 @@ import Data.Array as Array
 import Data.HashMap as HashMap
 import Task.Script.Context (Typtext, Context, types)
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (Expression, Message, Name, Task(..))
+import Task.Script.Syntax (Row, Arguments, Expression, Message, Name, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
 main :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
@@ -50,7 +50,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
       done <| Unchecked (Watch m' e')
     ---- Combinators
     Lift e -> do
-      e' <- editExpression Icon.check_square e
+      _ <- selectValues g Icon.check_square HashMap.empty
       done <| Unchecked (Lift e)
     Pair ts -> do
       ts' <- renderGroup ts
@@ -82,7 +82,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
       n' <- selectTask g n
       done <| Unchecked (Execute n' a)
     Hole a -> do
-      _ <- editMessage Icon.question ""
+      _ <- editHole g Icon.question a
       done <| Unchecked (Hole a)
     ---- Shares
     Share e -> do
@@ -115,23 +115,33 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
       ]
 
 -- | [[ t ]]
-showBox :: forall a. Array (Widget a) -> Widget a
-showBox inner =
+showBox :: forall a r. ShapeStyle r -> Array (Widget a) -> Widget a
+showBox style inner =
   Layout.column
     [ Layout.line Vertical 2.0 style_line
-    , Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
+    , Layout.box 0.5 10.0 1.0 style [ Layout.row inner ]
     ]
 
 -- | [[ i m ]]
 editMessage :: Icon -> Message -> Widget Message
 editMessage i m =
-  showBox
+  showBox style_box
     [ i, Input.entry m m ]
+
+editHole :: Context -> Icon -> Arguments -> Widget Name
+editHole g i as =
+  showBox style_hole
+    [ Input.picker'
+        [ "Builtin" ** []
+        , "Project" ** Array.sort (HashMap.keys g)
+        ]
+        "??"
+    ]
 
 -- | [[ i b ]]
 selectTask :: Context -> Name -> Widget Name
 selectTask g n =
-  showBox
+  showBox style_box
     [ Input.picker'
         [ "Builtin" ** []
         , "Project" ** Array.sort (HashMap.keys g)
@@ -142,7 +152,7 @@ selectTask g n =
 -- | [[ i b ]]
 selectType :: Typtext -> Icon -> Name -> Widget Name
 selectType s i n =
-  showBox
+  showBox style_box
     [ i
     , Input.picker'
         [ "Builtin" ** Array.sort (HashMap.keys types)
@@ -151,10 +161,15 @@ selectType s i n =
         n
     ]
 
+selectValues :: Context -> Icon -> Row Name -> Widget (Row Name)
+selectValues g i ns = do
+  _ <- showBox style_box []
+  done ns
+
 -- | [[ i e ]]
 editExpression :: Icon -> Expression -> Widget Expression
 editExpression i e =
-  showBox
+  showBox style_box
     [ i, Layout.text <| show e ]
 
 -- | x *--* y
@@ -186,6 +201,9 @@ style_box =
   , padding: All 0.5
   , margin: Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
   }
+
+style_hole :: ShapeStyle ()
+style_hole = style_box { stroke = "dash", fill = "white" }
 
 style_line :: ShapeStyle ()
 style_line = style_box { thickness = 1.0 }

@@ -21,7 +21,7 @@ import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Context (Context, Typtext)
 import Task.Script.Error (Error(..), Unchecked(..))
-import Task.Script.Syntax (Argument(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
 class Check a where
@@ -98,7 +98,7 @@ instance checkExpression :: Check Expression where
     Constant (I _) -> done <| TPrimitive TInt
     Constant (S _) -> done <| TPrimitive TString
 
-instance checkArgument :: Check Argument where
+instance checkArgument :: Check Arguments where
   check s g (ARecord es) = traverse (check s g) es ||> TRecord
 
 instance checkUnchecked :: Check (Unchecked Task) where

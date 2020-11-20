@@ -19,7 +19,7 @@ module Task.Script.Syntax
   , isBasic
   -- # Expressions
   , Expression(..)
-  , Argument(..)
+  , Arguments(..)
   , Constant(..)
   -- # Matches
   , Match(..)
@@ -217,12 +217,12 @@ instance showExpression :: Show Expression where
     Cons e1 e2 -> unwords [ show e1, "::", show e2 ]
     Constant c -> show c
 
-data Argument
+data Arguments
   = ARecord (Row Expression)
 
-derive instance eqArgument :: Eq Argument
+derive instance eqArguments :: Eq Arguments
 
-instance showArgument :: Show Argument where
+instance showArguments :: Show Arguments where
   show (ARecord es) = showFields "=" es
 
 data Constant
@@ -279,8 +279,8 @@ data Task t
   | Select (Array (Label ** Expression ** t))
   | Step Match t t
   -- Extras
-  | Execute Name Argument
-  | Hole Argument
+  | Execute Name Arguments
+  | Hole Arguments
   -- Shares
   | Share Expression
   | Assign Expression Expression

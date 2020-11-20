@@ -3,7 +3,7 @@ module Task.Script.Example.Subsidy where
 import Preload
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (Argument(..), BasicType(..), Expression(..), Match(..), Task(..))
+import Task.Script.Syntax (Arguments(..), BasicType(..), Expression(..), Match(..), Task(..))
 
 ---- Context -------------------------------------------------------------------
 types :: Typtext
