@@ -116,7 +116,11 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
 
 -- | [[ t ]]
 showBox :: forall a. Array (Widget a) -> Widget a
-showBox inner = Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
+showBox inner =
+  Layout.column
+    [ Layout.line Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+    , Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
+    ]
 
 -- | [[ i m ]]
 editMessage :: Icon -> Message -> Widget Message

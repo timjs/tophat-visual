@@ -114,19 +114,22 @@ head direction { draw, stroke, thickness } =
     ( { width: 0.0 |> pc
       , height: 0.0 |> pc
       , borderStyle: "solid"
-      , borderColor: "transparent"
+      -- , borderColor: "transparent"
       }
         /\ style_direction
     )
     empty
   where
   style_direction = case direction of
-    _ ->
+    _ ->  --TODO add other directions
       -- top, right, bottom, left in that order (clockwise)
-      { borderWidth: unwords [ thickness |> pt, thickness / 2.0 |> pt, 0.0 |> pt, thickness / 2.0 |> pt ]
+      { borderWidth: unwords [ thickness |> pc, thickness / 2.0 |> pc, 0.0 |> pc, thickness / 2.0 |> pc ]
       , borderColor: unwords [ draw, "transparent", "transparent", "transparent" ]
       }
 
+-- border-left: 0.5pc solid transparent;
+-- border-right: 0.5pc solid transparent;
+-- border-top: 1pc solid lightgray;
 ---- Shapes --------------------------------------------------------------------
 data Sided a
   = All a
