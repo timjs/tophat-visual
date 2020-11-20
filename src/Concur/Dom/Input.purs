@@ -45,7 +45,9 @@ picker :: forall a. Show a => Eq a => Array a -> a -> Widget a
 picker options default = do
   result <-
     Node.select
-      [ Attr.onChange ]
+      [ Attr.onChange
+      , Attr.defaultValue (show default)
+      ]
       (Array.mapWithIndex go options)
   case intValue result |= Array.index options of
     Just x -> done x
@@ -53,10 +55,7 @@ picker options default = do
   where
   -- go :: Show a => Int -> a -> Widget a
   go i x =
-    Node.option
-      [ Attr.selected (x == default)
-      , Attr.value <| show i
-      ]
+    Node.option [ Attr.value <| show i ]
       [ Node.text <| show x ]
 
 -- | Preconditions:
@@ -65,7 +64,9 @@ picker' :: Array (String ** Array String) -> String -> Widget String
 picker' groups default = do
   result <-
     Node.select
-      [ Attr.onChange ]
+      [ Attr.onChange
+      , Attr.defaultValue default
+      ]
       (map go groups)
   done <| stringValue result
   where
@@ -74,10 +75,7 @@ picker' groups default = do
       (map go' options)
 
   go' option =
-    Node.option
-      [ Attr.selected (option == default)
-      , Attr.value option
-      ]
+    Node.option [ Attr.value option ]
       [ Node.text option ]
 
 -- | Text entry showing `value` and `placeholder` when `value` is empty.
@@ -90,7 +88,7 @@ entry placeholder value = do
       [ Attr._type "text"
       -- , Attr.autoFocus true
       -- , Attr.label label
-      , Attr.value value
+      , Attr.defaultValue value
       , Attr.placeholder placeholder
       , Attr.style
           { boxSizing: "border-box"
