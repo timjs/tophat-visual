@@ -128,6 +128,7 @@ editMessage i m =
   showBox style_box
     [ i, Input.entry m m ]
 
+-- | [[ ?? ]]
 editHole :: Context -> Icon -> Arguments -> Widget Name
 editHole g i as =
   showBox style_hole
@@ -138,7 +139,7 @@ editHole g i as =
         "??"
     ]
 
--- | [[ i b ]]
+-- | [[ n ]]
 selectTask :: Context -> Name -> Widget Name
 selectTask g n =
   showBox style_box
@@ -161,6 +162,7 @@ selectType s i n =
         n
     ]
 
+-- | [[ i n ]]
 selectValues :: Context -> Icon -> Row Name -> Widget (Row Name)
 selectValues g i ns = do
   _ <- showBox style_box []
