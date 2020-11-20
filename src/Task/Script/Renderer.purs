@@ -10,28 +10,28 @@ import Concur.Dom.Layout (ShapeStyle, Sided(..), Direction(..), Orientation(..))
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Data.HashMap as HashMap
-import Task.Script.Context (Typtext, types)
+import Task.Script.Context (Typtext, Context, types)
 import Task.Script.Error (Unchecked(..))
 import Task.Script.Syntax (Expression, Message, Name, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
-main :: Typtext -> Unchecked Task -> Widget (Unchecked Task)
-main g u =
+main :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
+main g s u =
   repeat u \u' ->
     Layout.column
-      [ renderTask g u'
+      [ renderTask g s u'
       , Layout.code <| show u'
       ]
 
-renderTask :: Typtext -> Unchecked Task -> Widget (Unchecked Task)
-renderTask g u = Layout.column [ renderTask' u ]
+renderTask :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
+renderTask g s u_ = Layout.column [ renderTask' u_ ]
   where
   renderTask' :: Unchecked Task -> Widget (Unchecked Task)
   renderTask' u@(Unchecked t) = case t of
     ---- Editors
-    Enter b m -> do
-      b' <- selectType Icon.pen b
-      done <| Unchecked (Enter b' m)
+    Enter n m -> do
+      n' <- selectType s Icon.pen n
+      done <| Unchecked (Enter n' m)
     Update m e -> do
       m' <- editMessage Icon.edit m
       done <| Unchecked (Update m' e)
@@ -79,7 +79,7 @@ renderTask g u = Layout.column [ renderTask' u ]
       done <| Unchecked (Step m t1' t2')
     ---- Extras
     Execute n a -> do
-      n' <- selectTask n
+      n' <- selectTask g n
       done <| Unchecked (Execute n' a)
     Hole a -> do
       _ <- editMessage Icon.question ""
@@ -125,21 +125,26 @@ editMessage i m =
     [ i, Input.entry m m ]
 
 -- | [[ i b ]]
-selectTask :: Name -> Widget Name
-selectTask n =
+selectTask :: Context -> Name -> Widget Name
+selectTask g n =
   showBox
-    [ Input.picker [] n ]
+    [ Input.picker'
+        [ "Builtin" ** []
+        , "Project" ** Array.sort (HashMap.keys g)
+        ]
+        n
+    ]
 
 -- | [[ i b ]]
-selectType :: Icon -> Name -> Widget Name
-selectType i b =
+selectType :: Typtext -> Icon -> Name -> Widget Name
+selectType s i n =
   showBox
     [ i
     , Input.picker'
         [ "Builtin" ** Array.sort (HashMap.keys types)
-        , "Project" ** Array.sort (HashMap.keys g)
+        , "Project" ** Array.sort (HashMap.keys s)
         ]
-        b
+        n
     ]
 
 -- | [[ i e ]]

@@ -42,6 +42,9 @@ instance displayChecked :: Display (Checked Task) where
     Bury c -> Doc.words [ Doc.text "(?", display c, Doc.text "?)" ]
     Pass a c -> Doc.words [ Doc.text "(", display c, Doc.text ":", Doc.show a, Doc.text ")" ]
 
+instance showChecked :: Show (Checked Task) where
+  show = display >> Doc.render
+
 lift :: forall f. f (Unchecked f) -> f (Checked f) -> Error ++ Type -> Checked f
 lift u c = case _ of
   Left e -> Fail e u
