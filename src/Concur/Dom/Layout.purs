@@ -114,7 +114,6 @@ head direction { draw, stroke, thickness } =
     ( { width: 0.0 |> pc
       , height: 0.0 |> pc
       , borderStyle: "solid"
-      -- , borderColor: "transparent"
       }
         /\ style_direction
     )

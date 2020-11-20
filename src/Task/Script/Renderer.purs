@@ -6,7 +6,7 @@ import Concur.Dom (Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
-import Concur.Dom.Layout (ShapeStyle, Sided(..), Direction(..), Orientation(..))
+import Concur.Dom.Layout (Direction(..), Orientation(..), ShapeStyle, Sided(..), LineStyle)
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Data.HashMap as HashMap
@@ -109,8 +109,8 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
   renderStep t1 t2 = do
     Layout.column
       [ renderTask' t1 ||> Left
-      , Layout.line Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
-      , Layout.head Downward { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+      , Layout.line Vertical 2.0 style_line
+      , Layout.head Downward style_line
       , renderTask' t2 ||> Right
       ]
 
@@ -118,7 +118,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
 showBox :: forall a. Array (Widget a) -> Widget a
 showBox inner =
   Layout.column
-    [ Layout.line Vertical 2.0 { draw: "lightgray", stroke: "solid", thickness: 1.0 }
+    [ Layout.line Vertical 2.0 style_line
     , Layout.box 0.5 10.0 1.0 style_box [ Layout.row inner ]
     ]
 
@@ -169,7 +169,7 @@ renderShare m a b = do
 
   dot = Layout.circle 0.33 { fill: "black", draw: "black", stroke: "solid", thickness: 0.0, margin: All 0.0, padding: All 0.0 } empty
 
-  connection = Layout.line Layout.Horizontal 4.0 { draw: "black", stroke: "solid", thickness: 2.0 }
+  connection = Layout.line Layout.Horizontal 4.0 style_line
 
 data Mode
   = Reading
@@ -179,13 +179,16 @@ data Mode
 ---- Styles --------------------------------------------------------------------
 style_box :: ShapeStyle ()
 style_box =
-  { fill: "lightgray"
-  , draw: "lightgray"
+  { draw: "lightgray"
   , stroke: "solid"
   , thickness: 4.0
+  , fill: "lightgray"
   , padding: All 0.5
   , margin: Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
   }
+
+style_line :: ShapeStyle ()
+style_line = style_box { thickness = 1.0 }
 
 ---- Widgets -------------------------------------------------------------------
 type Both a
