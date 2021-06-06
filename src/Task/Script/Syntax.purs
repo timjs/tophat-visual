@@ -37,7 +37,7 @@ import Data.HashSet as HashSet
 type Row a
   = HashMap Label a
 
-showRow :: forall a. Show a => Char -> Char -> String -> HashMap Label a -> String
+showRow :: forall a. Show a => Char -> Char -> String -> Row a -> String
 showRow beg end sep as =
   as
     |> HashMap.toArrayBy check
@@ -53,10 +53,10 @@ showRow beg end sep as =
       else
         unwords [ l, sep, r ]
 
-showFields :: forall a. Show a => String -> HashMap Label a -> String
+showFields :: forall a. Show a => String -> Row a -> String
 showFields = showRow '{' '}'
 
-showVariants :: forall a. Show a => HashMap String a -> String
+showVariants :: forall a. Show a => Row a -> String
 showVariants = showRow '[' ']' ":"
 
 type Labels

@@ -21,23 +21,23 @@ module Preload
   , quote
   , indent
   -- Arrays
-  , Idx
-  , Slice
-  , view
-  , slice
-  , uncons
-  , unsnoc
-  , tail
-  , init
-  , take
-  , takeEnd
-  , takeWhile
-  , drop
-  , dropEnd
-  , dropWhile
-  , span
-  , group
-  , groupBy
+  -- , Idx
+  -- , Slice
+  -- , view
+  -- , slice
+  -- , uncons
+  -- , unsnoc
+  -- , tail
+  -- , init
+  -- , take
+  -- , takeEnd
+  -- , takeWhile
+  -- , drop
+  -- , dropEnd
+  -- , dropWhile
+  -- , span
+  -- , group
+  -- , groupBy
   , class Initialise
   , from
   -- Functions
@@ -61,7 +61,9 @@ module Preload
   , neutral
   , class Group
   , invert
+  , invertDefault
   , subtract
+  , subtractDefault
   , (~~)
   , class Module
   , scale
@@ -106,9 +108,9 @@ import Control.Alt (class Alt, (<|>)) as Reexport
 import Control.Semigroupoid (composeFlipped)
 import Data.Array as Array
 import Data.Array.NonEmpty (fromNonEmpty, toUnfoldable)
-import Data.ArrayView as Slice
-import Data.ArrayView.Internal (fromNonEmptyArray)
-import Data.ArrayView.Internal as Slice
+-- import Data.ArrayView as Slice
+-- import Data.ArrayView.Internal (fromNonEmptyArray)
+-- import Data.ArrayView.Internal as Slice
 import Data.Bifoldable as Reexport
 import Data.Bifunctor (class Bifunctor, bimap, lmap, rmap) as Reexport
 import Data.Either hiding (Either) as Reexport
@@ -136,7 +138,7 @@ import Data.String.CodeUnits as String
 import Data.String.Common as String
 import Data.String.Pattern as String
 import Data.Traversable as Reexport
-import Data.Tuple (curry, fst, lookup, snd, swap, uncurry) as Reexport
+import Data.Tuple (curry, fst, snd, swap, uncurry) as Reexport
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable as Reexport
 import Effect (Effect) as Reexport
@@ -192,71 +194,54 @@ indent n s = Reexport.fold (Reexport.replicate n "  " :: Array String) ++ s
 type Idx
   = Int
 
-type Slice
-  = Slice.ArrayView
-
--- *O(1)*
-view :: forall a. Array a -> Slice a
-view = Slice.fromArray
-
--- *O(1)*
-slice :: forall a. Int -> Int -> Array a -> Slice a
-slice n m = Slice.fromArray >> Slice.slice n m
-
--- *O(1)*
-uncons :: forall a. Array a -> Reexport.Maybe { head :: a, tail :: Slice a }
-uncons = Slice.fromArray >> Slice.uncons
-
--- *O(1)*
-unsnoc :: forall a. Array a -> Reexport.Maybe { init :: Slice a, last :: a }
-unsnoc = Slice.fromArray >> Slice.unsnoc
-
--- *O(1)*
-tail :: forall a. Array a -> Reexport.Maybe (Slice a)
-tail = Slice.fromArray >> Slice.tail
-
--- *O(1)*
-init :: forall a. Array a -> Reexport.Maybe (Slice a)
-init = Slice.fromArray >> Slice.init
-
--- *O(1)*
-take :: forall a. Int -> Array a -> Slice a
-take n = Slice.fromArray >> Slice.take n
-
--- *O(1)*
-takeEnd :: forall a. Int -> Array a -> Slice a
-takeEnd n = Slice.fromArray >> Slice.takeEnd n
-
--- *O(m)*
-takeWhile :: forall a. (a -> Boolean) -> Array a -> Slice a
-takeWhile f = Slice.fromArray >> Slice.takeWhile f
-
--- *O(1)*
-drop :: forall a. Int -> Array a -> Slice a
-drop n = Slice.fromArray >> Slice.drop n
-
--- *O(1)*
-dropEnd :: forall a. Int -> Array a -> Slice a
-dropEnd n = Slice.fromArray >> Slice.dropEnd n
-
--- *O(m)*
-dropWhile :: forall a. (a -> Boolean) -> Array a -> Slice a
-dropWhile f = Slice.fromArray >> Slice.dropWhile f
-
--- *O(m)*
-span :: forall a. (a -> Boolean) -> Array a -> { init :: Slice a, rest :: Slice a }
-span f = Slice.fromArray >> Slice.span f
-
-group :: forall a. Reexport.Eq a => Array a -> Array (Reexport.NonEmpty Slice a)
-group = Slice.fromArray >> Slice.group >> Reexport.map fromNonEmptyArrayView >> Slice.toArray
-
-groupBy :: forall a. (a -> a -> Boolean) -> Array a -> Array (Reexport.NonEmpty Slice a)
-groupBy f = Slice.fromArray >> Slice.groupBy f >> Reexport.map fromNonEmptyArrayView >> Slice.toArray
-
--- INTERNAL USE ONLY --
-fromNonEmptyArrayView :: forall a. Slice.NonEmptyArrayView a -> Reexport.NonEmpty Slice a
-fromNonEmptyArrayView (Slice.NonEmptyArrayView xs) = xs
-
+-- data Slice a
+--   = Slice { array :: Array a, index :: Idx, length :: Nat }
+-- -- *O(1)*
+-- view :: forall a. Array a -> Slice a
+-- view xs = Slice { array: xs, index: 0, length: Array.length xs }
+-- -- *O(1)*
+-- slice :: forall a. Int -> Int -> Array a -> Slice a
+-- slice n m = Slice.fromArray >> Slice.slice n m
+-- -- *O(1)*
+-- uncons :: forall a. Array a -> Reexport.Maybe { head :: a, tail :: Slice a }
+-- uncons = Slice.fromArray >> Slice.uncons
+-- -- *O(1)*
+-- unsnoc :: forall a. Array a -> Reexport.Maybe { init :: Slice a, last :: a }
+-- unsnoc = Slice.fromArray >> Slice.unsnoc
+-- -- *O(1)*
+-- tail :: forall a. Array a -> Reexport.Maybe (Slice a)
+-- tail = Slice.fromArray >> Slice.tail
+-- -- *O(1)*
+-- init :: forall a. Array a -> Reexport.Maybe (Slice a)
+-- init = Slice.fromArray >> Slice.init
+-- -- *O(1)*
+-- take :: forall a. Int -> Array a -> Slice a
+-- take n = Slice.fromArray >> Slice.take n
+-- -- *O(1)*
+-- takeEnd :: forall a. Int -> Array a -> Slice a
+-- takeEnd n = Slice.fromArray >> Slice.takeEnd n
+-- -- *O(m)*
+-- takeWhile :: forall a. (a -> Boolean) -> Array a -> Slice a
+-- takeWhile f = Slice.fromArray >> Slice.takeWhile f
+-- -- *O(1)*
+-- drop :: forall a. Int -> Array a -> Slice a
+-- drop n = Slice.fromArray >> Slice.drop n
+-- -- *O(1)*
+-- dropEnd :: forall a. Int -> Array a -> Slice a
+-- dropEnd n = Slice.fromArray >> Slice.dropEnd n
+-- -- *O(m)*
+-- dropWhile :: forall a. (a -> Boolean) -> Array a -> Slice a
+-- dropWhile f = Slice.fromArray >> Slice.dropWhile f
+-- -- *O(m)*
+-- span :: forall a. (a -> Boolean) -> Array a -> { init :: Slice a, rest :: Slice a }
+-- span f = Slice.fromArray >> Slice.span f
+-- group :: forall a. Reexport.Eq a => Array a -> Array (Reexport.NonEmpty Slice a)
+-- group = Slice.fromArray >> Slice.group >> Reexport.map fromNonEmptyArrayView >> Slice.toArray
+-- groupBy :: forall a. (a -> a -> Boolean) -> Array a -> Array (Reexport.NonEmpty Slice a)
+-- groupBy f = Slice.fromArray >> Slice.groupBy f >> Reexport.map fromNonEmptyArrayView >> Slice.toArray
+-- -- INTERNAL USE ONLY --
+-- fromNonEmptyArrayView :: forall a. Slice.NonEmptyArrayView a -> Reexport.NonEmpty Slice a
+-- fromNonEmptyArrayView (Slice.NonEmptyArrayView xs) = xs
 class Initialise c i | c -> i where
   -- type Item c = i
   from :: Array i -> c
@@ -305,6 +290,12 @@ instance eqNat :: Reexport.Eq Nat where
 
 instance ordNat :: Reexport.Ord Nat where
   compare (Nat i) (Nat j) = Reexport.compare i j
+
+instance semiringNat :: Reexport.Semiring Nat where
+  add (Nat i) (Nat j) = Nat (i Reexport.+ j)
+  zero = Nat 0
+  mul (Nat i) (Nat j) = Nat (i Reexport.* j)
+  one = Nat 1
 
 ---- Hashables -----------------------------------------------------------------
 infix 4 HashSet.member as =<

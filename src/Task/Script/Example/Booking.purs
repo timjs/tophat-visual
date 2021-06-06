@@ -1,6 +1,7 @@
 module Task.Script.Example.Booking where
 
 import Preload
+import Data.HashMap (empty)
 import Task.Script.Error (Unchecked(..))
 import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
 
@@ -9,9 +10,9 @@ t_nationality :: Type
 t_nationality =
   TVariant
     <| from
-        [ "Dutch" ** TRecord neutral
-        , "British" ** TRecord neutral
-        , "German" ** TRecord neutral
+        [ "Dutch" ** TRecord empty
+        , "British" ** TRecord empty
+        , "German" ** TRecord empty
         ]
 
 t_passenger :: Type
@@ -28,9 +29,9 @@ t_flight :: Type
 t_flight =
   TVariant
     <| from
-        [ "ToAmsterdam" ** TRecord neutral
-        , "ToLondon" ** TRecord neutral
-        , "ToBerlin" ** TRecord neutral
+        [ "ToAmsterdam" ** TRecord empty
+        , "ToLondon" ** TRecord empty
+        , "ToBerlin" ** TRecord empty
         ]
 
 t_row :: Type

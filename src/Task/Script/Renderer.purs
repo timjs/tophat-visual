@@ -1,6 +1,6 @@
 module Task.Script.Renderer where
 
-import Preload hiding (group)
+import Preload
 import Concur (list', repeat)
 import Concur.Dom (Widget)
 import Concur.Dom.Icon (Icon)

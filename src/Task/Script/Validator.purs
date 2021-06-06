@@ -43,7 +43,7 @@ validate s g (Unchecked i) = case i of
           where
           c2' = validate s g' u2
 
-          g' = g ++ d
+          g' = g \/ d
       _ -> bury (Step m (fail g i1 <| TaskNeeded t1) c2)
     where
     c1 = validate s g u1
@@ -73,7 +73,7 @@ validate s g (Unchecked i) = case i of
       b1 <- outofReference t1
       b2 <- check s g e2
       if b1 == b2 then
-        done <| TRecord neutral
+        done <| TRecord HashMap.empty
       else
         throw <| AssignError b1 b2
   where
@@ -103,3 +103,5 @@ validate s g (Unchecked i) = case i of
 ---- Helpers -------------------------------------------------------------------
 outofBranch :: Checked Task -> Error ++ Row Type
 outofBranch = extract >=> outofTask
+
+infixr 5 HashMap.union as \/

@@ -17,6 +17,7 @@ module Task.Script.Checker
   ) where
 
 import Preload
+import Data.Array as Array
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Context (Context, Typtext)
@@ -33,7 +34,7 @@ instance checkExpression :: Check Expression where
     Variable x -> HashMap.lookup x g |> note (UnknownVariable x)
     Lambda m t e -> do
       d <- match m t
-      t' <- check s (g ++ d) e
+      t' <- check s (g \/ d) e
       done <| TFunction t t'
     Apply e1 e2 -> do
       t1 <- check s g e1
@@ -65,7 +66,7 @@ instance checkExpression :: Check Expression where
           ts <-
             for bs' \(t ** m ** e) -> do
               d <- match m t
-              check s (g ++ d) e
+              check s (g \/ d) e
           smash ts
         _ -> throw <| VariantNeeded t0
     ---- Records & Variants
@@ -121,7 +122,7 @@ instance checkTask :: Check t => Check (Task t) where
       case t_u1 of
         TTask r -> do
           d <- match m (TRecord r)
-          check s (g ++ d) u2
+          check s (g \/ d) u2
         _ -> throw <| TaskNeeded t_u1
     Execute x a -> do
       t_x <- HashMap.lookup x g |> note (UnknownVariable x)
@@ -140,7 +141,7 @@ instance checkTask :: Check t => Check (Task t) where
       b1 <- outofReference t1
       b2 <- check s g e2
       if b1 == b2 then
-        done <| TRecord neutral
+        done <| TRecord HashMap.empty
       else
         throw <| AssignError b1 b2
     where
@@ -157,7 +158,7 @@ instance checkTask :: Check t => Check (Task t) where
 ---- Matcher -------------------------------------------------------------------
 match :: Match -> Type -> Error ++ Context
 match m t = case m of
-  MIgnore -> done neutral
+  MIgnore -> done HashMap.empty
   MBind x -> done <| from [ x ** t ]
   MRecord ms -> do
     case t of
@@ -174,12 +175,12 @@ match m t = case m of
 --
 -- Throws an error on double lables.
 unite :: forall t a. Foldable t => t (Row a) -> Error ++ Row a
-unite = gather go neutral
+unite = gather go HashMap.empty
   where
   go :: Row a -> Row a -> Error ++ Row a
   go acc r =
     if null is then
-      done <| acc ++ r
+      done <| acc \/ r
     else
       throw <| DoubleLabels is (keys r)
     where
@@ -207,7 +208,7 @@ merge r1 r2 =
 --
 -- Throws if the row is empty or if labels have different types.
 smash :: Row Type -> Error ++ Type
-smash r = case HashMap.values r |> uncons of
+smash r = case HashMap.values r |> Array.uncons of
   Nothing -> throw <| EmptyCase
   Just { head, tail } ->
     if all (_ == head) tail then
@@ -249,3 +250,5 @@ keys :: forall k v. Hashable k => HashMap k v -> HashSet k
 keys = HashMap.keys >> from
 
 infixl 6 HashMap.difference as \\
+
+infixr 5 HashMap.union as \/

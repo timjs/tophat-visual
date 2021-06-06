@@ -2,10 +2,10 @@
 Welcome to a Spago project!
 You can edit this file as you like.
 -}
-{ name = "my-project"
+{ name = "TopHat Visual"
 , dependencies =
-  [ "array-views"
-  , "arrays"
+  -- [ "array-views"
+  [ "arrays"
   , "concur-core"
   , "concur-react"
   , "console"
@@ -27,5 +27,5 @@ You can edit this file as you like.
   , "unordered-collections"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/**/*.purs", "test/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }

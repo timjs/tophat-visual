@@ -1,12 +1,12 @@
 module Test.Counter where
 
 import Preload
+import Data.Array as Array
 import Concur (combine, display, dynamic, loop, fix)
 import Concur.Dom (Widget, Signal)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
-import Data.Slice (zipWith)
 
 ---- Widgets -------------------------------------------------------------------
 counter :: Int -> Widget Int
@@ -63,6 +63,6 @@ main_ = dynamic <| fix [ 1, 2, 3 ] counters_
 
 ---- Helpers -------------------------------------------------------------------
 isSorted :: Array Int -> Bool
-isSorted xs = case tail xs of
+isSorted xs = case Array.tail xs of
   Nothing -> true
-  Just ys -> and <| zipWith (\x y -> x <= y) (view xs) ys
+  Just ys -> and <| Array.zipWith (\x y -> x <= y) xs ys

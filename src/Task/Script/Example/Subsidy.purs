@@ -1,6 +1,7 @@
 module Task.Script.Example.Subsidy where
 
 import Preload
+import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Error (Unchecked(..))
 import Task.Script.Syntax (Arguments(..), BasicType(..), Expression(..), Match(..), Task(..))
@@ -91,7 +92,7 @@ request_subsidy =
     <| Branch
         [ Apply (Variable "not") (Variable "approved")
             ** ( Unchecked
-                  <| View "Cannot approve" (Record neutral)
+                  <| View "Cannot approve" (Record HashMap.empty)
               )
         , Variable "approved"
             ** ( Unchecked
@@ -101,7 +102,7 @@ request_subsidy =
                               [ Unchecked
                                   <| Execute "provide_documents" (ARecord <| from [ "details" ** Variable "details" ])
                               , Unchecked
-                                  <| Step (MRecord <| from [ "contractor" ** MBind "contractor" ]) (Unchecked <| Execute "select_contractor" (ARecord neutral))
+                                  <| Step (MRecord <| from [ "contractor" ** MBind "contractor" ]) (Unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
                                   <| Unchecked
                                   <| Step (MRecord <| from [ "declaration" ** MBind "declaration" ]) (Unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ** Variable "contractor", "details" ** Variable "details" ]))
                                   <| Unchecked
