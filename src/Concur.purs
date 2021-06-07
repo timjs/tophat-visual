@@ -76,33 +76,33 @@ focus = Internal.mapWire
 ---- Combinators ---------------------------------------------------------------
 list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
 list render elements = do
-  (index ** result) <- Internal.orr indexedElements
+  (index ~> result) <- Internal.orr indexedElements
   done
     <| case result of
         Nothing -> Array.deleteAt index elements ?? elements
         Just element' -> Array.updateAt index element' elements ?? elements
   where
-  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ** _) <|| render element)
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <|| render element)
 
 list' :: forall v a. Monoid v => (a -> Reexport.Widget v a) -> Array a -> Reexport.Widget v (Array a)
 list' render elements = do
-  (index ** element) <- Internal.orr indexedElements
+  (index ~> element) <- Internal.orr indexedElements
   done <| Array.updateAt index element elements ?? elements
   where
-  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ** _) <|| render element)
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <|| render element)
 
 ---- Classes -------------------------------------------------------------------
 class (Internal.ShiftMap s t) <= Shift s t
 
-instance shiftAll :: (Internal.ShiftMap s t) => Shift s t
+instance (Internal.ShiftMap s t) => Shift s t
 
 class (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) <= Lift v m
 
-instance liftAll :: (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) => Lift v m
+instance (Internal.LiftWidget v m, Shift (Reexport.Widget v) m, Monad m, Alternative m) => Lift v m
 
 class (Internal.MultiAlternative f) <= Merge f
 
-instance mergeAll :: (Internal.MultiAlternative f) => Merge f
+instance (Internal.MultiAlternative f) => Merge f
 
 {-
 import Concur.Core (Widget, orr)

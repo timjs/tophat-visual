@@ -38,7 +38,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
     Change m e -> do
       r <- renderShare Mutating (editMessage Icon.edit m) (editExpression Icon.database e)
       let
-        m' ** e' = consolidate m e r
+        m' ~> e' = consolidate m e r
       done <| Unchecked (Change m' e')
     View m e -> do
       m' <- editMessage Icon.eye m
@@ -46,7 +46,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
     Watch m e -> do
       r <- renderShare Reading (editMessage Icon.eye m) (editExpression Icon.database e)
       let
-        m' ** e' = consolidate m e r
+        m' ~> e' = consolidate m e r
       done <| Unchecked (Watch m' e')
     ---- Combinators
     Lift e -> do
@@ -69,13 +69,13 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
         bs' = Array.zip (map fst2 bs) ts' |> map assoc
       done <| Unchecked (Select bs')
       where
-      fst2 (x ** y ** z) = x ** y
+      fst2 (x ~> y ~> z) = x ~> y
 
-      assoc ((x ** y) ** z) = x ** (y ** z)
+      assoc ((x ~> y) ~> z) = x ~> (y ~> z)
     Step m t1 t2 -> do
       r <- renderStep t1 t2
       let
-        t1' ** t2' = consolidate t1 t2 r
+        t1' ~> t2' = consolidate t1 t2 r
       done <| Unchecked (Step m t1' t2')
     ---- Extras
     Execute n a -> do
@@ -91,7 +91,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
     Assign e1 e2 -> do
       r <- renderShare Writing (editExpression Icon.retweet e1) (editExpression Icon.database e2)
       let
-        e1' ** e2' = consolidate e1 e2 r
+        e1' ~> e2' = consolidate e1 e2 r
       done <| Unchecked (Assign e1' e2')
 
   -- | ============
@@ -133,8 +133,8 @@ editHole :: Context -> Icon -> Arguments -> Widget Name
 editHole g i as =
   showBox style_hole
     [ Input.picker'
-        [ "Builtin" ** []
-        , "Project" ** Array.sort (HashMap.keys g)
+        [ "Builtin" ~> []
+        , "Project" ~> Array.sort (HashMap.keys g)
         ]
         "??"
     ]
@@ -144,8 +144,8 @@ selectTask :: Context -> Name -> Widget Name
 selectTask g n =
   showBox style_box
     [ Input.picker'
-        [ "Builtin" ** []
-        , "Project" ** Array.sort (HashMap.keys g)
+        [ "Builtin" ~> []
+        , "Project" ~> Array.sort (HashMap.keys g)
         ]
         n
     ]
@@ -156,8 +156,8 @@ selectType s i n =
   showBox style_box
     [ i
     , Input.picker'
-        [ "Builtin" ** Array.sort (HashMap.keys types)
-        , "Project" ** Array.sort (HashMap.keys s)
+        [ "Builtin" ~> Array.sort (HashMap.keys types)
+        , "Project" ~> Array.sort (HashMap.keys s)
         ]
         n
     ]
@@ -214,7 +214,7 @@ style_line = style_box { thickness = 1.0 }
 type Both a
   = Either a a
 
-consolidate :: forall a b. a -> b -> Either a b -> a ** b
+consolidate :: forall a b. a -> b -> Either a b -> a * b
 consolidate x y = case _ of
-  Left x' -> x' ** y
-  Right y' -> x ** y'
+  Left x' -> x' ~> y
+  Right y' -> x ~> y'

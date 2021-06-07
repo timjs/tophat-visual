@@ -89,19 +89,19 @@ validate s g (Unchecked i) = case i of
   -- Note that errors in the expression are atachted to the task instead of the whole branch.
   -- This is due to the data type: errors can only be saved in a `Fail` constructor of a `Checked Task`,
   -- not in the expression.
-  validate2 :: Expression ** Unchecked Task -> Expression ** Checked Task
-  validate2 (e ** u@(Unchecked i')) =
+  validate2 :: Expression * Unchecked Task -> Expression * Checked Task
+  validate2 (e ~> u@(Unchecked i')) =
     e
-      ** case check s g e of
+      ~> case check s g e of
           Right (TPrimitive TBool) -> validate1 u
           Right t -> fail g i' <| BoolNeeded t
           Left x -> fail g i' x
 
-  validate3 :: Label ** Expression ** Unchecked Task -> Label ** Expression ** Checked Task
-  validate3 (l ** e ** u) = l ** validate2 (e ** u)
+  validate3 :: Label * Expression * Unchecked Task -> Label * Expression * Checked Task
+  validate3 (l ~> e ~> u) = l ~> validate2 (e ~> u)
 
 ---- Helpers -------------------------------------------------------------------
-outofBranch :: Checked Task -> Error ++ Row_ Type_
+outofBranch :: Checked Task -> Error + Row_ Type_
 outofBranch = extract >=> outofTask
 
 infixr 5 HashMap.union as \/

@@ -134,7 +134,7 @@ data Sided a
   = All a
   | Some { top :: a, right :: a, bottom :: a, left :: a }
 
-derive instance functorSided :: Functor Sided
+derive instance Functor Sided
 
 convert :: Sided String -> String
 convert = case _ of

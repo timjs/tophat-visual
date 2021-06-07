@@ -26,9 +26,9 @@ import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..
 
 ---- Checker -------------------------------------------------------------------
 class Check a where
-  check :: Typtext -> Context -> a -> Error ++ Type_
+  check :: Typtext -> Context -> a -> Error + Type_
 
-instance checkExpression :: Check Expression where
+instance Check Expression where
   check s g = case _ of
     ---- Basics
     Variable x -> HashMap.lookup x g |> note (UnknownVariable x)
@@ -64,7 +64,7 @@ instance checkExpression :: Check Expression where
         TVariant r -> do
           bs' <- merge r bs --NOTE be aware of order: r is a subset of bs
           ts <-
-            for bs' \(t ** m ** e) -> do
+            for bs' \(t ~> m ~> e) -> do
               d <- match m t
               check s (g \/ d) e
           smash ts
@@ -99,13 +99,13 @@ instance checkExpression :: Check Expression where
     Constant (I _) -> done <| TPrimitive TInt
     Constant (S _) -> done <| TPrimitive TString
 
-instance checkArgument :: Check Arguments where
+instance Check Arguments where
   check s g (ARecord es) = traverse (check s g) es ||> TRecord
 
-instance checkUnchecked :: Check (Unchecked Task) where
+instance Check (Unchecked Task) where
   check s g (Unchecked i) = check s g i
 
-instance checkTask :: Check t => Check (Task t) where
+instance Check t => Check (Task t) where
   check s g = case _ of
     Enter b _ -> HashMap.lookup b s |> note (UnknownTypeName b) ||> ofBasic ||> wrapValue
     Update _ e -> check s g e ||= needBasic ||> wrapValue
@@ -147,19 +147,19 @@ instance checkTask :: Check t => Check (Task t) where
     where
     subcheck t = check s g t ||= outofTask
 
-    subcheck' (e ** t) = do
+    subcheck' (e ~> t) = do
       t_e <- check s g e
       case t_e of
         TPrimitive TBool -> subcheck t
         _ -> throw <| BoolNeeded t_e
 
-    subcheck'' (_ ** e ** t) = subcheck' (e ** t)
+    subcheck'' (_ ~> e ~> t) = subcheck' (e ~> t)
 
 ---- Matcher -------------------------------------------------------------------
-match :: Match -> Type_ -> Error ++ Context
+match :: Match -> Type_ -> Error + Context
 match m t = case m of
   MIgnore -> done HashMap.empty
-  MBind x -> done <| from [ x ** t ]
+  MBind x -> done <| from [ x ~> t ]
   MRecord ms -> do
     case t of
       TRecord r -> merge ms r ||= traverse (uncurry match) ||= unite
@@ -174,10 +174,10 @@ match m t = case m of
 -- | Unite multiple rows into one.
 --
 -- Throws an error on double lables.
-unite :: forall t a. Foldable t => t (Row_ a) -> Error ++ Row_ a
+unite :: forall t a. Foldable t => t (Row_ a) -> Error + Row_ a
 unite = gather go HashMap.empty
   where
-  go :: Row_ a -> Row_ a -> Error ++ Row_ a
+  go :: Row_ a -> Row_ a -> Error + Row_ a
   go acc r =
     if null is then
       done <| acc \/ r
@@ -189,16 +189,16 @@ unite = gather go HashMap.empty
 -- | Intersect multiple rows into one.
 --
 -- Throws if the intersection is empty.
-intersect :: forall t a. Foldable t => t (Row_ a) -> Error ++ Row_ a
+intersect :: forall t a. Foldable t => t (Row_ a) -> Error + Row_ a
 intersect rs = foldr1 HashMap.intersection rs |> note EmptyChoice
 
 -- | Merge the values of a second row into the first row with the same labels.
 --
 -- Throws if `r1` has labels not in `r2`.
-merge :: forall a b. Row_ a -> Row_ b -> Error ++ Row_ (a ** b)
+merge :: forall a b. Row_ a -> Row_ b -> Error + Row_ (a * b)
 merge r1 r2 =
   if HashMap.isEmpty ds then
-    done <| HashMap.intersectionWith (**) r1 r2
+    done <| HashMap.intersectionWith (~>) r1 r2
   else
     throw <| UnknownLabels (keys ds) (keys r2)
   where
@@ -207,7 +207,7 @@ merge r1 r2 =
 -- | Smash a row of types together into one type.
 --
 -- Throws if the row is empty or if labels have different types.
-smash :: Row_ Type_ -> Error ++ Type_
+smash :: Row_ Type_ -> Error + Type_
 smash r = case HashMap.values r |> Array.uncons of
   Nothing -> throw <| EmptyCase
   Just { head, tail } ->
@@ -217,33 +217,33 @@ smash r = case HashMap.values r |> Array.uncons of
       throw <| BranchesError r
 
 ---- Type_ helpers
-needBasic :: Type_ -> Error ++ Type_
+needBasic :: Type_ -> Error + Type_
 needBasic t
   | isBasic t = done t
   | otherwise = throw <| BasicNeeded t
 
-outofBasic :: Type_ -> Error ++ BasicType
+outofBasic :: Type_ -> Error + BasicType
 outofBasic t
   | Just b <- ofType t = done b
   | otherwise = throw <| BasicNeeded t
 
-outofRecord :: Type_ -> Error ++ Row_ Type_
+outofRecord :: Type_ -> Error + Row_ Type_
 outofRecord t
   | Just r <- ofRecord t = done r
   | otherwise = throw <| RecordNeeded t
 
-outofReference :: Type_ -> Error ++ Type_
+outofReference :: Type_ -> Error + Type_
 outofReference t
   | Just b <- ofReference t = done <| ofBasic b
   | otherwise = throw <| ReferenceNeeded t
 
-outofTask :: Type_ -> Error ++ Row_ Type_
+outofTask :: Type_ -> Error + Row_ Type_
 outofTask t
   | Just r <- ofTask t = done r
   | otherwise = throw <| TaskNeeded t
 
 wrapValue :: Type_ -> Type_
-wrapValue t = TTask <| from [ "value" ** t ]
+wrapValue t = TTask <| from [ "value" ~> t ]
 
 ---- General helpers
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k

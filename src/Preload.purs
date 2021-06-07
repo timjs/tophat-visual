@@ -7,11 +7,11 @@ module Preload
   , (|||)
   , composeOr
   -- Tuples
-  , (**)
-  , type (**)
+  , (~>)
+  , type (*)
   , trd
   -- Eithers
-  , type (++)
+  , type (+)
   , throw
   -- Maybes
   , (??)
@@ -161,15 +161,15 @@ composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
 composeOr f g x = f x Reexport.|| g x
 
 ---- Tuples --------------------------------------------------------------------
-infixr 2 Tuple as **
+infixr 2 Tuple as ~>
 
-infixr 2 type Tuple as **
+infixr 2 type Tuple as *
 
-trd :: forall a b c. a ** b ** c -> c
-trd (_ ** _ ** c) = c
+trd :: forall a b c. a * b * c -> c
+trd (_ ~> _ ~> c) = c
 
 ---- Eithers -------------------------------------------------------------------
-infixr 1 type Either as ++
+infixr 1 type Either as +
 
 throw :: forall x a. x -> Reexport.Either x a
 throw = Reexport.Left
@@ -246,13 +246,13 @@ class Initialise c i | c -> i where
   -- type Item c = i
   from :: Array i -> c
 
-instance initialiseList :: Initialise (Reexport.List a) a where
+instance Initialise (Reexport.List a) a where
   from = List.fromFoldable
 
-instance initialiseHashSet :: Reexport.Hashable a => Initialise (Reexport.HashSet a) a where
+instance Reexport.Hashable a => Initialise (Reexport.HashSet a) a where
   from = HashSet.fromArray
 
-instance initialiseHashMap :: Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k ** v) where
+instance Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k * v) where
   from = HashMap.fromArray
 
 ---- Functions -----------------------------------------------------------------
@@ -282,16 +282,16 @@ nat i
 unnat :: Nat -> Int
 unnat (Nat i) = i
 
-instance showNat :: Reexport.Show Nat where
+instance Reexport.Show Nat where
   show (Nat i) = "+" ++ Reexport.show i
 
-instance eqNat :: Reexport.Eq Nat where
+instance Reexport.Eq Nat where
   eq (Nat i) (Nat j) = i Reexport.== j
 
-instance ordNat :: Reexport.Ord Nat where
+instance Reexport.Ord Nat where
   compare (Nat i) (Nat j) = Reexport.compare i j
 
-instance semiringNat :: Reexport.Semiring Nat where
+instance Reexport.Semiring Nat where
   add (Nat i) (Nat j) = Nat (i Reexport.+ j)
   zero = Nat 0
   mul (Nat i) (Nat j) = Nat (i Reexport.* j)
@@ -394,8 +394,8 @@ infixr 1 Reexport.bindFlipped as =||
 done :: forall f a. Reexport.Applicative f => a -> f a
 done = pure
 
-pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a ** b)
-pair x y = done (**) -|| x -|| y
+pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a * b)
+pair x y = done (~>) -|| x -|| y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit

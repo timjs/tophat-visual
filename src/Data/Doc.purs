@@ -95,18 +95,18 @@ tuple = parens <. using Columns (intercalate comma)
 list :: forall f. Traversable f => f Doc -> Doc
 list = brackets <. using Columns (intercalate comma)
 
-record :: forall f. Traversable f => Doc -> f (Doc ** Doc) -> Doc
-record sep = braces <. using Columns (intercalate comma) <. map (\(k ** v) -> columns [ k, sep, v ])
+record :: forall f. Traversable f => Doc -> f (Doc * Doc) -> Doc
+record sep = braces <. using Columns (intercalate comma) <. map (\(k ~> v) -> columns [ k, sep, v ])
 
 ---- Wrappers ------------------------------------------------------------------
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents as lines.
 newtype Lines
   = Lines Doc
 
-derive instance newtypeLines :: Newtype Lines _
+derive instance Newtype Lines _
 
-instance semigroupLines :: Semigroup Lines where
+instance Semigroup Lines where
   append (Lines d1) (Lines d2) = Lines (d1 `atop` d2)
 
-instance monoidLines :: Monoid Lines where
+instance Monoid Lines where
   mempty = Lines (empty 0 0)

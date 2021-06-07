@@ -21,15 +21,15 @@ type Context
 builtins :: Context
 builtins =
   from
-    [ "not" ** TPrimitive TBool :-> TPrimitive TBool
-    , "&&" ** TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
-    , "||" ** TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
-    , "==" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , "/=" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , "+" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "*" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "-" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "/" ** TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    [ "not" ~> TPrimitive TBool :-> TPrimitive TBool
+    , "&&" ~> TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+    , "||" ~> TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+    , "==" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , "/=" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , "+" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "*" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "-" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "/" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
     ]
 
 type Typtext
@@ -38,11 +38,11 @@ type Typtext
 types :: Typtext
 types =
   from
-    [ "Bool" ** BPrimitive TBool
-    , "Int" ** BPrimitive TInt
-    , "Nat" ** BPrimitive TInt
-    , "Date" ** BPrimitive TInt
-    , "String" ** BPrimitive TString
+    [ "Bool" ~> BPrimitive TBool
+    , "Int" ~> BPrimitive TInt
+    , "Nat" ~> BPrimitive TInt
+    , "Date" ~> BPrimitive TInt
+    , "String" ~> BPrimitive TString
     ]
 
 ---- Types ---------------------------------------------------------------------
@@ -51,11 +51,11 @@ infixr 3 TFunction as :->
 listOf :: BasicType -> Type_
 listOf = BList .> ofBasic
 
-recordOf' :: Array (String ** BasicType) -> BasicType
+recordOf' :: Array (String * BasicType) -> BasicType
 recordOf' = from .> BRecord
 
-recordOf :: Array (String ** BasicType) -> Type_
+recordOf :: Array (String * BasicType) -> Type_
 recordOf = recordOf' .> ofBasic
 
-taskOf :: Array (String ** BasicType) -> Type_
+taskOf :: Array (String * BasicType) -> Type_
 taskOf = from .> map ofBasic .> TTask

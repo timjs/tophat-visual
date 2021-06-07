@@ -25,11 +25,11 @@ data Unchecked f
   = Unchecked (f (Unchecked f))
 
 --NOTE: below instance is infinite, we create one for Tasks only
--- instance showUnchecked :: Show (f (Unchecked f)) => Show (Unchecked f) where
-instance displayUnchecked :: Display (Unchecked Task) where
+-- instance Show (f (Unchecked f)) => Show (Unchecked f) where
+instance Display (Unchecked Task) where
   display (Unchecked x) = display x
 
-instance showUnchecked :: Show (Unchecked Task) where
+instance Show (Unchecked Task) where
   show = display .> Doc.render
 
 data Checked f
@@ -37,21 +37,21 @@ data Checked f
   | Bury (f (Checked f))
   | Pass Context Type_ (f (Checked f))
 
-instance displayChecked :: Display (Checked Task) where
+instance Display (Checked Task) where
   display = case _ of
     Fail _ e u -> Doc.words [ Doc.text "(!", display u, Doc.text ":", Doc.show e, Doc.text "!)" ]
     Bury c -> Doc.words [ Doc.text "(?", display c, Doc.text "?)" ]
     Pass _ a c -> Doc.words [ Doc.text "(", display c, Doc.text ":", Doc.show a, Doc.text ")" ]
 
-instance showChecked :: Show (Checked Task) where
+instance Show (Checked Task) where
   show = display .> Doc.render
 
-lift :: forall f. Context -> f (Unchecked f) -> f (Checked f) -> Error ++ Type_ -> Checked f
+lift :: forall f. Context -> f (Unchecked f) -> f (Checked f) -> Error + Type_ -> Checked f
 lift g u c = case _ of
   Left e -> Fail g e u
   Right a -> Pass g a c
 
-sink :: forall f. Context -> f (Checked f) -> Error ++ Type_ -> Checked f
+sink :: forall f. Context -> f (Checked f) -> Error + Type_ -> Checked f
 sink g c = case _ of
   Left e -> Bury c
   Right a -> Pass g a c
@@ -65,7 +65,7 @@ pass g c a = Pass g a c
 bury :: forall f. f (Checked f) -> Checked f
 bury = Bury
 
-extract :: forall f. Checked f -> Error ++ Type_
+extract :: forall f. Checked f -> Error + Type_
 extract = case _ of
   Pass _ t _ -> Right t
   _ -> Left UndeterminedType
@@ -75,14 +75,14 @@ withTypeOf c b f = case c of
   Pass g t _ -> f t
   _ -> Bury b
 
--- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type_)) -> Checked Task
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error + (Task (Checked Task) ~> Type_)) -> Checked Task
 -- annotate (Unchecked u) f = case f u of
 --   Left x -> Fail x u
---   Right (c ** t) -> Pass t c
--- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type_)) -> Checked Task
+--   Right (c ~> t) -> Pass t c
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error + (Task (Checked Task) ~> Type_)) -> Checked Task
 -- annotate (Unchecked u) f = case f u of
 --   Left x -> Fail x u
---   Right (c ** t) -> Pass t c
+--   Right (c ~> t) -> Pass t c
 -- replace :: Error -> Checked Task -> Checked Task
 -- replace x = case _ of
 --   Fail _ c -> Fail x c
@@ -115,7 +115,7 @@ data Error
   | RecordMismatch (Row_ Match) Type_
   | UnpackMismatch Type_
 
-instance showError :: Show Error where
+instance Show Error where
   show = case _ of
     UnknownVariable x -> unwords [ "Unknown variable", x |> quote ]
     UnknownTypeName n -> unwords [ "Unknown type name", n |> quote ]

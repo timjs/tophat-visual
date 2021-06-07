@@ -85,9 +85,9 @@ data Type_
   | TTask (Row_ Type_)
   | TPrimitive PrimType
 
-derive instance eqType :: Eq Type_
+derive instance Eq Type_
 
-instance showType :: Show Type_ where
+instance Show Type_ where
   show = case _ of
     TFunction t1 t2 ->
       unwords [ show t1, "->", show t2 ]
@@ -125,9 +125,9 @@ data PrimType
   | TInt
   | TString
 
-derive instance eqPrimType :: Eq PrimType
+derive instance Eq PrimType
 
-instance showPrimType :: Show PrimType where
+instance Show PrimType where
   show = case _ of
     TBool -> "Bool"
     TInt -> "Int"
@@ -140,9 +140,9 @@ data BasicType
   | BVariant (Row_ BasicType)
   | BPrimitive PrimType
 
-derive instance eqBasicType :: Eq BasicType
+derive instance Eq BasicType
 
-instance showBasicType :: Show BasicType where
+instance Show BasicType where
   show = case _ of
     BName n -> n
     BList t -> unwords [ "List", show t ]
@@ -186,16 +186,16 @@ data Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
-  | Case Expression (Row_ (Match ** Expression))
+  | Case Expression (Row_ (Match * Expression))
   | Record (Row_ Expression)
   | Variant Label Expression Type_
   | Nil Type_
   | Cons Expression Expression
   | Constant Constant
 
-derive instance eqExpression :: Eq Expression
+derive instance Eq Expression
 
-instance showExpression :: Show Expression where
+instance Show Expression where
   show = case _ of
     Lambda m t e -> unwords [ show m, ":", show t, ".", show e ]
     Apply e1 e2 -> unwords [ show e1, show e2 ] --FIXME
@@ -220,9 +220,9 @@ instance showExpression :: Show Expression where
 data Arguments
   = ARecord (Row_ Expression)
 
-derive instance eqArguments :: Eq Arguments
+derive instance Eq Arguments
 
-instance showArguments :: Show Arguments where
+instance Show Arguments where
   show (ARecord es) = showFields "=" es
 
 data Constant
@@ -230,9 +230,9 @@ data Constant
   | I Int
   | S String
 
-derive instance eqConstant :: Eq Constant
+derive instance Eq Constant
 
-instance showConstant :: Show Constant where
+instance Show Constant where
   show = case _ of
     B true -> "True"
     B false -> "False"
@@ -246,9 +246,9 @@ data Match
   | MRecord (Row_ Match)
   | MUnpack
 
-derive instance eqMatch :: Eq Match
+derive instance Eq Match
 
-instance showMatch :: Show Match where
+instance Show Match where
   show = case _ of
     MIgnore -> "_"
     MBind x -> x
@@ -259,8 +259,8 @@ instance showMatch :: Show Match where
 -- data Statement t
 --   = Step' Match t (Statement t)
 --   | Task' t
--- derive instance eqStatement :: Eq t => Eq (Statement t)
--- instance showStatement :: Show t => Show (Statement t) where
+-- derive instance Eq t => Eq (Statement t)
+-- instance Show t => Show (Statement t) where
 --   show = case _ of
 --     Step' m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
 --     Task' t -> show t
@@ -275,8 +275,8 @@ data Task t
   | Lift Expression
   | Pair (Array t)
   | Choose (Array t)
-  | Branch (Array (Expression ** t))
-  | Select (Array (Label ** Expression ** t))
+  | Branch (Array (Expression * t))
+  | Select (Array (Label * Expression * t))
   | Step Match t t
   -- Extras
   | Execute Name Arguments
@@ -285,14 +285,14 @@ data Task t
   | Share Expression
   | Assign Expression Expression
 
-derive instance eqTask :: Eq t => Eq (Task t)
+derive instance Eq t => Eq (Task t)
 
-derive instance functorTask :: Functor Task
+derive instance Functor Task
 
-instance showTask :: Display t => Show (Task t) where
+instance Display t => Show (Task t) where
   show = display .> Doc.render
 
-instance displayTask :: Display t => Display (Task t) where
+instance Display t => Display (Task t) where
   display = case _ of
     Enter t m -> Doc.words [ Doc.text "enter", Doc.text t, Doc.quotes (Doc.text m) ]
     Update m e -> Doc.words [ Doc.text "update", Doc.quotes (Doc.text m), Doc.show e ]
@@ -317,11 +317,11 @@ instance displayTask :: Display t => Display (Task t) where
         .> Doc.indent
 
     inner' =
-      map (\(e ** s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+      map (\(e ~> s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
         .> Doc.lines
         .> Doc.indent
 
     inner'' =
-      map (\(l ** e ** s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+      map (\(l ~> e ~> s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
         .> Doc.lines
         .> Doc.indent

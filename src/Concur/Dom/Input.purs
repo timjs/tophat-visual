@@ -60,7 +60,7 @@ picker options default = do
 
 -- | Preconditions:
 -- | * all elements are unique
-picker' :: Array (String ** Array String) -> String -> Widget String
+picker' :: Array (String * Array String) -> String -> Widget String
 picker' groups default = do
   result <-
     Node.select
@@ -70,7 +70,7 @@ picker' groups default = do
       (map go groups)
   done <| stringValue result
   where
-  go (label ** options) =
+  go (label ~> options) =
     Node.optgroup [ Attr.label label ]
       (map go' options)
 
