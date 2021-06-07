@@ -3,10 +3,10 @@ module Task.Script.Example.Booking where
 import Preload
 import Data.HashMap (empty)
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type(..))
+import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type_(..))
 
 ---- Types ---------------------------------------------------------------------
-t_nationality :: Type
+t_nationality :: Type_
 t_nationality =
   TVariant
     <| from
@@ -15,7 +15,7 @@ t_nationality =
         , "German" ** TRecord empty
         ]
 
-t_passenger :: Type
+t_passenger :: Type_
 t_passenger =
   TRecord
     <| from
@@ -25,7 +25,7 @@ t_passenger =
         , "age" ** TPrimitive TInt
         ]
 
-t_flight :: Type
+t_flight :: Type_
 t_flight =
   TVariant
     <| from
@@ -34,13 +34,13 @@ t_flight =
         , "ToBerlin" ** TRecord empty
         ]
 
-t_row :: Type
+t_row :: Type_
 t_row = TPrimitive TInt
 
-t_chair :: Type
+t_chair :: Type_
 t_chair = TPrimitive TString
 
-t_seat :: Type
+t_seat :: Type_
 t_seat =
   TRecord
     <| from
@@ -48,7 +48,7 @@ t_seat =
         , "chair" ** t_chair
         ]
 
-t_booking :: Type
+t_booking :: Type_
 t_booking =
   TRecord
     <| from

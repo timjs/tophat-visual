@@ -12,7 +12,7 @@ import Data.Array as Array
 import Data.HashMap as HashMap
 import Task.Script.Context (Typtext, Context, types)
 import Task.Script.Error (Unchecked(..))
-import Task.Script.Syntax (Row, Arguments, Expression, Message, Name, Task(..))
+import Task.Script.Syntax (Row_, Arguments, Expression, Message, Name, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
 main :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
@@ -163,7 +163,7 @@ selectType s i n =
     ]
 
 -- | [[ i n ]]
-selectValues :: Context -> Icon -> Row Name -> Widget (Row Name)
+selectValues :: Context -> Icon -> Row_ Name -> Widget (Row_ Name)
 selectValues g i ns = do
   _ <- showBox style_box []
   done ns

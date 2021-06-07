@@ -22,11 +22,11 @@ import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Context (Context, Typtext)
 import Task.Script.Error (Error(..), Unchecked(..))
-import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row, Task(..), Type(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row_, Task(..), Type_(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
 class Check a where
-  check :: Typtext -> Context -> a -> Error ++ Type
+  check :: Typtext -> Context -> a -> Error ++ Type_
 
 instance checkExpression :: Check Expression where
   check s g = case _ of
@@ -156,7 +156,7 @@ instance checkTask :: Check t => Check (Task t) where
     subcheck'' (_ ** e ** t) = subcheck' (e ** t)
 
 ---- Matcher -------------------------------------------------------------------
-match :: Match -> Type -> Error ++ Context
+match :: Match -> Type_ -> Error ++ Context
 match m t = case m of
   MIgnore -> done HashMap.empty
   MBind x -> done <| from [ x ** t ]
@@ -170,14 +170,14 @@ match m t = case m of
       _ -> throw <| UnpackMismatch t
 
 ---- Helpers -------------------------------------------------------------------
----- Row helpers
+---- Row_ helpers
 -- | Unite multiple rows into one.
 --
 -- Throws an error on double lables.
-unite :: forall t a. Foldable t => t (Row a) -> Error ++ Row a
+unite :: forall t a. Foldable t => t (Row_ a) -> Error ++ Row_ a
 unite = gather go HashMap.empty
   where
-  go :: Row a -> Row a -> Error ++ Row a
+  go :: Row_ a -> Row_ a -> Error ++ Row_ a
   go acc r =
     if null is then
       done <| acc \/ r
@@ -189,13 +189,13 @@ unite = gather go HashMap.empty
 -- | Intersect multiple rows into one.
 --
 -- Throws if the intersection is empty.
-intersect :: forall t a. Foldable t => t (Row a) -> Error ++ Row a
+intersect :: forall t a. Foldable t => t (Row_ a) -> Error ++ Row_ a
 intersect rs = foldr1 HashMap.intersection rs |> note EmptyChoice
 
 -- | Merge the values of a second row into the first row with the same labels.
 --
 -- Throws if `r1` has labels not in `r2`.
-merge :: forall a b. Row a -> Row b -> Error ++ Row (a ** b)
+merge :: forall a b. Row_ a -> Row_ b -> Error ++ Row_ (a ** b)
 merge r1 r2 =
   if HashMap.isEmpty ds then
     done <| HashMap.intersectionWith (**) r1 r2
@@ -207,7 +207,7 @@ merge r1 r2 =
 -- | Smash a row of types together into one type.
 --
 -- Throws if the row is empty or if labels have different types.
-smash :: Row Type -> Error ++ Type
+smash :: Row_ Type_ -> Error ++ Type_
 smash r = case HashMap.values r |> Array.uncons of
   Nothing -> throw <| EmptyCase
   Just { head, tail } ->
@@ -216,33 +216,33 @@ smash r = case HashMap.values r |> Array.uncons of
     else
       throw <| BranchesError r
 
----- Type helpers
-needBasic :: Type -> Error ++ Type
+---- Type_ helpers
+needBasic :: Type_ -> Error ++ Type_
 needBasic t
   | isBasic t = done t
   | otherwise = throw <| BasicNeeded t
 
-outofBasic :: Type -> Error ++ BasicType
+outofBasic :: Type_ -> Error ++ BasicType
 outofBasic t
   | Just b <- ofType t = done b
   | otherwise = throw <| BasicNeeded t
 
-outofRecord :: Type -> Error ++ Row Type
+outofRecord :: Type_ -> Error ++ Row_ Type_
 outofRecord t
   | Just r <- ofRecord t = done r
   | otherwise = throw <| RecordNeeded t
 
-outofReference :: Type -> Error ++ Type
+outofReference :: Type_ -> Error ++ Type_
 outofReference t
   | Just b <- ofReference t = done <| ofBasic b
   | otherwise = throw <| ReferenceNeeded t
 
-outofTask :: Type -> Error ++ Row Type
+outofTask :: Type_ -> Error ++ Row_ Type_
 outofTask t
   | Just r <- ofTask t = done r
   | otherwise = throw <| TaskNeeded t
 
-wrapValue :: Type -> Type
+wrapValue :: Type_ -> Type_
 wrapValue t = TTask <| from [ "value" ** t ]
 
 ---- General helpers

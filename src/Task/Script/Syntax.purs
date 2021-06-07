@@ -1,13 +1,13 @@
 module Task.Script.Syntax
   -- # Synonyms
-  ( Row
+  ( Row_
   , Labels
   , Name
   , Label
   , showLabels
   , Message
   -- # Types
-  , Type(..)
+  , Type_(..)
   , ofRecord
   , ofVariant
   , ofReference
@@ -34,10 +34,10 @@ import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 
 ---- Synonyms ------------------------------------------------------------------
-type Row a
+type Row_ a
   = HashMap Label a
 
-showRow :: forall a. Show a => Char -> Char -> String -> Row a -> String
+showRow :: forall a. Show a => Char -> Char -> String -> Row_ a -> String
 showRow beg end sep as =
   as
     |> HashMap.toArrayBy check
@@ -53,10 +53,10 @@ showRow beg end sep as =
       else
         unwords [ l, sep, r ]
 
-showFields :: forall a. Show a => String -> Row a -> String
+showFields :: forall a. Show a => String -> Row_ a -> String
 showFields = showRow '{' '}'
 
-showVariants :: forall a. Show a => Row a -> String
+showVariants :: forall a. Show a => Row_ a -> String
 showVariants = showRow '[' ']' ":"
 
 type Labels
@@ -75,19 +75,19 @@ type Message
   = String
 
 ---- Types ---------------------------------------------------------------------
-data Type
-  = TFunction Type Type
+data Type_
+  = TFunction Type_ Type_
   | TName Name
-  | TList Type
-  | TRecord (Row Type)
-  | TVariant (Row Type)
+  | TList Type_
+  | TRecord (Row_ Type_)
+  | TVariant (Row_ Type_)
   | TReference BasicType
-  | TTask (Row Type)
+  | TTask (Row_ Type_)
   | TPrimitive PrimType
 
-derive instance eqType :: Eq Type
+derive instance eqType :: Eq Type_
 
-instance showType :: Show Type where
+instance showType :: Show Type_ where
   show = case _ of
     TFunction t1 t2 ->
       unwords [ show t1, "->", show t2 ]
@@ -100,22 +100,22 @@ instance showType :: Show Type where
     TTask t -> unwords [ "Task", showFields ":" t ]
     TPrimitive p -> show p
 
-ofRecord :: Type -> Maybe (Row Type)
+ofRecord :: Type_ -> Maybe (Row_ Type_)
 ofRecord = case _ of
   TRecord r -> Just r
   _ -> Nothing
 
-ofVariant :: Type -> Maybe (Row Type)
+ofVariant :: Type_ -> Maybe (Row_ Type_)
 ofVariant = case _ of
   TVariant r -> Just r
   _ -> Nothing
 
-ofReference :: Type -> Maybe BasicType
+ofReference :: Type_ -> Maybe BasicType
 ofReference = case _ of
   TReference b -> Just b
   _ -> Nothing
 
-ofTask :: Type -> Maybe (Row Type)
+ofTask :: Type_ -> Maybe (Row_ Type_)
 ofTask = case _ of
   TTask r -> Just r
   _ -> Nothing
@@ -136,8 +136,8 @@ instance showPrimType :: Show PrimType where
 data BasicType
   = BName Name
   | BList BasicType
-  | BRecord (Row BasicType)
-  | BVariant (Row BasicType)
+  | BRecord (Row_ BasicType)
+  | BVariant (Row_ BasicType)
   | BPrimitive PrimType
 
 derive instance eqBasicType :: Eq BasicType
@@ -150,7 +150,7 @@ instance showBasicType :: Show BasicType where
     BVariant ts -> showVariants ts
     BPrimitive p -> show p
 
-ofType :: Type -> Maybe BasicType
+ofType :: Type_ -> Maybe BasicType
 ofType = case _ of
   TPrimitive p -> Just <| BPrimitive p
   TName n -> Just <| BName n
@@ -167,7 +167,7 @@ ofType = case _ of
   TReference _ -> Nothing
   TTask _ -> Nothing
 
-ofBasic :: BasicType -> Type
+ofBasic :: BasicType -> Type_
 ofBasic = case _ of
   BList t -> TList <| ofBasic t
   BRecord r -> TRecord <| map ofBasic r
@@ -175,21 +175,21 @@ ofBasic = case _ of
   BName n -> TName n
   BPrimitive p -> TPrimitive p
 
-isBasic :: Type -> Bool
+isBasic :: Type_ -> Bool
 isBasic t
   | Just _ <- ofType t = true
   | otherwise = false
 
 ---- Expressions ---------------------------------------------------------------
 data Expression
-  = Lambda Match Type Expression
+  = Lambda Match Type_ Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
-  | Case Expression (Row (Match ** Expression))
-  | Record (Row Expression)
-  | Variant Label Expression Type
-  | Nil Type
+  | Case Expression (Row_ (Match ** Expression))
+  | Record (Row_ Expression)
+  | Variant Label Expression Type_
+  | Nil Type_
   | Cons Expression Expression
   | Constant Constant
 
@@ -218,7 +218,7 @@ instance showExpression :: Show Expression where
     Constant c -> show c
 
 data Arguments
-  = ARecord (Row Expression)
+  = ARecord (Row_ Expression)
 
 derive instance eqArguments :: Eq Arguments
 
@@ -243,7 +243,7 @@ instance showConstant :: Show Constant where
 data Match
   = MIgnore
   | MBind Name
-  | MRecord (Row Match)
+  | MRecord (Row_ Match)
   | MUnpack
 
 derive instance eqMatch :: Eq Match

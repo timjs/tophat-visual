@@ -17,7 +17,7 @@ module Task.Script.Error
 import Preload
 import Data.Doc (class Display, display)
 import Data.Doc as Doc
-import Task.Script.Syntax (Label, Labels, Match, Name, Row, Task, Type, showLabels)
+import Task.Script.Syntax (Label, Labels, Match, Name, Row_, Task, Type_, showLabels)
 import Task.Script.Context (Context)
 
 ---- Checked or Unchecked ------------------------------------------------------
@@ -35,7 +35,7 @@ instance showUnchecked :: Show (Unchecked Task) where
 data Checked f
   = Fail Context Error (f (Unchecked f))
   | Bury (f (Checked f))
-  | Pass Context Type (f (Checked f))
+  | Pass Context Type_ (f (Checked f))
 
 instance displayChecked :: Display (Checked Task) where
   display = case _ of
@@ -46,12 +46,12 @@ instance displayChecked :: Display (Checked Task) where
 instance showChecked :: Show (Checked Task) where
   show = display >> Doc.render
 
-lift :: forall f. Context -> f (Unchecked f) -> f (Checked f) -> Error ++ Type -> Checked f
+lift :: forall f. Context -> f (Unchecked f) -> f (Checked f) -> Error ++ Type_ -> Checked f
 lift g u c = case _ of
   Left e -> Fail g e u
   Right a -> Pass g a c
 
-sink :: forall f. Context -> f (Checked f) -> Error ++ Type -> Checked f
+sink :: forall f. Context -> f (Checked f) -> Error ++ Type_ -> Checked f
 sink g c = case _ of
   Left e -> Bury c
   Right a -> Pass g a c
@@ -59,27 +59,27 @@ sink g c = case _ of
 fail :: forall f. Context -> f (Unchecked f) -> Error -> Checked f
 fail g u e = Fail g e u
 
-pass :: forall f. Context -> f (Checked f) -> Type -> Checked f
+pass :: forall f. Context -> f (Checked f) -> Type_ -> Checked f
 pass g c a = Pass g a c
 
 bury :: forall f. f (Checked f) -> Checked f
 bury = Bury
 
-extract :: forall f. Checked f -> Error ++ Type
+extract :: forall f. Checked f -> Error ++ Type_
 extract = case _ of
   Pass _ t _ -> Right t
   _ -> Left UndeterminedType
 
-withTypeOf :: forall f. Checked f -> f (Checked f) -> (Type -> Checked f) -> Checked f
+withTypeOf :: forall f. Checked f -> f (Checked f) -> (Type_ -> Checked f) -> Checked f
 withTypeOf c b f = case c of
   Pass g t _ -> f t
   _ -> Bury b
 
--- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type_)) -> Checked Task
 -- annotate (Unchecked u) f = case f u of
 --   Left x -> Fail x u
 --   Right (c ** t) -> Pass t c
--- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type)) -> Checked Task
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error ++ (Task (Checked Task) ** Type_)) -> Checked Task
 -- annotate (Unchecked u) f = case f u of
 --   Left x -> Fail x u
 --   Right (c ** t) -> Pass t c
@@ -91,29 +91,29 @@ withTypeOf c b f = case c of
 data Error
   = UnknownVariable Name
   | UnknownTypeName Name
-  | UnknownLabel Label Type
-  | ArgumentError Type Type
-  | VariantError Label Type Type
-  | BranchError Type Type
-  | BranchesError (Row Type)
-  | AssignError Type Type
-  | ListError Type Type
-  | FunctionNeeded Type
-  | BoolNeeded Type
-  | RecordNeeded Type
-  | VariantNeeded Type
-  | ListNeeded Type
-  | ReferenceNeeded Type
-  | TaskNeeded Type
-  | BasicNeeded Type
+  | UnknownLabel Label Type_
+  | ArgumentError Type_ Type_
+  | VariantError Label Type_ Type_
+  | BranchError Type_ Type_
+  | BranchesError (Row_ Type_)
+  | AssignError Type_ Type_
+  | ListError Type_ Type_
+  | FunctionNeeded Type_
+  | BoolNeeded Type_
+  | RecordNeeded Type_
+  | VariantNeeded Type_
+  | ListNeeded Type_
+  | ReferenceNeeded Type_
+  | TaskNeeded Type_
+  | BasicNeeded Type_
   | UnknownLabels Labels Labels
   | DoubleLabels Labels Labels
   | UndeterminedType
   | EmptyCase
   | EmptyChoice
   | HoleFound Context
-  | RecordMismatch (Row Match) Type
-  | UnpackMismatch Type
+  | RecordMismatch (Row_ Match) Type_
+  | UnpackMismatch Type_
 
 instance showError :: Show Error where
   show = case _ of

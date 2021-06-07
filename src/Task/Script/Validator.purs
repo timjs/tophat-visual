@@ -7,7 +7,7 @@ import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
 import Task.Script.Error (Checked(..), Error(..), Unchecked(..), withTypeOf, extract, bury, sink, fail, extract, lift, pass)
-import Task.Script.Syntax (Expression, Label, PrimType(..), Row, Task(..), Type(..), ofBasic)
+import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------
 validate :: Typtext -> Context -> Unchecked Task -> Checked Task
@@ -101,7 +101,7 @@ validate s g (Unchecked i) = case i of
   validate3 (l ** e ** u) = l ** validate2 (e ** u)
 
 ---- Helpers -------------------------------------------------------------------
-outofBranch :: Checked Task -> Error ++ Row Type
+outofBranch :: Checked Task -> Error ++ Row_ Type_
 outofBranch = extract >=> outofTask
 
 infixr 5 HashMap.union as \/
