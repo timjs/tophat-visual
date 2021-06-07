@@ -21,7 +21,7 @@ button label = do
     Node.input
       [ Attr._type "button"
       , Attr.value label
-      , Attr.onClick ||- Nothing
+      , Attr.onClick >>> Nothing
       , Attr.onKeyDown ||> Just
       ]
   case result of
@@ -37,7 +37,7 @@ toggle checked = do
   Node.input
     [ Attr._type "checkbox"
     , Attr.checked checked
-    , Attr.onInput ||- unit
+    , Attr.onInput >>> unit
     ]
   done (not checked)
 
@@ -49,7 +49,7 @@ picker options default = do
       , Attr.defaultValue (show default)
       ]
       (Array.mapWithIndex go options)
-  case intValue result |= Array.index options of
+  case intValue result ||= Array.index options of
     Just x -> done x
     Nothing -> picker options default
   where
@@ -113,7 +113,7 @@ entry placeholder value = do
 textbox :: String -> Widget String
 textbox value = do
   Node.div [ void Attr.onClick ] [ Node.text value ]
-  new <- Node.div' [ entry value value, button "Cancel" ||- value ]
+  new <- Node.div' [ entry value value, button "Cancel" >>> value ]
   --XXX inconsistent formatting when compared to `case-of`...
   done
     if new == "" then

@@ -30,7 +30,7 @@ instance displayUnchecked :: Display (Unchecked Task) where
   display (Unchecked x) = display x
 
 instance showUnchecked :: Show (Unchecked Task) where
-  show = display >> Doc.render
+  show = display .> Doc.render
 
 data Checked f
   = Fail Context Error (f (Unchecked f))
@@ -44,7 +44,7 @@ instance displayChecked :: Display (Checked Task) where
     Pass _ a c -> Doc.words [ Doc.text "(", display c, Doc.text ":", Doc.show a, Doc.text ")" ]
 
 instance showChecked :: Show (Checked Task) where
-  show = display >> Doc.render
+  show = display .> Doc.render
 
 lift :: forall f. Context -> f (Unchecked f) -> f (Checked f) -> Error ++ Type_ -> Checked f
 lift g u c = case _ of

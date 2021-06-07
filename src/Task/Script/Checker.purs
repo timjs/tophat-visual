@@ -108,15 +108,15 @@ instance checkUnchecked :: Check (Unchecked Task) where
 instance checkTask :: Check t => Check (Task t) where
   check s g = case _ of
     Enter b _ -> HashMap.lookup b s |> note (UnknownTypeName b) ||> ofBasic ||> wrapValue
-    Update _ e -> check s g e |= needBasic ||> wrapValue
-    Change _ e -> check s g e |= outofReference ||> wrapValue
-    View _ e -> check s g e |= needBasic ||> wrapValue
-    Watch _ e -> check s g e |= outofReference ||> wrapValue
-    Lift e -> check s g e |= outofRecord ||> TTask
-    Pair ss -> traverse subcheck ss |= unite ||> TTask
-    Choose ss -> traverse subcheck ss |= intersect ||> TTask
-    Branch bs -> traverse subcheck' bs |= intersect ||> TTask
-    Select bs -> traverse subcheck'' bs |= intersect ||> TTask
+    Update _ e -> check s g e ||= needBasic ||> wrapValue
+    Change _ e -> check s g e ||= outofReference ||> wrapValue
+    View _ e -> check s g e ||= needBasic ||> wrapValue
+    Watch _ e -> check s g e ||= outofReference ||> wrapValue
+    Lift e -> check s g e ||= outofRecord ||> TTask
+    Pair ss -> traverse subcheck ss ||= unite ||> TTask
+    Choose ss -> traverse subcheck ss ||= intersect ||> TTask
+    Branch bs -> traverse subcheck' bs ||= intersect ||> TTask
+    Select bs -> traverse subcheck'' bs ||= intersect ||> TTask
     Step m u1 u2 -> do
       t_u1 <- check s g u1
       case t_u1 of
@@ -135,7 +135,7 @@ instance checkTask :: Check t => Check (Task t) where
             throw <| ArgumentError r' t_a
         _ -> throw <| FunctionNeeded t_x
     Hole _ -> throw <| HoleFound g --TODO: how to handle holes?
-    Share e -> check s g e |= outofBasic ||> TReference ||> wrapValue
+    Share e -> check s g e ||= outofBasic ||> TReference ||> wrapValue
     Assign e1 e2 -> do
       t1 <- check s g e1
       b1 <- outofReference t1
@@ -145,7 +145,7 @@ instance checkTask :: Check t => Check (Task t) where
       else
         throw <| AssignError b1 b2
     where
-    subcheck t = check s g t |= outofTask
+    subcheck t = check s g t ||= outofTask
 
     subcheck' (e ** t) = do
       t_e <- check s g e
@@ -162,7 +162,7 @@ match m t = case m of
   MBind x -> done <| from [ x ** t ]
   MRecord ms -> do
     case t of
-      TRecord r -> merge ms r |= traverse (uncurry match) |= unite
+      TRecord r -> merge ms r ||= traverse (uncurry match) ||= unite
       _ -> throw <| RecordMismatch ms t
   MUnpack -> do
     case t of
@@ -247,7 +247,7 @@ wrapValue t = TTask <| from [ "value" ** t ]
 
 ---- General helpers
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
-keys = HashMap.keys >> from
+keys = HashMap.keys .> from
 
 infixl 6 HashMap.difference as \\
 

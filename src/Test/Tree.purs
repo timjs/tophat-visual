@@ -44,8 +44,8 @@ tree (Tree name children) = do
     Node.ul'
       [ Node.li'
           [ Rename <|| title name
-          , Create -|| Input.button "Create"
-          , Delete -|| Input.button "Delete"
+          , Create <<< Input.button "Create"
+          , Delete <<< Input.button "Delete"
           , Modify <|| list tree children
           ]
       ]
@@ -59,7 +59,7 @@ tree (Tree name children) = do
 title :: String -> Widget String
 title old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
-  new <- Node.div' [ Input.entry old old, Input.button "Cancel" ||- old ]
+  new <- Node.div' [ Input.entry old old, Input.button "Cancel" >>> old ]
   done
     <| if new == "" then
         old
@@ -85,11 +85,11 @@ tree_ :: Tree String -> Signal (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
     name' <- loop name title
-    deleting <- step false (Input.button "Delete" ||- done true)
+    deleting <- step false (Input.button "Delete" >>> done true)
     if deleting then
       done Nothing
     else do
-      child' <- step Nothing (Input.button "New" ||- done (Just newTree))
+      child' <- step Nothing (Input.button "New" >>> done (Just newTree))
       let
         children' = case child' of
           Nothing -> children
@@ -112,8 +112,8 @@ tree' (Tree name children) = do
     Node.ul'
       [ Node.li'
           [ Rename <|| title name
-          , Create -|| Input.button "Create"
-          , Delete -|| Input.button "Delete"
+          , Create <<< Input.button "Create"
+          , Delete <<< Input.button "Delete"
           , Modify <|| forest children
           ]
       ]
