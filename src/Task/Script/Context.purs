@@ -1,8 +1,8 @@
 module Task.Script.Context
   ( Context
-  , builtins
+  , builtinNames
   , Typtext
-  , types
+  , builtinTypes
   -- # Types
   , (:->)
   , listOf
@@ -18,8 +18,8 @@ import Task.Script.Syntax (BasicType(..), Name, PrimType(..), Type_(..), ofBasic
 type Context
   = HashMap Name Type_
 
-builtins :: Context
-builtins =
+builtinNames :: Context
+builtinNames =
   from
     [ "not" ~> TPrimitive TBool :-> TPrimitive TBool
     , "&&" ~> TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
@@ -35,8 +35,8 @@ builtins =
 type Typtext
   = HashMap Name BasicType
 
-types :: Typtext
-types =
+builtinTypes :: Typtext
+builtinTypes =
   from
     [ "Bool" ~> BPrimitive TBool
     , "Int" ~> BPrimitive TInt
