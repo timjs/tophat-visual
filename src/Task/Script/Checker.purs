@@ -17,11 +17,12 @@ module Task.Script.Checker
   ) where
 
 import Preload
+
 import Data.Array as Array
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Context (Context, Typtext)
-import Task.Script.Error (Error(..), Unchecked(..))
+import Task.Script.Error (Error(..), Unchecked(..), expand)
 import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row_, Task(..), Type_(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
@@ -41,7 +42,9 @@ instance Check Expression where
       case t1 of
         TFunction t' t -> do
           t2 <- check s g e2
-          if t' == t2 then
+          t2' <- expand s t2
+          t'' <- expand s t'
+          if t'' == t2' then
             done t
           else
             throw <| ArgumentError t' t2
@@ -129,7 +132,9 @@ instance Check t => Check (Task t) where
       case t_x of
         TFunction r' t -> do
           t_a <- check s g a
-          if r' == t_a then
+          t_a' <- expand s t_a
+          r'' <- expand s r'
+          if r'' == t_a' then
             done t
           else
             throw <| ArgumentError r' t_a

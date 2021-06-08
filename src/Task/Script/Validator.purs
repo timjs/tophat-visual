@@ -6,7 +6,7 @@ import Preload
 import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
-import Task.Script.Error (Checked(..), Error(..), Unchecked(..), withTypeOf, extract, bury, sink, fail, extract, lift, pass)
+import Task.Script.Error (Checked(..), Error(..), Unchecked(..), bury, expand, extract, fail, lift, pass, sink, withTypeOf)
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------
@@ -56,10 +56,12 @@ validate s g (Unchecked i) = case i of
       case t_n of
         TFunction r' t -> do
           t_a <- check s g a
-          if r' == t_a then
+          t_a' <- expand s t_a
+          r'' <- expand s r'
+          if r'' == t_a' then
             done t
           else
-            throw <| ArgumentError r' t_a
+            throw <| ArgumentError r'' t_a'
         _ -> throw <| FunctionNeeded t_n
   Hole _ -> fail g i (HoleFound g) --TODO: how to handle holes?
   Share e ->
