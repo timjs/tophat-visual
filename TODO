@@ -1,0 +1,17 @@
+# Task Script
+
+## Errors
+
+* Move (Un)Checked to own module
+
+## Preload
+
+### Medium
+
+* Change >> to .>
+
+### Low
+
+* HashMap Semigroup and Monoid instances
+* Slice type
+* Fold, Traverse etc synonyms
