@@ -1,17 +1,22 @@
 # Task Script
 
+## Checker/Validator
+
+[ ] Make type expansion more robust
+
 ## Errors
 
-* Move (Un)Checked to own module
+[ ] Move (Un)Checked to own module
+[ ] Fix printing of long records
 
-## Preload
+# Preload
 
-### Medium
+## Medium
 
-* Change >> to .>
+[x] Change >> to .>
 
-### Low
+## Low
 
-* HashMap Semigroup and Monoid instances
-* Slice type
-* Fold, Traverse etc synonyms
+[ ] HashMap Semigroup and Monoid instances
+[ ] Slice type
+[ ] Fold, Traverse etc synonyms
