@@ -10,7 +10,7 @@ import Concur.Dom.Layout (Direction(..), Orientation(..), ShapeStyle, Sided(..),
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Data.HashMap as HashMap
-import Task.Script.Context (Context, Typtext, builtinTypes)
+import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Error (Unchecked(..))
 import Task.Script.Syntax (Row_, Arguments, Expression, Message, Name, Task(..))
 
@@ -156,7 +156,7 @@ selectType s i n =
   showBox style_box
     [ i
     , Input.picker'
-        [ "Builtin" ~> Array.sort (HashMap.keys builtinTypes)
+        [ "Builtin" ~> Array.sort (HashMap.keys aliases)
         , "Project" ~> Array.sort (HashMap.keys s)
         ]
         n
