@@ -6,12 +6,12 @@ import Concur.Dom (Widget)
 import Concur.Dom.Icon (Icon)
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
-import Concur.Dom.Layout (Direction(..), Orientation(..), ShapeStyle, Sided(..), LineStyle)
+import Concur.Dom.Layout (Direction(..), Orientation(..), ShapeStyle, Sided(..))
 import Concur.Dom.Layout as Layout
 import Data.Array as Array
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, aliases)
-import Task.Script.Error (Unchecked(..))
+import Task.Script.Knot (Unchecked(..))
 import Task.Script.Syntax (Row_, Arguments, Expression, Message, Name, Task(..))
 
 ---- Rendering -----------------------------------------------------------------

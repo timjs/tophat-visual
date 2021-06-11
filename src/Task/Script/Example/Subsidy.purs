@@ -3,7 +3,7 @@ module Task.Script.Example.Subsidy where
 import Preload
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
-import Task.Script.Error (Unchecked(..))
+import Task.Script.Knot (Unchecked(..))
 import Task.Script.Syntax (Arguments(..), BasicType(..), Expression(..), Match(..), Task(..))
 
 ---- Context -------------------------------------------------------------------

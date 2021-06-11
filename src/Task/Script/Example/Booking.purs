@@ -1,8 +1,8 @@
 module Task.Script.Example.Booking where
 
 import Preload
-import Data.HashMap (empty)
-import Task.Script.Error (Unchecked(..))
+import Data.HashMap as HashMap
+import Task.Script.Knot (Unchecked(..))
 import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type_(..))
 
 ---- Types ---------------------------------------------------------------------
@@ -10,9 +10,9 @@ t_nationality :: Type_
 t_nationality =
   TVariant
     <| from
-        [ "Dutch" ~> TRecord empty
-        , "British" ~> TRecord empty
-        , "German" ~> TRecord empty
+        [ "Dutch" ~> TRecord HashMap.empty
+        , "British" ~> TRecord HashMap.empty
+        , "German" ~> TRecord HashMap.empty
         ]
 
 t_passenger :: Type_
@@ -29,9 +29,9 @@ t_flight :: Type_
 t_flight =
   TVariant
     <| from
-        [ "ToAmsterdam" ~> TRecord empty
-        , "ToLondon" ~> TRecord empty
-        , "ToBerlin" ~> TRecord empty
+        [ "ToAmsterdam" ~> TRecord HashMap.empty
+        , "ToLondon" ~> TRecord HashMap.empty
+        , "ToBerlin" ~> TRecord HashMap.empty
         ]
 
 t_row :: Type_

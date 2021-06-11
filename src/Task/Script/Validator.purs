@@ -6,7 +6,8 @@ import Preload
 import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
-import Task.Script.Error (Checked(..), Error(..), Unchecked(..), withTypeOf, bury, sink, fail, extract, lift, pass)
+import Task.Script.Error (Error(..))
+import Task.Script.Knot (Checked(..), Unchecked(..), withTypeOf, bury, sink, fail, extract, lift, pass)
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------

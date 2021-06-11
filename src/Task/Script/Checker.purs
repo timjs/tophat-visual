@@ -21,7 +21,8 @@ import Data.Array as Array
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Context (Context, Typtext)
-import Task.Script.Error (Error(..), Unchecked(..))
+import Task.Script.Error (Error(..))
+import Task.Script.Knot (Unchecked(..))
 import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row_, Task(..), Type_(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
