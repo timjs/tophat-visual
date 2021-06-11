@@ -6,7 +6,7 @@ import Preload
 import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
-import Task.Script.Error (Checked(..), Error(..), Unchecked(..), bury, expand, extract, fail, lift, pass, sink, withTypeOf)
+import Task.Script.Error (Checked(..), Error(..), Unchecked(..), withTypeOf, bury, sink, fail, extract, lift, pass)
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------
@@ -56,12 +56,10 @@ validate s g (Unchecked i) = case i of
       case t_n of
         TFunction r' t -> do
           t_a <- check s g a
-          t_a' <- expand s t_a
-          r'' <- expand s r'
-          if r'' == t_a' then
+          if r' == t_a then
             done t
           else
-            throw <| ArgumentError r'' t_a'
+            throw <| ArgumentError r' t_a
         _ -> throw <| FunctionNeeded t_n
   Hole _ -> fail g i (HoleFound g) --TODO: how to handle holes?
   Share e ->
@@ -81,9 +79,9 @@ validate s g (Unchecked i) = case i of
   where
   validate1 :: Unchecked Task -> Checked Task
   validate1 u@(Unchecked i') = case validate s g u of --XXX crashes when eta expanded
-    Pass g t j -> case t of
-      TTask _ -> pass g j t
-      _ -> fail g i' <| TaskNeeded t
+    Pass g' t j -> case t of
+      TTask _ -> pass g' j t
+      _ -> fail g' i' <| TaskNeeded t
     c -> c
 
   -- | Validate a branch consisting of a boolean expression and an unchecked task.
