@@ -76,15 +76,15 @@ data Direction
 type Color
   = String
 
-type LineStyle r
-  = { draw :: Color
-    , stroke :: String
-    -- , phase :: Phase
-    , thickness :: Number -- in pt
-    -- , cap :: Cap
-    -- , join :: Join
-    | r
-    }
+type LineStyle r =
+  { draw :: Color
+  , stroke :: String
+  -- , phase :: Phase
+  , thickness :: Number -- in pt
+  -- , cap :: Cap
+  -- , join :: Join
+  | r
+  }
 
 line :: forall a r. Orientation -> Number -> LineStyle r -> Widget a
 line orientation length { draw, stroke, thickness } =
@@ -120,7 +120,7 @@ head direction { draw, stroke, thickness } =
     empty
   where
   style_direction = case direction of
-    _ ->  --TODO add other directions
+    _ -> --TODO add other directions
       -- top, right, bottom, left in that order (clockwise)
       { borderWidth: unwords [ thickness |> pc, thickness / 2.0 |> pc, 0.0 |> pc, thickness / 2.0 |> pc ]
       , borderColor: unwords [ draw, "transparent", "transparent", "transparent" ]
@@ -147,13 +147,12 @@ data Sized a
   | Minimally a
   | Between a a
 
-type ShapeStyle r
-  = LineStyle
-      ( fill :: Color
-      , margin :: Sided Number
-      , padding :: Sided Number
-      | r
-      )
+type ShapeStyle r = LineStyle
+  ( fill :: Color
+  , margin :: Sided Number
+  , padding :: Sided Number
+  | r
+  )
 
 group :: forall a r. Orientation -> LineStyle r -> Array (Widget a) -> Widget a
 group orientation { draw, stroke, thickness } =

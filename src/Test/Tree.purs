@@ -51,20 +51,20 @@ tree (Tree name children) = do
       ]
   done
     <| case result of
-        Rename name' -> Just <| Tree name' children
-        Create -> Just <| Tree name (Array.snoc children newTree)
-        Delete -> Nothing
-        Modify children' -> Just <| Tree name children'
+      Rename name' -> Just <| Tree name' children
+      Create -> Just <| Tree name (Array.snoc children newTree)
+      Delete -> Nothing
+      Modify children' -> Just <| Tree name children'
 
 title :: String -> Widget String
 title old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
   new <- Node.div' [ Input.entry old old, Input.button "Cancel" >>> old ]
-  done
-    <| if new == "" then
-        old
-      else
-        new
+  done <|
+    if new == "" then
+      old
+    else
+      new
 
 render :: forall a. Tree String -> Widget a
 render t = do

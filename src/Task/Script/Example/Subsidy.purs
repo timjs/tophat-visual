@@ -12,39 +12,39 @@ types =
   from
     [ "Citizen"
         ~> recordOf'
-            [ "ssn" ~> BName "Nat"
-            , "name" ~> BName "String"
-            , "address" ~> BName "Address"
-            ]
+          [ "ssn" ~> BName "Nat"
+          , "name" ~> BName "String"
+          , "address" ~> BName "Address"
+          ]
     , "Company"
         ~> recordOf'
-            [ "coc" ~> BName "Nat"
-            , "name" ~> BName "String"
-            , "address" ~> BName "Address"
-            ]
+          [ "coc" ~> BName "Nat"
+          , "name" ~> BName "String"
+          , "address" ~> BName "Address"
+          ]
     , "Address"
         ~> recordOf'
-            [ "street" ~> BName "String"
-            , "house_number" ~> BName "Nat"
-            , "postal_code" ~> BName "Nat"
-            , "city" ~> BName "String"
-            ]
+          [ "street" ~> BName "String"
+          , "house_number" ~> BName "Nat"
+          , "postal_code" ~> BName "Nat"
+          , "city" ~> BName "String"
+          ]
     , "Documents"
         ~> recordOf'
-            [ "invoice_amount" ~> BName "Nat"
-            , "invoice_date" ~> BName "Date"
-            , "roof_photos" ~> BList (BName "String")
-            ]
+          [ "invoice_amount" ~> BName "Nat"
+          , "invoice_date" ~> BName "Date"
+          , "roof_photos" ~> BList (BName "String")
+          ]
     , "Declaration"
         ~> recordOf'
-            [ "roof_photos" ~> BList (BName "String")
-            , "date" ~> BName "Date"
-            ]
+          [ "roof_photos" ~> BList (BName "String")
+          , "date" ~> BName "Date"
+          ]
     , "Dossier"
         ~> recordOf'
-            [ "documents" ~> BName "Documents"
-            , "declaration" ~> BName "Declaration"
-            ]
+          [ "documents" ~> BName "Documents"
+          , "declaration" ~> BName "Declaration"
+          ]
     ]
 
 context :: Context
@@ -90,26 +90,28 @@ request_subsidy =
     <| Step (MRecord <| from [ "approved" ~> MBind "approved" ]) (Unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ~> Variable "details" ]))
     <| Unchecked
     <| Branch
-        [ Apply (Variable "not") (Variable "approved")
-            ~> ( Unchecked
-                  <| View "Cannot approve" (Record HashMap.empty)
-              )
-        , Variable "approved"
-            ~> ( Unchecked
-                  <| Step (MRecord <| from [ "documents" ~> MBind "documents", "declaration" ~> MBind "declaration" ])
-                      ( Unchecked
-                          <| Pair
-                              [ Unchecked
-                                  <| Execute "provide_documents" (ARecord <| from [ "details" ~> Variable "details" ])
-                              , Unchecked
-                                  <| Step (MRecord <| from [ "contractor" ~> MBind "contractor" ]) (Unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
-                                  <| Unchecked
-                                  <| Step (MRecord <| from [ "declaration" ~> MBind "declaration" ]) (Unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~> Variable "contractor", "details" ~> Variable "details" ]))
-                                  <| Unchecked
-                                  <| Lift (Record <| from [ "contractor" ~> Variable "contractor", "declaration" ~> Variable "declaration" ])
-                              ]
-                      )
-                  <| Unchecked
-                  <| Execute "submit_request" (ARecord <| from [ "dossier" ~> Record (from [ "declaration" ~> Variable "declaration", "documents" ~> Variable "documents" ]) ])
-              )
-        ]
+      [ Apply (Variable "not") (Variable "approved")
+          ~>
+            ( Unchecked
+                <| View "Cannot approve" (Record HashMap.empty)
+            )
+      , Variable "approved"
+          ~>
+            ( Unchecked
+                <| Step (MRecord <| from [ "documents" ~> MBind "documents", "declaration" ~> MBind "declaration" ])
+                  ( Unchecked
+                      <| Pair
+                        [ Unchecked
+                            <| Execute "provide_documents" (ARecord <| from [ "details" ~> Variable "details" ])
+                        , Unchecked
+                            <| Step (MRecord <| from [ "contractor" ~> MBind "contractor" ]) (Unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
+                            <| Unchecked
+                            <| Step (MRecord <| from [ "declaration" ~> MBind "declaration" ]) (Unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~> Variable "contractor", "details" ~> Variable "details" ]))
+                            <| Unchecked
+                            <| Lift (Record <| from [ "contractor" ~> Variable "contractor", "declaration" ~> Variable "declaration" ])
+                        ]
+                  )
+                <| Unchecked
+                <| Execute "submit_request" (ARecord <| from [ "dossier" ~> Record (from [ "declaration" ~> Variable "declaration", "documents" ~> Variable "documents" ]) ])
+            )
+      ]

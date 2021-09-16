@@ -1,7 +1,7 @@
 module Task.Script.Expander
   ( class Expand
-  , expand)
-  where
+  , expand
+  ) where
 
 import Preload
 

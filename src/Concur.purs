@@ -79,8 +79,8 @@ list render elements = do
   (index ~> result) <- Internal.orr indexedElements
   done
     <| case result of
-        Nothing -> Array.deleteAt index elements ?? elements
-        Just element' -> Array.updateAt index element' elements ?? elements
+      Nothing -> Array.deleteAt index elements ?? elements
+      Just element' -> Array.updateAt index element' elements ?? elements
   where
   indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <|| render element)
 

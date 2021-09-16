@@ -8,7 +8,6 @@ import Preload
 import Task.Script.Context (Context)
 import Task.Script.Syntax (Label, Labels, Match, Name, Row_, Type_, showLabels)
 
-
 ---- Errors --------------------------------------------------------------------
 data Error
   = UnknownVariable Name
