@@ -29,7 +29,7 @@ module Task.Script.Syntax
 
 import Preload
 import Data.Doc as Doc
-import Data.Doc (Doc, class Display, display)
+import Data.Doc (class Display, display)
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 
