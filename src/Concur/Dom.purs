@@ -42,7 +42,7 @@ floatValue :: forall a. React.SyntheticEvent_ a -> Maybe Number
 floatValue = stringValue >> Number.fromString
 
 intValue :: forall a. React.SyntheticEvent_ a -> Maybe Int
-intValue e = floatValue e ||> Int.floor
+intValue e = floatValue e >-> Int.floor
 
 ---- Running -------------------------------------------------------------------
 runWidgetInDom :: forall a. String -> Widget a -> Effect Unit

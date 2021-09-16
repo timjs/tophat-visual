@@ -5,6 +5,7 @@ module Concur.Dom.Input
   , entry
   , picker
   , picker'
+  , textbox
   ) where
 
 import Preload
@@ -14,15 +15,17 @@ import Concur.Dom.Node as Node
 import Data.Array as Array
 
 -- [normal|radio|image]button, toggle/switch/checkbox, slider, stepper, [normal|date|time|file|color|...]picker, entry/entry
+
 ---- Controls ------------------------------------------------------------------
+
 button :: String -> Widget Unit
 button label = do
   result <-
     Node.input
       [ Attr._type "button"
       , Attr.value label
-      , Attr.onClick >>> Nothing
-      , Attr.onKeyDown ||> Just
+      , Attr.onClick ->> Nothing
+      , Attr.onKeyDown >-> Just
       ]
   case result of
     Nothing -> done unit
@@ -37,7 +40,7 @@ toggle checked = do
   Node.input
     [ Attr._type "checkbox"
     , Attr.checked checked
-    , Attr.onInput >>> unit
+    , Attr.onInput ->> unit
     ]
   done (not checked)
 
@@ -49,7 +52,7 @@ picker options default = do
       , Attr.defaultValue (show default)
       ]
       (Array.mapWithIndex go options)
-  case intValue result ||= Array.index options of
+  case intValue result >>= Array.index options of
     Just x -> done x
     Nothing -> picker options default
   where
@@ -98,8 +101,8 @@ entry placeholder value = do
           , width: "auto"
           , height: "auto"
           }
-      , Attr.onInput ||> Left
-      , Attr.onKeyDown ||> Right
+      , Attr.onInput >-> Left
+      , Attr.onKeyDown >-> Right
       ]
   case result of
     Left event -> entry placeholder (stringValue event)
@@ -110,10 +113,11 @@ entry placeholder value = do
         entry placeholder value
 
 ---- Derived -------------------------------------------------------------------
+
 textbox :: String -> Widget String
 textbox value = do
   Node.div [ void Attr.onClick ] [ Node.text value ]
-  new <- Node.div' [ entry value value, button "Cancel" >>> value ]
+  new <- Node.div' [ entry value value, button "Cancel" ->> value ]
   --XXX inconsistent formatting when compared to `case-of`...
   done
     if new == "" then

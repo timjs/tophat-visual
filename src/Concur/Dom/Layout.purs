@@ -32,19 +32,21 @@ import Concur.Dom.Node as Node
 import Record as Record
 
 ---- Boxes ---------------------------------------------------------------------
+
 element :: forall a s. Record s -> Array (Widget a) -> Widget a
 element s = Node.div [ Attr.style s ]
 
 row :: forall a. Array (Widget a) -> Widget a
-row = element ({ flexDirection: "row" } /\ style_flexbox)
+row = element ({ flexDirection: "row" } \/ style_flexbox)
 
 column :: forall a. Array (Widget a) -> Widget a
-column = element ({ flexDirection: "column" } /\ style_flexbox)
+column = element ({ flexDirection: "column" } \/ style_flexbox)
 
 style_flexbox :: { alignItems :: String, display :: String, justifyContent :: String }
 style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center" }
 
 ---- Text ----------------------------------------------------------------------
+
 -- type TextStyle r
 --   = { face :: Face
 --     , size :: Int
@@ -63,6 +65,7 @@ lines :: forall a. Array String -> Widget a
 lines xs = column <| map Node.text xs
 
 ---- Lines ---------------------------------------------------------------------
+
 data Orientation
   = Horizontal
   | Vertical
@@ -73,8 +76,8 @@ data Direction
   | Forward
   | Backward
 
-type Color
-  = String
+type Color = String
+type Length = Number
 
 type LineStyle r =
   { draw :: Color
@@ -86,15 +89,14 @@ type LineStyle r =
   | r
   }
 
-line :: forall a r. Orientation -> Number -> LineStyle r -> Widget a
+line :: forall a r. Orientation -> Length -> LineStyle r -> Widget a
 line orientation length { draw, stroke, thickness } =
   element
     ( { position: "relative"
       , borderColor: draw
       , borderStyle: stroke
       , borderWidth: thickness |> pt
-      }
-        /\ style_orientation
+      } \/ style_orientation
     )
     empty
   where
@@ -113,23 +115,33 @@ head direction { draw, stroke, thickness } =
   element
     ( { width: 0.0 |> pc
       , height: 0.0 |> pc
-      , borderStyle: "solid"
-      }
-        /\ style_direction
+      , borderStyle: stroke
+      } \/ style_direction
     )
     empty
   where
   style_direction = case direction of
-    _ -> --TODO add other directions
+    Downward ->
       -- top, right, bottom, left in that order (clockwise)
       { borderWidth: unwords [ thickness |> pc, thickness / 2.0 |> pc, 0.0 |> pc, thickness / 2.0 |> pc ]
       , borderColor: unwords [ draw, "transparent", "transparent", "transparent" ]
       }
+    _ -> todo "add other directions"
 
 -- border-left: 0.5pc solid transparent;
 -- border-right: 0.5pc solid transparent;
 -- border-top: 1pc solid lightgray;
+
 ---- Shapes --------------------------------------------------------------------
+
+type Round = Number
+
+type Width = Number
+
+type Height = Number
+
+type Radius = Number
+
 data Sided a
   = All a
   | Some { top :: a, right :: a, bottom :: a, left :: a }
@@ -167,7 +179,7 @@ group orientation { draw, stroke, thickness } =
     Horizontal -> unwords [ thickness |> pt, "0" ]
     Vertical -> unwords [ "0", thickness |> pt ]
 
-box :: forall a r. Number -> Number -> Number -> ShapeStyle r -> Array (Widget a) -> Widget a
+box :: forall a r. Round -> Width -> Height -> ShapeStyle r -> Array (Widget a) -> Widget a
 box round width height { fill, draw, stroke, thickness, margin, padding } =
   element
     { width: width |> pc
@@ -181,27 +193,31 @@ box round width height { fill, draw, stroke, thickness, margin, padding } =
     , padding: padding |> map pc |> convert
     }
 
-rectangle :: forall a r. Number -> Number -> ShapeStyle r -> Array (Widget a) -> Widget a
+rectangle :: forall a r. Width -> Height -> ShapeStyle r -> Array (Widget a) -> Widget a
 rectangle = box 0.0
 
-square :: forall a r. Number -> ShapeStyle r -> Array (Widget a) -> Widget a
+square :: forall a r. Width -> ShapeStyle r -> Array (Widget a) -> Widget a
 square size = rectangle size size
 
-circle :: forall a r. Number -> ShapeStyle r -> Array (Widget a) -> Widget a
+circle :: forall a r. Radius -> ShapeStyle r -> Array (Widget a) -> Widget a
 circle radius = box 50.0 diameter diameter
   where
   diameter = radius * 2.0
 
-diamond :: forall a r. Number -> Number -> ShapeStyle r -> Array (Widget a) -> Widget a
-diamond width height style inner = rotate 45.0 [ rectangle width height style [ rotate (-45.0) inner ] ]
+diamond :: forall a r. Width -> Height -> ShapeStyle r -> Array (Widget a) -> Widget a
+diamond width height style inner = rotate 45.0 [ rectangle width height style [ rotate (negate 45.0) inner ] ]
 
 ---- Transformations -----------------------------------------------------------
-rotate :: forall a. Number -> Array (Widget a) -> Widget a
+
+type Degrees = Number
+
+rotate :: forall a. Degrees -> Array (Widget a) -> Widget a
 rotate degrees =
   element
     { transform: "rotate(" ++ show degrees ++ "deg)" }
 
 ---- Units ---------------------------------------------------------------------
+
 pt :: Number -> String
 pt x = show x ++ "pt"
 
@@ -212,4 +228,5 @@ ct :: Number -> String
 ct x = show x ++ "%"
 
 ---- Helpers -------------------------------------------------------------------
-infixr 5 Record.union as /\
+
+infixr 5 Record.union as \/

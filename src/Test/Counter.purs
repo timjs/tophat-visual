@@ -9,18 +9,19 @@ import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
 
 ---- Widgets -------------------------------------------------------------------
+
 counter :: Int -> Widget Int
 counter n = do
   Node.div'
-    [ Node.button [ Attr.onClick >>> n + 1 ] [ Icon.plus_square ]
+    [ Node.button [ Attr.onClick ->> n + 1 ] [ Icon.plus_square ]
     , Node.text <| show n
-    , Node.button [ Attr.onClick >>> n - 1 ] [ Icon.minus_square ]
+    , Node.button [ Attr.onClick ->> n - 1 ] [ Icon.minus_square ]
     ]
 
 -- | Displays a counter for every widget.
 -- |
--- |* Widgets end after the first event has been sent.
--- |* Results are collected in an array.
+-- | * Widgets end after the first event has been sent.
+-- | * Results are collected in an array.
 counters :: Array Int -> Widget (Array Int)
 counters xs = combine (map counter xs)
 
@@ -28,13 +29,13 @@ main :: Widget (Array Int)
 main = counters [ 1, 2, 3 ]
 
 ---- Signals -------------------------------------------------------------------
+
 -- | Repeat the counter widget as a signal.
 -- |
 -- | * Signal starts with given initial value.
 -- | * Widget is repeated with resulting value.
 -- | * Value is kept in the signal.
 counter_ :: Int -> Signal Int
--- counter_ k = loop k counter
 counter_ k = loop k counter
 
 -- | Dynamically traverse counter signal.
@@ -56,12 +57,13 @@ counters__ xs = do
   display <| Node.text <| show { content: xs, isSorted: isSorted xs }
   loop xs counters
 
--- | * `loop` has to be there to feed the start value
--- |   and to feed next results into the signal again!
+-- | NOTE: `loop` has to be there to feed the start value
+-- |       and to feed next results into the signal again!
 main_ :: Widget (Array Int)
 main_ = dynamic <| fix [ 1, 2, 3 ] counters_
 
 ---- Helpers -------------------------------------------------------------------
+
 isSorted :: Array Int -> Bool
 isSorted xs = case Array.tail xs of
   Nothing -> true

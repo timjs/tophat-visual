@@ -9,11 +9,11 @@ import Concur.Dom.Input as Input
 import Data.Array as Array
 
 ---- Data ----------------------------------------------------------------------
+
 data Tree a
   = Tree a (Forest a)
 
-type Forest a
-  = Array (Tree a)
+type Forest a = Array (Tree a)
 
 newTree :: Tree String
 newTree = Tree "New heading" []
@@ -29,9 +29,10 @@ initTree =
 ---- Widgets -------------------------------------------------------------------
 {-
   Widgets:
-  - Everything you lay out on a page using `Node` tags is *parallel composition* or *composition in space*.
-  - Everything you do inside the monad is *stepwise composition* or *composition in time*.
+  * Everything you lay out on a page using `Node` tags is *parallel composition* or *composition in space*.
+  * Everything you do inside the monad is *stepwise composition* or *composition in time*.
 -}
+
 data Action
   = Rename String
   | Create
@@ -43,10 +44,10 @@ tree (Tree name children) = do
   result <-
     Node.ul'
       [ Node.li'
-          [ Rename <|| title name
-          , Create <<< Input.button "Create"
-          , Delete <<< Input.button "Delete"
-          , Modify <|| list tree children
+          [ Rename <-< title name
+          , Create <<- Input.button "Create"
+          , Delete <<- Input.button "Delete"
+          , Modify <-< list tree children
           ]
       ]
   done
@@ -59,7 +60,7 @@ tree (Tree name children) = do
 title :: String -> Widget String
 title old = do
   Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
-  new <- Node.div' [ Input.entry old old, Input.button "Cancel" >>> old ]
+  new <- Node.div' [ Input.entry old old, Input.button "Cancel" ->> old ]
   done <|
     if new == "" then
       old
@@ -85,11 +86,11 @@ tree_ :: Tree String -> Signal (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
     name' <- loop name title
-    deleting <- step false (Input.button "Delete" >>> done true)
+    deleting <- step false (Input.button "Delete" ->> done true)
     if deleting then
       done Nothing
     else do
-      child' <- step Nothing (Input.button "New" >>> done (Just newTree))
+      child' <- step Nothing (Input.button "New" ->> done (Just newTree))
       let
         children' = case child' of
           Nothing -> children
@@ -111,10 +112,10 @@ tree' (Tree name children) = do
   action <-
     Node.ul'
       [ Node.li'
-          [ Rename <|| title name
-          , Create <<< Input.button "Create"
-          , Delete <<< Input.button "Delete"
-          , Modify <|| forest children
+          [ Rename <-< title name
+          , Create <<- Input.button "Create"
+          , Delete <<- Input.button "Delete"
+          , Modify <-< forest children
           ]
       ]
   done

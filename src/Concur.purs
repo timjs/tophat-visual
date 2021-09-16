@@ -82,14 +82,14 @@ list render elements = do
       Nothing -> Array.deleteAt index elements ?? elements
       Just element' -> Array.updateAt index element' elements ?? elements
   where
-  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <|| render element)
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <-< render element)
 
 list' :: forall v a. Monoid v => (a -> Reexport.Widget v a) -> Array a -> Reexport.Widget v (Array a)
 list' render elements = do
   (index ~> element) <- Internal.orr indexedElements
   done <| Array.updateAt index element elements ?? elements
   where
-  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <|| render element)
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <-< render element)
 
 ---- Classes -------------------------------------------------------------------
 class (Internal.ShiftMap s t) <= Shift s t
@@ -129,6 +129,6 @@ list' render elements = do
   pure <| List.setAt index result elements
   where
     indexedElements =
-      List.imap (\index element -> (index,) <|| render element) <| elements
+      List.imap (\index element -> (index,) <-< render element) <| elements
 
 -}

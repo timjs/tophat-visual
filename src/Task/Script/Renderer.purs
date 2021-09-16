@@ -108,10 +108,10 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
   renderStep :: Unchecked Task -> Unchecked Task -> Widget (Both (Unchecked Task))
   renderStep t1 t2 = do
     Layout.column
-      [ renderTask' t1 ||> Left
+      [ renderTask' t1 >-> Left
       , Layout.line Vertical 2.0 style_line
       , Layout.head Downward style_line
-      , renderTask' t2 ||> Right
+      , renderTask' t2 >-> Right
       ]
 
 -- | [[ t ]]
@@ -177,7 +177,7 @@ editExpression i e =
 -- | x *--* y
 renderShare :: forall a b. Mode -> Widget a -> Widget b -> Widget (Either a b)
 renderShare m a b = do
-  Layout.row [ a ||> Left, line, b ||> Right ]
+  Layout.row [ a >-> Left, line, b >-> Right ]
   where
   line = case m of
     Reading -> Layout.row [ dot, connection ]

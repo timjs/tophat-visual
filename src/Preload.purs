@@ -45,7 +45,7 @@ module Preload
   , (>>)
   , (|>)
   , (<|)
-  , undefined
+  , todo
   -- Enums
   , (..)
   -- Naturals
@@ -82,19 +82,19 @@ module Preload
   , unwords
   , unlines
   -- Functors, Applicatives, Alternatives, Monads
-  , (<||)
-  , (||>)
-  , (<<<)
-  , (>>>)
+  , (<-<)
+  , (>->)
+  , (<<-)
+  , (->>)
   , done
-  , (-||)
   , (-<<)
-  , (>>-)
+  , (-<-)
+  , (->-)
   , skip
   , pair
   , (<>)
-  , (||=)
-  , (=||)
+  -- , (>>=)
+  -- , (=<<)
   -- Newtypes
   , using
   ) where
@@ -272,8 +272,11 @@ infixr 0 apply as <|
 
 infixl 1 applyFlipped as |>
 
-undefined :: forall a. Warn (Text "Undefined function in code") => a
-undefined = unsafeCoerce {}
+-- undefined :: forall a. Warn (Text "Undefined function in code") => a
+-- undefined = unsafeCoerce {}
+
+todo :: forall a. Warn (Text "Todo left in code") => String -> a
+todo _ = unsafeCoerce {}
 
 ---- Enums ---------------------------------------------------------------------
 
@@ -382,31 +385,31 @@ unlines = Reexport.intercalate "\n"
 
 ---- Functors, Applicatives, Applicatives, Monads ------------------------------
 
-infixl 4 Reexport.map as <||
+infixl 4 Reexport.map as <-<
 
-infixl 1 Reexport.mapFlipped as ||>
+infixl 1 Reexport.mapFlipped as >->
 
-infixl 4 Reexport.voidRight as <<<
+infixl 4 Reexport.voidRight as <<-
 
-infixl 4 Reexport.voidLeft as >>>
+infixl 4 Reexport.voidLeft as ->>
 
-infixl 4 Reexport.apply as -||
+infixl 4 Reexport.apply as -<<
 
-infixl 4 Reexport.applyFirst as -<<
+infixl 4 Reexport.applyFirst as -<-
 
-infixl 4 Reexport.applySecond as >>-
+infixl 4 Reexport.applySecond as ->-
 
 infixl 5 pair as <>
 
-infixl 1 Reexport.bind as ||=
+-- infixl 1 Reexport.bind as >>=
 
-infixr 1 Reexport.bindFlipped as =||
+-- infixr 1 Reexport.bindFlipped as =<<
 
 done :: forall f a. Reexport.Applicative f => a -> f a
 done = pure
 
 pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a * b)
-pair x y = done (~>) -|| x -|| y
+pair x y = done (~>) -<< x -<< y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit

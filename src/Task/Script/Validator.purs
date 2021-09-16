@@ -14,23 +14,23 @@ import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type
 validate :: Typtext -> Context -> Unchecked Task -> Checked Task
 validate s g (Unchecked i) = case i of
   ---- Editors
-  Enter n m -> lift g i (Enter n m) (HashMap.lookup n s |> note (UnknownTypeName n) ||> ofBasic ||> wrapValue)
-  Update m e -> lift g i (Update m e) (check s g e ||= needBasic ||> wrapValue)
-  Change m e -> lift g i (Change m e) (check s g e ||= outofReference ||> wrapValue)
-  View m e -> lift g i (View m e) (check s g e ||= needBasic ||> wrapValue)
-  Watch m e -> lift g i (Watch m e) (check s g e ||= outofReference ||> wrapValue)
-  Lift e -> lift g i (Lift e) (check s g e ||= outofRecord ||> TTask)
+  Enter n m -> lift g i (Enter n m) (HashMap.lookup n s |> note (UnknownTypeName n) >-> ofBasic >-> wrapValue)
+  Update m e -> lift g i (Update m e) (check s g e >>= needBasic >-> wrapValue)
+  Change m e -> lift g i (Change m e) (check s g e >>= outofReference >-> wrapValue)
+  View m e -> lift g i (View m e) (check s g e >>= needBasic >-> wrapValue)
+  Watch m e -> lift g i (Watch m e) (check s g e >>= outofReference >-> wrapValue)
+  Lift e -> lift g i (Lift e) (check s g e >>= outofRecord >-> TTask)
   ---- Combinators
-  Pair us -> sink g (Pair cs) (traverse outofBranch cs ||= unite ||> TTask)
+  Pair us -> sink g (Pair cs) (traverse outofBranch cs >>= unite >-> TTask)
     where
     cs = map validate1 us
-  Choose us -> sink g (Choose cs) (traverse outofBranch cs ||= intersect ||> TTask)
+  Choose us -> sink g (Choose cs) (traverse outofBranch cs >>= intersect >-> TTask)
     where
     cs = map validate1 us
-  Branch us -> sink g (Branch cs) (traverse (snd >> outofBranch) cs ||= intersect ||> TTask)
+  Branch us -> sink g (Branch cs) (traverse (snd >> outofBranch) cs >>= intersect >-> TTask)
     where
     cs = map validate2 us
-  Select us -> sink g (Select cs) (traverse (snd >> snd >> outofBranch) cs ||= intersect ||> TTask)
+  Select us -> sink g (Select cs) (traverse (snd >> snd >> outofBranch) cs >>= intersect >-> TTask)
     where
     cs = map validate3 us
   Step m u1@(Unchecked i1) u2@(Unchecked i2) ->
