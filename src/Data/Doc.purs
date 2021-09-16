@@ -34,7 +34,7 @@ class Display a where
   display :: a -> Doc
 
 show :: forall a. Show a => a -> Doc
-show = Preload.show .> text
+show = Preload.show >> text
 
 ---- Characters ----------------------------------------------------------------
 space :: Columns
@@ -90,13 +90,13 @@ backticks :: Doc -> Doc
 backticks = enclose (text "`") (text "`")
 
 tuple :: forall f. Traversable f => f Doc -> Doc
-tuple = parens <. using Columns (intercalate comma)
+tuple = parens << using Columns (intercalate comma)
 
 list :: forall f. Traversable f => f Doc -> Doc
-list = brackets <. using Columns (intercalate comma)
+list = brackets << using Columns (intercalate comma)
 
 record :: forall f. Traversable f => Doc -> f (Doc * Doc) -> Doc
-record sep = braces <. using Columns (intercalate comma) <. map (\(k ~> v) -> columns [ k, sep, v ])
+record sep = braces << using Columns (intercalate comma) << map (\(k ~> v) -> columns [ k, sep, v ])
 
 ---- Wrappers ------------------------------------------------------------------
 -- | A wrapper for `Doc` with a `Monoid` instance which stacks documents as lines.

@@ -49,13 +49,13 @@ aliases =
 infixr 3 TFunction as :->
 
 listOf :: BasicType -> Type_
-listOf = BList .> ofBasic
+listOf = BList >> ofBasic
 
 recordOf' :: Array (String * BasicType) -> BasicType
-recordOf' = from .> BRecord
+recordOf' = from >> BRecord
 
 recordOf :: Array (String * BasicType) -> Type_
-recordOf = recordOf' .> ofBasic
+recordOf = recordOf' >> ofBasic
 
 taskOf :: Array (String * BasicType) -> Type_
-taskOf = from .> map ofBasic .> TTask
+taskOf = from >> map ofBasic >> TTask

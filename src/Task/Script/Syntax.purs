@@ -63,7 +63,7 @@ type Labels
   = HashSet Label
 
 showLabels :: HashSet Label -> String
-showLabels = HashSet.toArray .> intercalate "," .> enclose '{' '}'
+showLabels = HashSet.toArray >> intercalate "," >> enclose '{' '}'
 
 type Name
   = String
@@ -290,7 +290,7 @@ derive instance Eq t => Eq (Task t)
 derive instance Functor Task
 
 instance Display t => Show (Task t) where
-  show = display .> Doc.render
+  show = display >> Doc.render
 
 instance Display t => Display (Task t) where
   display = case _ of
@@ -313,15 +313,15 @@ instance Display t => Display (Task t) where
     -- inner :: Array t -> Doc
     inner =
       map display
-        .> Doc.lines
-        .> Doc.indent
+        >> Doc.lines
+        >> Doc.indent
 
     inner' =
       map (\(e ~> s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
-        .> Doc.lines
-        .> Doc.indent
+        >> Doc.lines
+        >> Doc.indent
 
     inner'' =
       map (\(l ~> e ~> s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
-        .> Doc.lines
-        .> Doc.indent
+        >> Doc.lines
+        >> Doc.indent

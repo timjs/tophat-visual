@@ -39,7 +39,7 @@ stringValue :: forall a. React.SyntheticEvent_ a -> String
 stringValue = React.unsafeTargetValue
 
 floatValue :: forall a. React.SyntheticEvent_ a -> Maybe Number
-floatValue = stringValue .> Number.fromString
+floatValue = stringValue >> Number.fromString
 
 intValue :: forall a. React.SyntheticEvent_ a -> Maybe Int
 intValue e = floatValue e ||> Int.floor

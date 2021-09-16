@@ -27,10 +27,10 @@ validate s g (Unchecked i) = case i of
   Choose us -> sink g (Choose cs) (traverse outofBranch cs ||= intersect ||> TTask)
     where
     cs = map validate1 us
-  Branch us -> sink g (Branch cs) (traverse (snd .> outofBranch) cs ||= intersect ||> TTask)
+  Branch us -> sink g (Branch cs) (traverse (snd >> outofBranch) cs ||= intersect ||> TTask)
     where
     cs = map validate2 us
-  Select us -> sink g (Select cs) (traverse (snd .> snd .> outofBranch) cs ||= intersect ||> TTask)
+  Select us -> sink g (Select cs) (traverse (snd >> snd >> outofBranch) cs ||= intersect ||> TTask)
     where
     cs = map validate3 us
   Step m u1@(Unchecked i1) u2@(Unchecked i2) ->
@@ -94,9 +94,9 @@ validate s g (Unchecked i) = case i of
   validate2 (e ~> u@(Unchecked i')) =
     e
       ~> case check s g e of
-          Right (TPrimitive TBool) -> validate1 u
-          Right t -> fail g i' <| BoolNeeded t
-          Left x -> fail g i' x
+        Right (TPrimitive TBool) -> validate1 u
+        Right t -> fail g i' <| BoolNeeded t
+        Left x -> fail g i' x
 
   validate3 :: Label * Expression * Unchecked Task -> Label * Expression * Checked Task
   validate3 (l ~> e ~> u) = l ~> validate2 (e ~> u)

@@ -41,8 +41,8 @@ module Preload
   , class Initialise
   , from
   -- Functions
-  , (<.)
-  , (.>)
+  , (<<)
+  , (>>)
   , (|>)
   , (<|)
   , undefined
@@ -147,6 +147,7 @@ import Prim.TypeError (class Warn, Text)
 import Unsafe.Coerce (unsafeCoerce)
 
 ---- Booleans ------------------------------------------------------------------
+
 type Bool
   = Boolean
 
@@ -161,6 +162,7 @@ composeOr :: forall a. (a -> Bool) -> (a -> Bool) -> a -> Bool
 composeOr f g x = f x Reexport.|| g x
 
 ---- Tuples --------------------------------------------------------------------
+
 infixr 2 Tuple as ~>
 
 infixr 2 type Tuple as *
@@ -169,18 +171,21 @@ trd :: forall a b c. a * b * c -> c
 trd (_ ~> _ ~> c) = c
 
 ---- Eithers -------------------------------------------------------------------
+
 infixr 1 type Either as +
 
-throw :: forall x a. x -> Reexport.Either x a
+throw :: forall x a. x -> x + a
 throw = Reexport.Left
 
 ---- Maybes --------------------------------------------------------------------
+
 infix 2 withDefault as ??
 
 withDefault :: forall a. Reexport.Maybe a -> a -> a
 withDefault = Reexport.flip fromMaybe
 
 ---- Strings -------------------------------------------------------------------
+
 enclose :: Char -> Char -> String -> String
 enclose a b s = String.singleton a ++ s ++ String.singleton b
 
@@ -191,6 +196,7 @@ indent :: Int -> String -> String
 indent n s = Reexport.fold (Reexport.replicate n "  " :: Array String) ++ s
 
 ---- Arrays --------------------------------------------------------------------
+
 type Idx
   = Int
 
@@ -201,47 +207,48 @@ type Idx
 -- view xs = Slice { array: xs, index: 0, length: Array.length xs }
 -- -- *O(1)*
 -- slice :: forall a. Int -> Int -> Array a -> Slice a
--- slice n m = Slice.fromArray .> Slice.slice n m
+-- slice n m = Slice.fromArray >> Slice.slice n m
 -- -- *O(1)*
 -- uncons :: forall a. Array a -> Reexport.Maybe { head :: a, tail :: Slice a }
--- uncons = Slice.fromArray .> Slice.uncons
+-- uncons = Slice.fromArray >> Slice.uncons
 -- -- *O(1)*
 -- unsnoc :: forall a. Array a -> Reexport.Maybe { init :: Slice a, last :: a }
--- unsnoc = Slice.fromArray .> Slice.unsnoc
+-- unsnoc = Slice.fromArray >> Slice.unsnoc
 -- -- *O(1)*
 -- tail :: forall a. Array a -> Reexport.Maybe (Slice a)
--- tail = Slice.fromArray .> Slice.tail
+-- tail = Slice.fromArray >> Slice.tail
 -- -- *O(1)*
 -- init :: forall a. Array a -> Reexport.Maybe (Slice a)
--- init = Slice.fromArray .> Slice.init
+-- init = Slice.fromArray >> Slice.init
 -- -- *O(1)*
 -- take :: forall a. Int -> Array a -> Slice a
--- take n = Slice.fromArray .> Slice.take n
+-- take n = Slice.fromArray >> Slice.take n
 -- -- *O(1)*
 -- takeEnd :: forall a. Int -> Array a -> Slice a
--- takeEnd n = Slice.fromArray .> Slice.takeEnd n
+-- takeEnd n = Slice.fromArray >> Slice.takeEnd n
 -- -- *O(m)*
 -- takeWhile :: forall a. (a -> Boolean) -> Array a -> Slice a
--- takeWhile f = Slice.fromArray .> Slice.takeWhile f
+-- takeWhile f = Slice.fromArray >> Slice.takeWhile f
 -- -- *O(1)*
 -- drop :: forall a. Int -> Array a -> Slice a
--- drop n = Slice.fromArray .> Slice.drop n
+-- drop n = Slice.fromArray >> Slice.drop n
 -- -- *O(1)*
 -- dropEnd :: forall a. Int -> Array a -> Slice a
--- dropEnd n = Slice.fromArray .> Slice.dropEnd n
+-- dropEnd n = Slice.fromArray >> Slice.dropEnd n
 -- -- *O(m)*
 -- dropWhile :: forall a. (a -> Boolean) -> Array a -> Slice a
--- dropWhile f = Slice.fromArray .> Slice.dropWhile f
+-- dropWhile f = Slice.fromArray >> Slice.dropWhile f
 -- -- *O(m)*
 -- span :: forall a. (a -> Boolean) -> Array a -> { init :: Slice a, rest :: Slice a }
--- span f = Slice.fromArray .> Slice.span f
+-- span f = Slice.fromArray >> Slice.span f
 -- group :: forall a. Reexport.Eq a => Array a -> Array (Reexport.NonEmpty Slice a)
--- group = Slice.fromArray .> Slice.group .> Reexport.map fromNonEmptyArrayView .> Slice.toArray
+-- group = Slice.fromArray >> Slice.group >> Reexport.map fromNonEmptyArrayView >> Slice.toArray
 -- groupBy :: forall a. (a -> a -> Boolean) -> Array a -> Array (Reexport.NonEmpty Slice a)
--- groupBy f = Slice.fromArray .> Slice.groupBy f .> Reexport.map fromNonEmptyArrayView .> Slice.toArray
+-- groupBy f = Slice.fromArray >> Slice.groupBy f >> Reexport.map fromNonEmptyArrayView >> Slice.toArray
 -- -- INTERNAL USE ONLY --
 -- fromNonEmptyArrayView :: forall a. Slice.NonEmptyArrayView a -> Reexport.NonEmpty Slice a
 -- fromNonEmptyArrayView (Slice.NonEmptyArrayView xs) = xs
+
 class Initialise c i | c -> i where
   -- type Item c = i
   from :: Array i -> c
@@ -256,9 +263,10 @@ instance Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k * v) where
   from = HashMap.fromArray
 
 ---- Functions -----------------------------------------------------------------
-infixr 9 Reexport.compose as <.
 
-infixr 9 composeFlipped as .>
+infixr 9 Reexport.compose as <<
+
+infixr 9 composeFlipped as >>
 
 infixr 0 apply as <|
 
@@ -268,9 +276,11 @@ undefined :: forall a. Warn (Text "Undefined function in code") => a
 undefined = unsafeCoerce {}
 
 ---- Enums ---------------------------------------------------------------------
+
 infix 8 enumFromTo as ..
 
 ---- Natural numbers -----------------------------------------------------------
+
 newtype Nat
   = Nat Int
 
@@ -298,14 +308,16 @@ instance Reexport.Semiring Nat where
   one = Nat 1
 
 ---- Hashables -----------------------------------------------------------------
+
 infix 4 HashSet.member as =<
 
 infix 4 notMember as /<
 
 notMember :: forall a. Reexport.Hashable a => a -> Reexport.HashSet a -> Bool
-notMember x = Reexport.not <. HashSet.member x
+notMember x = Reexport.not << HashSet.member x
 
 ---- Semigroups, Monoids, Groups, Modules, Torsors -----------------------------
+
 infixr 5 Reexport.append as ++
 
 infixr 5 subtract as ~~
@@ -313,8 +325,7 @@ infixr 5 subtract as ~~
 neutral :: forall m. Reexport.Monoid m => m
 neutral = mempty
 
-class
-  (Reexport.Monoid a) <= Group a where
+class (Reexport.Monoid a) <= Group a where
   invert :: a -> a
   subtract :: a -> a -> a
 
@@ -324,18 +335,17 @@ invertDefault x = neutral ~~ x
 subtractDefault :: forall a. Group a => a -> a -> a
 subtractDefault x y = x ++ invert y
 
-class
-  (Group a, Reexport.Semiring s) <= Module a s | a -> s where
+class (Group a, Reexport.Semiring s) <= Module a s | a -> s where
   -- type Factor a = s
   scale :: s -> a -> a
 
-class
-  (Group d) <= Torsor a d | a -> d where
+class (Group d) <= Torsor a d | a -> d where
   -- type Difference a = d
   diff :: a -> a -> d
   adjust :: d -> a -> a
 
 ---- Foldables, Traversables ---------------------------------------------------
+
 infix 4 foldlInfix as /:
 
 infix 4 foldrInfix as :\
@@ -352,17 +362,17 @@ foldr1 f xs = Reexport.foldr mf Reexport.Nothing xs
   mf x m =
     Reexport.Just
       <| case m of
-          Reexport.Nothing -> x
-          Reexport.Just y -> f x y
+        Reexport.Nothing -> x
+        Reexport.Just y -> f x y
 
 gather :: forall f m a b. Reexport.Foldable f => Reexport.Monad m => (a -> b -> m a) -> a -> f b -> m a
 gather = foldM
 
 words :: forall f. Reexport.Unfoldable f => String -> f String
-words = String.split (String.Pattern " ") .> Array.toUnfoldable
+words = String.split (String.Pattern " ") >> Array.toUnfoldable
 
 lines :: forall f. Reexport.Unfoldable f => String -> f String
-lines = String.split (String.Pattern "\n") .> Array.toUnfoldable
+lines = String.split (String.Pattern "\n") >> Array.toUnfoldable
 
 unwords :: forall f. Reexport.Foldable f => f String -> String
 unwords = Reexport.intercalate " "
@@ -371,6 +381,7 @@ unlines :: forall f. Reexport.Foldable f => f String -> String
 unlines = Reexport.intercalate "\n"
 
 ---- Functors, Applicatives, Applicatives, Monads ------------------------------
+
 infixl 4 Reexport.map as <||
 
 infixl 1 Reexport.mapFlipped as ||>
@@ -401,5 +412,6 @@ skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit
 
 ---- Newtypes ------------------------------------------------------------------
+
 using :: forall f s b a t. Reexport.Newtype t a => Reexport.Newtype s b => Reexport.Functor f => (a -> t) -> (f s -> t) -> f b -> a
-using _ f = Reexport.unwrap <. f <. Reexport.map Reexport.wrap
+using _ f = Reexport.unwrap << f << Reexport.map Reexport.wrap

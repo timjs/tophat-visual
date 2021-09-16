@@ -248,7 +248,7 @@ wrapValue t = TTask <| from [ "value" ~> t ]
 
 ---- General helpers
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
-keys = HashMap.keys .> from
+keys = HashMap.keys >> from
 
 infixl 6 HashMap.difference as \\
 
