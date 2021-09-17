@@ -1,10 +1,5 @@
-{-
-Welcome to a Spago project!
-You can edit this file as you like.
--}
 { name = "TopHat Visual"
 , dependencies =
-  -- [ "array-views"
   [ "arrays"
   , "concur-core"
   , "concur-react"
