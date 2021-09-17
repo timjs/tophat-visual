@@ -38,11 +38,11 @@ renderTask g s u = Layout.column [ renderTask' u ]
       let t1' ~> t2' = consolidate t1 t2 r
       done <| Unchecked (Step m t1' t2')
     Branch bs -> do
-      ts' <- renderGroup style_branch (map snd bs)
+      ts' <- renderOptions Closed style_branch (map snd bs)
       let bs' = Array.zip (map fst bs) ts'
       done <| Unchecked (Branch bs')
     Select bs -> do
-      ts' <- renderGroup style_branch (map trd bs)
+      ts' <- renderOptions Open style_branch (map trd bs)
       let bs' = Array.zip (map fst2 bs) ts' |> map assoc
       done <| Unchecked (Select bs')
       where
@@ -54,6 +54,7 @@ renderTask g s u = Layout.column [ renderTask' u ]
       n' <- selectType s Icon.pen n
       done <| Unchecked (Enter n' m)
     Update m e -> do
+      --TODO: edit expression
       m' <- editMessage Icon.edit m
       done <| Unchecked (Update m' e)
     Change m e -> do
@@ -61,6 +62,7 @@ renderTask g s u = Layout.column [ renderTask' u ]
       let m' ~> e' = consolidate m e r
       done <| Unchecked (Change m' e')
     View m e -> do
+      --TODO: edit expression
       m' <- editMessage Icon.eye m
       done <| Unchecked (View m' e)
     Watch m e -> do
@@ -96,6 +98,17 @@ renderTask g s u = Layout.column [ renderTask' u ]
       let e1' ~> e2' = consolidate e1 e2 r
       done <| Unchecked (Assign e1' e2')
 
+  -- |       V
+  -- | ==============
+  -- |  f_1 ... f_n
+  -- | =============
+  renderOptions :: Kind -> ShapeStyle () -> Array (Unchecked Task) -> Widget (Array (Unchecked Task))
+  renderOptions kind style ts =
+    Layout.column
+      [ Layout.head Downward style_line
+      , renderGroup style ts
+      ]
+
   -- | ==============
   -- |  f_1 ... f_n
   -- | =============
@@ -114,6 +127,8 @@ renderTask g s u = Layout.column [ renderTask' u ]
       , Layout.line Vertical 2.0 style_line
       , renderTask' t2 >-> Right
       ]
+
+data Kind = Open | Closed
 
 ---- Parts ---------------------------------------------------------------------
 
