@@ -81,6 +81,14 @@ picker' groups default = do
     Node.option [ Attr.value option ]
       [ Node.text option ]
 
+-- multipicker :: Array (String * Bool) -> Widget (Array (String * Bool))
+-- multipicker items = do
+--   result <-
+--     Node.select
+--       [Attr.onChange]
+--       (map go items)
+--   done <| stringValue result
+
 -- | Text entry showing `value` and `placeholder` when `value` is empty.
 -- |
 -- | Commits when hitting the enter-key.

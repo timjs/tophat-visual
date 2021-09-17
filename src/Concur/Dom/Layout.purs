@@ -12,7 +12,6 @@ module Concur.Dom.Layout
   , Sized(..)
   , Color
   , line
-  , head
   -- # Shapes
   , ShapeStyle
   , group
@@ -21,6 +20,8 @@ module Concur.Dom.Layout
   , square
   , circle
   , diamond
+  , head
+  , dot
   ) where
 
 import Preload
@@ -43,7 +44,7 @@ column = element ({ flexDirection: "column", alignItems: "center", justifyItems:
 style_flexbox :: { display :: String }
 style_flexbox = { display: "flex" }
 
----- Lines ---------------------------------------------------------------------
+---- Types ---------------------------------------------------------------------
 
 data Orientation
   = Horizontal
@@ -70,6 +71,33 @@ instance Show Stroke where
     Dashed -> "dashed"
     Solid -> "solid"
     Double -> "double"
+
+type Round = Number
+
+type Width = Number
+
+type Height = Number
+
+type Radius = Number
+
+data Sided a
+  = All a
+  | Some { top :: a, right :: a, bottom :: a, left :: a }
+
+derive instance Functor Sided
+
+convert :: Sided String -> String
+convert = case _ of
+  All a -> a
+  Some { top, right, bottom, left } -> unwords [ top, right, bottom, left ]
+
+data Sized a
+  = Exactly a
+  | Maximally a
+  | Minimally a
+  | Between a a
+
+---- Lines ---------------------------------------------------------------------
 
 type LineStyle r =
   { draw :: Color
@@ -126,31 +154,6 @@ head direction { draw, stroke, thickness } =
 
 ---- Shapes --------------------------------------------------------------------
 
-type Round = Number
-
-type Width = Number
-
-type Height = Number
-
-type Radius = Number
-
-data Sided a
-  = All a
-  | Some { top :: a, right :: a, bottom :: a, left :: a }
-
-derive instance Functor Sided
-
-convert :: Sided String -> String
-convert = case _ of
-  All a -> a
-  Some { top, right, bottom, left } -> unwords [ top, right, bottom, left ]
-
-data Sized a
-  = Exactly a
-  | Maximally a
-  | Minimally a
-  | Between a a
-
 type ShapeStyle r = LineStyle
   ( fill :: Color
   , margin :: Sided Number
@@ -200,6 +203,17 @@ circle radius = box 50.0 diameter diameter
 
 diamond :: forall a r. Width -> Height -> ShapeStyle r -> Array (Widget a) -> Widget a
 diamond width height style inner = rotate 45.0 [ rectangle width height style [ rotate (negate 45.0) inner ] ]
+
+dot :: forall a. Radius -> Color -> Widget a
+dot radius color = circle radius
+  { fill: color
+  , draw: color
+  , stroke: "solid"
+  , thickness: 0.0
+  , margin: All 0.0
+  , padding: All 0.0
+  }
+  empty
 
 ---- Transformations -----------------------------------------------------------
 
