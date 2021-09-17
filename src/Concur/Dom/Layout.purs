@@ -1,11 +1,8 @@
 module Concur.Dom.Layout
   -- # Boxes
-  ( row
+  ( element
+  , row
   , column
-  -- # Text
-  , text
-  , code
-  , lines
   -- # Lines
   , LineStyle
   , Orientation(..)
@@ -44,25 +41,6 @@ column = element ({ flexDirection: "column" } \/ style_flexbox)
 
 style_flexbox :: { alignItems :: String, display :: String, justifyContent :: String }
 style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center" }
-
----- Text ----------------------------------------------------------------------
-
--- type TextStyle r
---   = { face :: Face
---     , size :: Int
---     , shape :: Shape
---     , weight :: Weight
---     , decoration :: Line
---     | r
---     }
-text :: forall a. String -> Widget a
-text = Node.text
-
-code :: forall a. String -> Widget a
-code s = Node.pre [] [ Node.text s ]
-
-lines :: forall a. Array String -> Widget a
-lines xs = column <| map Node.text xs
 
 ---- Lines ---------------------------------------------------------------------
 
@@ -224,8 +202,8 @@ pt x = show x ++ "pt"
 pc :: Number -> String
 pc x = show x ++ "pc"
 
-ct :: Number -> String
-ct x = show x ++ "%"
+-- ct :: Number -> String
+-- ct x = show x ++ "%"
 
 ---- Helpers -------------------------------------------------------------------
 

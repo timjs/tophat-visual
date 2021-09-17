@@ -8,6 +8,8 @@ import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
 import Concur.Dom.Layout (Direction(..), Orientation(..), ShapeStyle, Sided(..))
 import Concur.Dom.Layout as Layout
+import Concur.Dom.Text as Text
+import Concur.Dom.Text (text)
 import Data.Array as Array
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, aliases)
@@ -20,14 +22,14 @@ main g s u =
   repeat u \u' ->
     Layout.column
       [ renderTask g s u'
-      , Layout.code <| show u'
+      , Text.code <| show u'
       ]
 
 renderTask :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
 renderTask g s u_ = Layout.column [ renderTask' u_ ]
   where
   renderTask' :: Unchecked Task -> Widget (Unchecked Task)
-  renderTask' u@(Unchecked t) = case t of
+  renderTask' (Unchecked t) = case t of
     ---- Editors
     Enter n m -> do
       n' <- selectType s Icon.pen n
@@ -69,7 +71,7 @@ renderTask g s u_ = Layout.column [ renderTask' u_ ]
         bs' = Array.zip (map fst2 bs) ts' |> map assoc
       done <| Unchecked (Select bs')
       where
-      fst2 (x ~> y ~> z) = x ~> y
+      fst2 (x ~> y ~> _) = x ~> y
 
       assoc ((x ~> y) ~> z) = x ~> (y ~> z)
     Step m t1 t2 -> do
@@ -172,7 +174,7 @@ selectValues g i ns = do
 editExpression :: Icon -> Expression -> Widget Expression
 editExpression i e =
   showBox style_box
-    [ i, Layout.text <| show e ]
+    [ i, text <| show e ]
 
 -- | x *--* y
 renderShare :: forall a b. Mode -> Widget a -> Widget b -> Widget (Either a b)

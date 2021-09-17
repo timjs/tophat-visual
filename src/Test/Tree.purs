@@ -6,6 +6,8 @@ import Concur.Dom (Widget, Signal)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Concur.Dom.Input as Input
+import Concur.Dom.Text as Text
+import Concur.Dom.Layout as Layout
 import Data.Array as Array
 
 ---- Data ----------------------------------------------------------------------
@@ -41,37 +43,31 @@ data Action
 
 tree :: Tree String -> Widget (Maybe (Tree String))
 tree (Tree name children) = do
-  result <-
-    Node.ul'
-      [ Node.li'
-          [ Rename <-< title name
-          , Create <<- Input.button "Create"
-          , Delete <<- Input.button "Delete"
-          , Modify <-< list tree children
-          ]
-      ]
-  done
-    <| case result of
-      Rename name' -> Just <| Tree name' children
-      Create -> Just <| Tree name (Array.snoc children newTree)
-      Delete -> Nothing
-      Modify children' -> Just <| Tree name children'
+  result <- Text.bullets
+    [ Layout.element {}
+        [ Rename <-< title name
+        , Create <<- Input.button "Create"
+        , Delete <<- Input.button "Delete"
+        , Modify <-< list tree children
+        ]
+    ]
+  done <| case result of
+    Rename name' -> Just <| Tree name' children
+    Create -> Just <| Tree name (Array.snoc children newTree)
+    Delete -> Nothing
+    Modify children' -> Just <| Tree name children'
 
 title :: String -> Widget String
 title old = do
-  Node.h5 [ void Attr.onDoubleClick ] [ Node.text old ]
-  new <- Node.div' [ Input.entry old old, Input.button "Cancel" ->> old ]
-  done <|
-    if new == "" then
-      old
-    else
-      new
+  Text.activate [ void Attr.onDoubleClick ] (Text.subhead old)
+  new <- Layout.element {} [ Input.entry old old, Input.button "Cancel" ->> old ]
+  done <| if new == "" then old else new
 
 render :: forall a. Tree String -> Widget a
 render t = do
   mt <- tree t
   case mt of
-    Nothing -> Node.h5 [] [ Node.text "Tree deleted" ]
+    Nothing -> Text.subhead "Tree deleted"
     Just t' -> render t'
 
 -- | Main tree widget
@@ -82,6 +78,7 @@ main :: Widget (Maybe (Tree String))
 main = render initTree
 
 ---- Signals -------------------------------------------------------------------
+
 tree_ :: Tree String -> Signal (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
