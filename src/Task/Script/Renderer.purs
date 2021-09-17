@@ -11,11 +11,13 @@ import Concur.Dom.Layout (Direction(..), Orientation(..), ShapeStyle, Sided(..),
 import Concur.Dom.Layout as Layout
 import Concur.Dom.Text (text)
 import Concur.Dom.Text as Text
+import Control.Monad.List.Trans (cons)
 import Data.Array as Array
+import Data.Generic.Rep (Argument)
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Knot (Unchecked(..))
-import Task.Script.Syntax (Row_, Arguments, Expression, Message, Name, Task(..))
+import Task.Script.Syntax (Arguments(..), Expression, Message, Name, Row_, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
 
@@ -33,6 +35,9 @@ renderTask g s u = renderTask' u
   renderTask' :: Unchecked Task -> Widget (Unchecked Task)
   renderTask' (Unchecked t) = case t of
     ---- Steps
+    --TODO match on `Step m r (Branch bs)` and `Step m r (Select bs)`
+    --IMPL change `renderStep`
+    --INVARIANT third arg of `Step` is always Branch or Select
     Step m t1 t2 -> do
       r <- renderStep t1 t2
       let t1' ~> t2' = consolidate t1 t2 r
@@ -84,12 +89,17 @@ renderTask g s u = renderTask' u
       done <| Unchecked (Choose ts')
 
     ---- Extras
-    Execute n a -> do
-      n' <- selectTask g n
-      done <| Unchecked (Execute n' a)
-    Hole a -> do
-      _ <- editHole g Icon.question a
-      done <| Unchecked (Hole a)
+    Execute n as -> do
+      r <- editTask g n as
+      let n' ~> as' = consolidate n as r
+      done <| Unchecked (Execute n' as')
+    Hole as -> do
+      r <- editHole g Icon.question as
+      let n' ~> as' = consolidate "??" as r
+      if n' == "??" then
+        done <| Unchecked (Hole as')
+      else
+        done <| Unchecked (Execute n' as)
 
     ---- Shares
     Share e -> do --OK
@@ -171,26 +181,39 @@ editMessage i m =
   showBox style_box
     [ i, Input.entry m m ]
 
+editArgs :: Context -> Arguments -> Widget Arguments
+editArgs g (ARecord as) =
+  --TODO show labels and expressions
+  Layout.column (map (show >> text) (HashMap.keys as))
+
 -- | [[ ?? ]]
-editHole :: Context -> Icon -> Arguments -> Widget Name
+editHole :: Context -> Icon -> Arguments -> Widget (Name + Arguments)
+
 editHole g i as =
-  showBox style_hole
-    [ Input.picker'
-        [ "Builtin" ~> []
-        , "Project" ~> Array.sort (HashMap.keys g)
+  Layout.column
+    [ showLine style_line (editArgs g as) >-> Right
+    , showBox style_hole
+        [ Input.picker'
+            [ "Builtin" ~> []
+            , "Project" ~> Array.sort (HashMap.keys g)
+            ]
+            "??"
+            >-> Left
         ]
-        "??"
     ]
 
 -- | [[ n ]]
-selectTask :: Context -> Name -> Widget Name
-selectTask g n =
-  showBox style_box
-    [ Input.picker'
-        [ "Builtin" ~> []
-        , "Project" ~> Array.sort (HashMap.keys g)
+editTask :: Context -> Name -> Arguments -> Widget (Name + Arguments)
+editTask g n as =
+  Layout.column
+    [ showLine style_line (editArgs g as) >-> Right
+    , showBox style_box
+        [ Input.picker'
+            [ "Builtin" ~> []
+            , "Project" ~> Array.sort (HashMap.keys g)
+            ]
+            n >-> Left
         ]
-        n
     ]
 
 -- | [[ i b ]]
