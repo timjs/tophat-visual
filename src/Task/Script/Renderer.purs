@@ -38,11 +38,11 @@ renderTask g s u = Layout.column [ renderTask' u ]
       let t1' ~> t2' = consolidate t1 t2 r
       done <| Unchecked (Step m t1' t2')
     Branch bs -> do
-      ts' <- renderGroup style_group_or (map snd bs)
+      ts' <- renderGroup style_branch (map snd bs)
       let bs' = Array.zip (map fst bs) ts'
       done <| Unchecked (Branch bs')
     Select bs -> do
-      ts' <- renderGroup style_group_or (map trd bs)
+      ts' <- renderGroup style_branch (map trd bs)
       let bs' = Array.zip (map fst2 bs) ts' |> map assoc
       done <| Unchecked (Select bs')
       where
@@ -73,10 +73,10 @@ renderTask g s u = Layout.column [ renderTask' u ]
       _ <- selectValues g Icon.check_square HashMap.empty
       done <| Unchecked (Lift e)
     Pair ts -> do
-      ts' <- renderGroup style_group_and ts
+      ts' <- renderGroup style_group ts
       done <| Unchecked (Pair ts')
     Choose ts -> do
-      ts' <- renderGroup style_group_or ts
+      ts' <- renderGroup style_branch ts
       done <| Unchecked (Choose ts')
 
     ---- Extras
@@ -214,11 +214,14 @@ style_box =
   , margin: Some { top: 0.0, bottom: 0.0, left: 1.0, right: 1.0 }
   }
 
-style_group_and :: ShapeStyle ()
-style_group_and = style_box
+style_group :: ShapeStyle ()
+style_group = style_box
+  { thickness = 6.0
+  , padding = All 2.0
+  }
 
-style_group_or :: ShapeStyle ()
-style_group_or = style_group_and { stroke = "dashed" }
+style_branch :: ShapeStyle ()
+style_branch = style_group { stroke = "dashed" }
 
 style_hole :: ShapeStyle ()
 style_hole = style_box { stroke = "dashed", fill = "white" }

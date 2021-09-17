@@ -22,7 +22,7 @@ select {
   border               : none;
   outline              : none;
   border-radius        : 0pc;
-  /* width             : auto; */
+  width                : auto;
   margin               : 0;
   font                 : initial;
   padding              : 0pc;

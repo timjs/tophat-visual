@@ -35,13 +35,13 @@ element :: forall a s. Record s -> Array (Widget a) -> Widget a
 element s = Node.div [ Attr.style s ]
 
 row :: forall a. Array (Widget a) -> Widget a
-row = element ({ flexDirection: "row" } \/ style_flexbox)
+row = element ({ flexDirection: "row", alignItems: "stretch", justifyItems: "stretch" } \/ style_flexbox)
 
 column :: forall a. Array (Widget a) -> Widget a
-column = element ({ flexDirection: "column" } \/ style_flexbox)
+column = element ({ flexDirection: "column", alignItems: "center", justifyItems: "stretch" } \/ style_flexbox)
 
-style_flexbox :: { alignItems :: String, display :: String, justifyContent :: String }
-style_flexbox = { display: "flex", alignItems: "center", justifyContent: "center" }
+style_flexbox :: { display :: String }
+style_flexbox = { display: "flex" }
 
 ---- Lines ---------------------------------------------------------------------
 
@@ -158,13 +158,15 @@ type ShapeStyle r = LineStyle
   | r
   )
 
-group :: forall a r. Orientation -> LineStyle r -> Array (Widget a) -> Widget a
-group orientation { draw, stroke, thickness } =
+group :: forall a r. Orientation -> ShapeStyle r -> Array (Widget a) -> Widget a
+group orientation { draw, stroke, thickness, margin, padding } =
   element
-    { borderColor: draw
+    { backgroundColor: "transparent"
+    , borderColor: draw
     , borderStyle: stroke
     , borderWidth: style_orientation
-    -- , margin: "-2pt"
+    , margin: margin |> map pc |> convert
+    , padding: padding |> map pc |> convert
     }
   where
   style_orientation = case orientation of
