@@ -34,6 +34,7 @@ import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 
 ---- Synonyms ------------------------------------------------------------------
+
 type Row_ a
   = HashMap Label a
 
@@ -75,6 +76,7 @@ type Message
   = String
 
 ---- Types ---------------------------------------------------------------------
+
 data Type_
   = TFunction Type_ Type_
   | TName Name
@@ -181,6 +183,7 @@ isBasic t
   | otherwise = false
 
 ---- Expressions ---------------------------------------------------------------
+
 data Expression
   = Lambda Match Type_ Expression
   | Apply Expression Expression
@@ -240,6 +243,7 @@ instance Show Constant where
     S s -> show s
 
 ---- Matches -------------------------------------------------------------------
+
 data Match
   = MIgnore
   | MBind Name
@@ -256,6 +260,7 @@ instance Show Match where
     MUnpack -> "{..}"
 
 ---- Statements ----------------------------------------------------------------
+
 -- data Statement t
 --   = Step' Match t (Statement t)
 --   | Task' t
@@ -264,9 +269,14 @@ instance Show Match where
 --   show = case _ of
 --     Step' m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
 --     Task' t -> show t
+
 data Task t
+  -- Steps
+  = Step Match t t
+  | Branch (Array (Expression * t))
+  | Select (Array (Label * Expression * t))
   -- Editors
-  = Enter Name Message
+  | Enter Name Message
   | Update Message Expression
   | Change Message Expression
   | View Message Expression
@@ -275,9 +285,6 @@ data Task t
   | Lift Expression
   | Pair (Array t)
   | Choose (Array t)
-  | Branch (Array (Expression * t))
-  | Select (Array (Label * Expression * t))
-  | Step Match t t
   -- Extras
   | Execute Name Arguments
   | Hole Arguments
@@ -294,6 +301,9 @@ instance Display t => Show (Task t) where
 
 instance Display t => Display (Task t) where
   display = case _ of
+    Step m t s -> Doc.lines [ Doc.words [ Doc.show m, Doc.text "<-", display t ], display s ]
+    Branch bs -> Doc.lines [ Doc.text "branch", inner' bs ]
+    Select bs -> Doc.lines [ Doc.text "select", inner'' bs ]
     Enter t m -> Doc.words [ Doc.text "enter", Doc.text t, Doc.quotes (Doc.text m) ]
     Update m e -> Doc.words [ Doc.text "update", Doc.quotes (Doc.text m), Doc.show e ]
     Change m e -> Doc.words [ Doc.text "change", Doc.quotes (Doc.text m), Doc.show e ]
@@ -302,9 +312,6 @@ instance Display t => Display (Task t) where
     Lift e -> Doc.words [ Doc.text "done", Doc.show e ]
     Pair ss -> Doc.lines [ Doc.text "pair", inner ss ]
     Choose ss -> Doc.lines [ Doc.text "choose", inner ss ]
-    Branch bs -> Doc.lines [ Doc.text "branch", inner' bs ]
-    Select bs -> Doc.lines [ Doc.text "select", inner'' bs ]
-    Step m t s -> Doc.lines [ Doc.words [ Doc.show m, Doc.text "<-", display t ], display s ]
     Execute n as -> Doc.words [ Doc.text n, Doc.show as ]
     Hole as -> Doc.words [ Doc.text "?", Doc.show as ]
     Share e -> Doc.words [ Doc.text "share", Doc.show e ]

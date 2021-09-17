@@ -9,5 +9,5 @@ import Task.Script.Renderer as Renderer
 import Test.Tree as Test
 
 main :: Effect Unit
-main = runWidgetInDom "root" <| Test.main
--- main = runWidgetInDom "root" <| Renderer.main Example.context Example.types Example.request_subsidy
+-- main = runWidgetInDom "root" <| Test.main
+main = runWidgetInDom "root" <| Renderer.main Example.context Example.types Example.request_subsidy

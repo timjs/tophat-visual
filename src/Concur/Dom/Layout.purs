@@ -7,6 +7,7 @@ module Concur.Dom.Layout
   , LineStyle
   , Orientation(..)
   , Direction(..)
+  , Stroke(..)
   , Sided(..)
   , Sized(..)
   , Color
@@ -56,6 +57,19 @@ data Direction
 
 type Color = String
 type Length = Number
+
+data Stroke
+  = Dotted
+  | Dashed
+  | Solid
+  | Double
+
+instance Show Stroke where
+  show = case _ of
+    Dotted -> "dotted"
+    Dashed -> "dashed"
+    Solid -> "solid"
+    Double -> "double"
 
 type LineStyle r =
   { draw :: Color
