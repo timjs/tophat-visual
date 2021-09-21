@@ -36,6 +36,7 @@ import Effect.Aff.Class (class MonadAff)
 import Effect.Class (class MonadEffect)
 
 ---- Widgets -------------------------------------------------------------------
+
 -- | Combine multiple widgets showing them in parallel, until all finish, and collect their outputs.
 combine :: forall v a. Monoid v => Array (Reexport.Widget v a) -> Reexport.Widget v (Array a)
 combine = Internal.andd
@@ -51,6 +52,7 @@ repeat x w = do
   repeat x' w
 
 ---- Signals -------------------------------------------------------------------
+
 -- | Turn a (closed) signal into a widget.
 dynamic :: forall m a b. Monad m => Cofree m a -> m b
 dynamic = Internal.dyn
@@ -64,6 +66,7 @@ fix :: forall m a. Monad m => a -> (a -> Cofree m a) -> Cofree m a
 fix = Internal.loopS
 
 ---- Wires ---------------------------------------------------------------------
+
 type Wire m a
   = Internal.Wire m a
 
@@ -74,6 +77,7 @@ focus :: forall m s a. Functor m => Lens' s a -> Wire m s -> Wire m a
 focus = Internal.mapWire
 
 ---- Combinators ---------------------------------------------------------------
+
 list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
 list render elements = do
   (index ~> result) <- Internal.orr indexedElements
@@ -92,6 +96,7 @@ list' render elements = do
   indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <-< render element)
 
 ---- Classes -------------------------------------------------------------------
+
 class (Internal.ShiftMap s t) <= Shift s t
 
 instance (Internal.ShiftMap s t) => Shift s t
