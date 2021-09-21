@@ -21,6 +21,7 @@ module Preload
   , quote
   , indent
   -- Arrays
+  , Assoc
   -- , Idx
   -- , Slice
   -- , view
@@ -145,6 +146,7 @@ import Effect (Effect) as Reexport
 import Prelude hiding (mempty, pure, (<<<), (>>>), (<>), ($), (#), (<$>), (<#>), (<@>), (<$), ($>), (<*>), (<*), (*>)) as Reexport
 import Prim.TypeError (class Warn, Text)
 import Unsafe.Coerce (unsafeCoerce)
+import Safe.Coerce (coerce) as Reexport
 
 ---- Booleans ------------------------------------------------------------------
 
@@ -197,8 +199,9 @@ indent n s = Reexport.fold (Reexport.replicate n "  " :: Array String) ++ s
 
 ---- Arrays --------------------------------------------------------------------
 
-type Idx
-  = Int
+type Assoc k v = Array (k * v)
+
+type Idx = Int
 
 -- data Slice a
 --   = Slice { array :: Array a, index :: Idx, length :: Nat }
