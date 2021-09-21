@@ -91,15 +91,15 @@ validate s g (Unchecked i) = case i of
   -- This is due to the data type: errors can only be saved in a `Fail` constructor of a `Checked Task`,
   -- not in the expression.
   validate2 :: Expression * Unchecked Task -> Expression * Checked Task
-  validate2 (e ~> u@(Unchecked i')) =
+  validate2 (e ~ u@(Unchecked i')) =
     e
-      ~> case check s g e of
-        Right (TPrimitive TBool) -> validate1 u
-        Right t -> fail g i' <| BoolNeeded t
-        Left x -> fail g i' x
+      ~ case check s g e of
+          Right (TPrimitive TBool) -> validate1 u
+          Right t -> fail g i' <| BoolNeeded t
+          Left x -> fail g i' x
 
   validate3 :: Label * Expression * Unchecked Task -> Label * Expression * Checked Task
-  validate3 (l ~> e ~> u) = l ~> validate2 (e ~> u)
+  validate3 (l ~ e ~ u) = l ~ validate2 (e ~ u)
 
 ---- Helpers -------------------------------------------------------------------
 outofBranch :: Checked Task -> Error + Row_ Type_

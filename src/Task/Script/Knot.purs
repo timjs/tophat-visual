@@ -75,14 +75,14 @@ withTypeOf c b f = case c of
   Pass _ t _ -> f t
   _ -> Bury b
 
--- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error + (Task (Checked Task) ~> Type_)) -> Checked Task
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error + (Task (Checked Task) ~ Type_)) -> Checked Task
 -- annotate (Unchecked u) f = case f u of
 --   Left x -> Fail x u
---   Right (c ~> t) -> Pass t c
--- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error + (Task (Checked Task) ~> Type_)) -> Checked Task
+--   Right (c ~ t) -> Pass t c
+-- annotate :: Unchecked Task -> (Task (Unchecked Task) -> Error + (Task (Checked Task) ~ Type_)) -> Checked Task
 -- annotate (Unchecked u) f = case f u of
 --   Left x -> Fail x u
---   Right (c ~> t) -> Pass t c
+--   Right (c ~ t) -> Pass t c
 -- replace :: Error -> Checked Task -> Checked Task
 -- replace x = case _ of
 --   Fail _ c -> Fail x c

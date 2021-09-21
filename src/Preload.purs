@@ -7,7 +7,7 @@ module Preload
   , (|||)
   , composeOr
   -- Tuples
-  , (~>)
+  , (~)
   , type (*)
   , trd
   -- Eithers
@@ -165,12 +165,12 @@ composeOr f g x = f x Reexport.|| g x
 
 ---- Tuples --------------------------------------------------------------------
 
-infixr 2 Tuple as ~>
+infixr 2 Tuple as ~
 
 infixr 2 type Tuple as *
 
 trd :: forall a b c. a * b * c -> c
-trd (_ ~> _ ~> c) = c
+trd (_ ~ _ ~ c) = c
 
 ---- Eithers -------------------------------------------------------------------
 
@@ -412,7 +412,7 @@ done :: forall f a. Reexport.Applicative f => a -> f a
 done = pure
 
 pair :: forall f a b. Reexport.Applicative f => f a -> f b -> f (a * b)
-pair x y = done (~>) -<< x -<< y
+pair x y = done (~) -<< x -<< y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit

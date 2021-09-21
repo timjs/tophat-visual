@@ -80,20 +80,20 @@ focus = Internal.mapWire
 
 list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
 list render elements = do
-  (index ~> result) <- Internal.orr indexedElements
+  (index ~ result) <- Internal.orr indexedElements
   done
     <| case result of
       Nothing -> Array.deleteAt index elements ?? elements
       Just element' -> Array.updateAt index element' elements ?? elements
   where
-  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <-< render element)
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~ _) <-< render element)
 
 list' :: forall v a. Monoid v => (a -> Reexport.Widget v a) -> Array a -> Reexport.Widget v (Array a)
 list' render elements = do
-  (index ~> element) <- Internal.orr indexedElements
+  (index ~ element) <- Internal.orr indexedElements
   done <| Array.updateAt index element elements ?? elements
   where
-  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~> _) <-< render element)
+  indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~ _) <-< render element)
 
 ---- Classes -------------------------------------------------------------------
 

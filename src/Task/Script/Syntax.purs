@@ -324,11 +324,11 @@ instance Display t => Display (Task t) where
         >> Doc.indent
 
     inner' =
-      map (\(e ~> s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+      map (\(e ~ s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
         >> Doc.lines
         >> Doc.indent
 
     inner'' =
-      map (\(l ~> e ~> s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+      map (\(l ~ e ~ s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
         >> Doc.lines
         >> Doc.indent

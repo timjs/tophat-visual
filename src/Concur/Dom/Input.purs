@@ -106,7 +106,7 @@ picker groups default = do
       (map go groups)
   done <| stringValue result
   where
-  go (label ~> options) =
+  go (label ~ options) =
     Node.optgroup [ Attr.label label ]
       (map go' options)
   go' option =

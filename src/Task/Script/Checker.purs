@@ -65,7 +65,7 @@ instance Check Expression where
         TVariant r -> do
           bs' <- merge r bs --NOTE be aware of order: r is a subset of bs
           ts <-
-            for bs' \(t ~> m ~> e) -> do
+            for bs' \(t ~ m ~ e) -> do
               d <- match m t
               check s (g \/ d) e
           smash ts
@@ -148,19 +148,19 @@ instance Check t => Check (Task t) where
     where
     subcheck t = check s g t >>= outofTask
 
-    subcheck' (e ~> t) = do
+    subcheck' (e ~ t) = do
       t_e <- check s g e
       case t_e of
         TPrimitive TBool -> subcheck t
         _ -> throw <| BoolNeeded t_e
 
-    subcheck'' (_ ~> e ~> t) = subcheck' (e ~> t)
+    subcheck'' (_ ~ e ~ t) = subcheck' (e ~ t)
 
 ---- Matcher -------------------------------------------------------------------
 match :: Match -> Type_ -> Error + Context
 match m t = case m of
   MIgnore -> done HashMap.empty
-  MBind x -> done <| from [ x ~> t ]
+  MBind x -> done <| from [ x ~ t ]
   MRecord ms -> do
     case t of
       TRecord r -> merge ms r >>= traverse (uncurry match) >>= unite
@@ -199,7 +199,7 @@ intersect rs = foldr1 HashMap.intersection rs |> note EmptyChoice
 merge :: forall a b. Row_ a -> Row_ b -> Error + Row_ (a * b)
 merge r1 r2 =
   if HashMap.isEmpty ds then
-    done <| HashMap.intersectionWith (~>) r1 r2
+    done <| HashMap.intersectionWith (~) r1 r2
   else
     throw <| UnknownLabels (keys ds) (keys r2)
   where
@@ -244,7 +244,7 @@ outofTask t
   | otherwise = throw <| TaskNeeded t
 
 wrapValue :: Type_ -> Type_
-wrapValue t = TTask <| from [ "value" ~> t ]
+wrapValue t = TTask <| from [ "value" ~ t ]
 
 ---- General helpers
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k

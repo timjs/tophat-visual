@@ -21,15 +21,15 @@ type Context
 builtins :: Context
 builtins =
   from
-    [ "not" ~> TPrimitive TBool :-> TPrimitive TBool
-    , "&&" ~> TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
-    , "||" ~> TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
-    , "==" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , "/=" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , "+" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "*" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "-" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "/" ~> TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    [ "not" ~ TPrimitive TBool :-> TPrimitive TBool
+    , "&&" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+    , "||" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+    , "==" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , "/=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , "+" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "*" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "-" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "/" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
     ]
 
 type Typtext
@@ -38,11 +38,11 @@ type Typtext
 aliases :: Typtext
 aliases =
   from
-    [ "Bool" ~> BPrimitive TBool
-    , "Int" ~> BPrimitive TInt
-    , "Nat" ~> BPrimitive TInt
-    , "Date" ~> BPrimitive TInt
-    , "String" ~> BPrimitive TString
+    [ "Bool" ~ BPrimitive TBool
+    , "Int" ~ BPrimitive TInt
+    , "Nat" ~ BPrimitive TInt
+    , "Date" ~ BPrimitive TInt
+    , "String" ~ BPrimitive TString
     ]
 
 ---- Types ---------------------------------------------------------------------
