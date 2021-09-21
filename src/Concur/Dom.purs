@@ -6,7 +6,9 @@ module Concur.Dom
   , Signal
   -- # Elements
   , block
+  , blockWithData
   , inline
+  , inlineWithData
   -- # Values
   , stringValue
   , intValue
@@ -18,7 +20,7 @@ module Concur.Dom
 import Preload
 import Concur (Widget, Signal) as Concur
 import Concur.React (HTML) as React
-import Concur.React.Props (ReactProps, unsafeTargetValue) as React
+import Concur.React.Props (unsafeTargetValue) as React
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
 import Concur.React.Run (runWidgetInDom) as React
@@ -30,7 +32,7 @@ import Data.Number as Number
 
 type Dom = React.HTML
 
-type Attr a = React.ReactProps a
+type Attr a = Attr.Attr a
 
 type Widget = Concur.Widget Dom
 
@@ -41,8 +43,14 @@ type Signal a = Concur.Signal Dom a
 block :: forall a. Array String -> Array (Widget a) -> Widget a
 block cs = Node.div (map Attr.className cs)
 
+blockWithData :: forall a r. Array String -> Record r -> Array (Widget a) -> Widget a
+blockWithData cs r = Node.div ((map Attr.className cs) ++ [ Attr._data r ])
+
 inline :: forall a. Array String -> Array (Widget a) -> Widget a
 inline cs = Node.span (map Attr.className cs)
+
+inlineWithData :: forall a r. Array String -> Record r -> Array (Widget a) -> Widget a
+inlineWithData cs r = Node.span ((map Attr.className cs) ++ [ Attr._data r ])
 
 ---- Target values -------------------------------------------------------------
 

@@ -12,7 +12,8 @@ module Concur.Dom.Input
   ) where
 
 import Preload
-import Concur.Dom (Widget, block, inline, intValue, stringValue)
+
+import Concur.Dom (Widget, block, inline, inlineWithData, intValue, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Concur.Dom.Style (Kind, Size, Position)
@@ -26,9 +27,7 @@ button kind size label = do
   result <-
     Node.input
       [ Attr._type "button"
-      , Attr.className "btn"
-      , Attr.className ("btn-" ++ show kind)
-      , Attr.className ("btn-" ++ show size)
+      , Attr.classes [ "btn", "btn-" ++ show kind, "btn-" ++ show size ]
       , Attr.value label
       , Attr.onClick ->> Nothing
       , Attr.onKeyDown >-> Just
@@ -50,13 +49,13 @@ button kind size label = do
 toggle :: Toggle -> String -> Bool -> Widget Bool
 toggle typ label checked = do
   block [ "form-group" ]
-    [ Node.label [ Attr.className ("form-" ++ show typ) ]
+    [ Node.label [ Attr.classes [ "form-" ++ show typ ] ]
         [ Node.input
             [ Attr._type "checkbox"
             , Attr.checked checked
             , Attr.onInput ->> unit
             ]
-        , Node.i [ Attr.className "form-icon" ] [ Node.text label ]
+        , Node.i [ Attr.classes [ "form-icon" ] ] [ Node.text label ]
         ]
     ]
   done (not checked)
@@ -99,7 +98,7 @@ picker :: Assoc String (Array String) -> String -> Widget String
 picker groups default = do
   result <-
     Node.select
-      [ Attr.className "form-select"
+      [ Attr.classes [ "form-select" ]
       , Attr.onChange
       , Attr.defaultValue default
       ]
@@ -131,8 +130,7 @@ entry size placeholder value = do
   result <-
     Node.input
       [ Attr._type "text"
-      , Attr.className "form-input"
-      , Attr.className ("input-" ++ show size)
+      , Attr.classes [ "form-input", "input-" ++ show size ]
       -- , Attr.autoFocus true
       -- , Attr.label label
       , Attr.defaultValue value
@@ -159,11 +157,8 @@ addon size contents widget =
     ]
 
 tooltip :: forall a. Position -> String -> Widget a -> Widget a
-tooltip pos text widget = Node.span
-  [ Attr.className "tooltip"
-  , Attr.className ("tooltip-" ++ show pos)
-  , Attr._data { dataTooltip: text }
-  ]
+tooltip pos text widget = inlineWithData [ "tooltip", "tooltip-" ++ show pos ]
+  { dataTooltip: text }
   [ widget ]
 
 popover :: forall a. Position -> Widget a -> Widget a -> Widget a

@@ -3,7 +3,6 @@ module Concur.Dom.Text
   -- # Text
   , text
   , code
-  , lines
   -- # Heads
   , title
   , subtitle
@@ -18,13 +17,11 @@ module Concur.Dom.Text
 import Preload
 import Concur.Dom (Widget, Attr)
 import Concur.Dom.Node as Node
-import Concur.Dom.Layout as Layout
 
 activate :: forall a. Array (Attr a) -> Widget a -> Widget a
 activate = Node.div_
 
 ---- Text ----------------------------------------------------------------------
-
 -- type TextStyle r
 --   = { face :: Face
 --     , size :: Int
@@ -33,14 +30,15 @@ activate = Node.div_
 --     , decoration :: Line
 --     | r
 --     }
+
 text :: forall a. String -> Widget a
 text = Node.text
 
 code :: forall a. String -> Widget a
 code s = Node.pre [] [ Node.text s ]
 
-lines :: forall a. Array String -> Widget a
-lines xs = Layout.column <| map Node.text xs
+-- lines :: forall a. Array String -> Widget a
+-- lines xs = Layout.column <| map Node.text xs
 
 ---- Heads ----------------------------------------------------------------------
 -- title = h1

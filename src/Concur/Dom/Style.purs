@@ -2,17 +2,20 @@ module Concur.Dom.Style
   -- # Types
   ( Kind(..)
   , Size(..)
+  , Orientation(..)
   , Position(..)
   -- # Layout
   , vertical
   , horizontal
   , place
+  , divider
   -- # Shapes
   , line
   ) where
 
 import Preload
-import Concur.Dom (Widget, block)
+
+import Concur.Dom (Widget, block, blockWithData)
 
 ---- Types ---------------------------------------------------------------------
 
@@ -21,6 +24,8 @@ data Kind = Default | Primary | Link | Success | Error
 data Size = Large | Normal | Small
 
 -- data Anchor = North | East | South | West
+
+data Orientation = Horizontal | Vertical
 
 data Position = Above | Below | Before | After
 
@@ -37,6 +42,11 @@ instance Show Size where
     Large -> "lg"
     Normal -> ""
     Small -> "sm"
+
+instance Show Orientation where
+  show = case _ of
+    Horizontal -> ""
+    Vertical -> "-vert"
 
 instance Show Position where
   show = case _ of
@@ -55,6 +65,12 @@ horizontal = block [ "layout-horizontal" ]
 
 place :: forall a. Position -> Widget a -> Widget a
 place pos widget = block [ "layout-side", show pos ] [ widget ]
+
+divider :: forall a. Orientation -> Maybe String -> Widget a -> Widget a
+divider orient text widget = blockWithData
+  [ "divider" ++ show orient, if isJust text then "text-center" else "" ]
+  { dataContent: text ?? "" }
+  [ widget ]
 
 ---- Shapes --------------------------------------------------------------------
 
