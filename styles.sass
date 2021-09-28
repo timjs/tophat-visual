@@ -1,0 +1,198 @@
+// Variables ////////////////
+
+// Core colors
+$primary-color: #5755d9 !default
+$primary-color-dark: darken($primary-color, 3%) !default
+$primary-color-light: lighten($primary-color, 3%) !default
+$secondary-color: lighten($primary-color, 37.5%) !default
+$secondary-color-dark: darken($secondary-color, 3%) !default
+$secondary-color-light: lighten($secondary-color, 3%) !default
+
+// Gray colors
+$dark-color: #303742 !default
+$light-color: #fff !default
+$gray-color: lighten($dark-color, 55%) !default
+$gray-color-dark: darken($gray-color, 30%) !default
+$gray-color-light: lighten($gray-color, 20%) !default
+
+// Styling ////////////////
+
+body
+  font-family: Lucida Grande
+
+.form-select, .form-input, .btn-gray, .step
+  &:hover
+    //background-color: $secondary-color
+    border-color: $primary-color-dark
+
+.btn-gray
+  border-color: $gray-color
+  color: $dark-color
+
+.input-group-addon
+  >.fas, >.far
+    padding-top: 2pt
+    // padding-right: 0.5em
+
+.sym
+  font-size: 1.1pc
+  margin: -6pt
+  color: $gray-color
+  &:hover
+    color: $primary-color-dark
+    cursor: default
+
+// Positioning ////////////////
+
+div
+  position: relative
+
+.layout-row
+  display: flex
+  flex-direction: row
+  align-items: stretch
+  //>.line
+  //  top: 1pc
+  //  width: 4pc
+
+  &.layout-branch
+    >.layout-column
+      // Need to spell everything out here because of `:before` specifier, use @mixin?
+      &::before
+        outline: dashed 1pt $gray-color
+        content: ""
+        position: absolute
+        left: 0
+        right: 0
+        top: 0
+      &:first-child::before
+        left: 50%
+      &:last-child::before
+        right: 50%
+
+      &::after
+        outline: solid 1pt $gray-color
+        content: ""
+        position: absolute
+        left: 0
+        right: 0
+        bottom: 0
+      &:first-child::after
+        left: 50%
+      &:last-child::after
+        right: 50%
+
+  &.layout-group
+    &.stroke-solid
+      border-top: solid 6pt $gray-color
+      border-bottom: solid 6pt $gray-color
+      padding: 0 1pc
+      //margin: 0.5pc 0
+      &:hover
+        border-color: $primary-color-light
+
+    &.stroke-double
+      border-top: double 6pt $gray-color
+      border-bottom: double 6pt $gray-color
+      &:hover
+        border-color: $primary-color-light
+
+.layout-column
+  display: flex
+  flex-direction: column
+  align-items: center
+  padding: 0 0.5pc
+
+  >.shape-line
+    height: 2pc
+    flex-grow: 1
+
+.layout-side
+  position: absolute
+
+  &.side-left
+    right: 1.5pc
+
+  &.side-right
+    left: 0.5pc
+    //padding: 0.5pc 0
+    min-width: 10pc
+
+// Shapes ////////////////
+
+.shape-line
+  border: 1pt solid $gray-color
+  &.option
+    border-style: dashed
+
+.shape-caret
+  width: 0
+  height: 0
+  &.down
+    border-left: 0.5pc solid transparent
+    border-right: 0.5pc solid transparent
+    border-top: 1pc solid $gray-color
+    &:hover
+      border-left: 0.5pc solid transparent
+      border-right: 0.5pc solid transparent
+      border-top: 1pc solid $primary-color-dark
+
+// .shape-triangle
+//   border: solid $gray-color
+//   border-width: 0 2pt 2pt 0
+//   padding: 3pt
+//   &.down
+//     transform: rotate(45deg)
+//   &:hover
+//     border-color: $primary-color-dark
+
+.shape-triangle.style-outlined
+  &::before
+    content: "▽"
+    font-size: 1.1pc
+    font-weight: bold
+    margin: -6pt
+    color: $gray-color
+  &:hover::before
+    content: "▽"
+    font-size: 1.1pc
+    font-weight: bold
+    margin: -6pt
+    color: $primary-color-dark
+    cursor: default
+.shape-triangle.style-filled
+  &::before
+    content: "▼"
+    font-size: 1.1pc
+    font-weight: bold
+    margin: -6pt
+    color: $gray-color
+  &:hover::before
+    content: "▼"
+    font-size: 1.1pc
+    font-weight: bold
+    margin: -6pt
+    color: $primary-color-dark
+    cursor: default
+
+.shape-diamond
+  height: 1pc
+  width: 1pc
+  transform: rotate(45deg)
+  margin: -0.5pc
+  z-index: 1
+  border: 1pt solid $gray-color
+  background-color: white
+  &:hover
+    border: 1pt solid $primary-color-dark
+  &.closed
+    background-color: $gray-color
+    &:hover
+      background-color: $primary-color-dark
+
+.shape-circle
+  height: 1pc
+  width: 1pc
+  background-color: $gray-color
+  border: 1pt solid $gray-color
+  border-radius: 50%
