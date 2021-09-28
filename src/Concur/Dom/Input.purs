@@ -152,7 +152,7 @@ entry size placeholder value = do
 addon :: forall a. Size -> Widget a -> Widget a -> Widget a
 addon size contents widget =
   block [ "input-group" ]
-    [ inline [ "input-group-addon", "addon-" ++ show size ]
+    [ block [ "input-group-addon", "addon-" ++ show size ]
         [ contents ]
     , widget
     ]
