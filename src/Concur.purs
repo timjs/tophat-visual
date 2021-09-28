@@ -16,8 +16,8 @@ module Concur
   , local
   , focus
   -- # Combinators
-  , list
-  , list'
+  , wither
+  , traverse
   ) where
 
 import Preload
@@ -78,18 +78,17 @@ focus = Internal.mapWire
 
 ---- Combinators ---------------------------------------------------------------
 
-list :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
-list render elements = do
+wither :: forall v a. Monoid v => (a -> Reexport.Widget v (Maybe a)) -> Array a -> Reexport.Widget v (Array a)
+wither render elements = do
   (index ~ result) <- Internal.orr indexedElements
-  done
-    <| case result of
-      Nothing -> Array.deleteAt index elements ?? elements
-      Just element' -> Array.updateAt index element' elements ?? elements
+  done <| case result of
+    Nothing -> Array.deleteAt index elements ?? elements
+    Just element' -> Array.updateAt index element' elements ?? elements
   where
   indexedElements = elements |> Array.mapWithIndex (\index element -> (index ~ _) <-< render element)
 
-list' :: forall v a. Monoid v => (a -> Reexport.Widget v a) -> Array a -> Reexport.Widget v (Array a)
-list' render elements = do
+traverse :: forall v a. Monoid v => (a -> Reexport.Widget v a) -> Array a -> Reexport.Widget v (Array a)
+traverse render elements = do
   (index ~ element) <- Internal.orr indexedElements
   done <| Array.updateAt index element elements ?? elements
   where
