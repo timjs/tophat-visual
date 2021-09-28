@@ -142,6 +142,7 @@ import Data.Traversable as Reexport
 import Data.Tuple (curry, fst, snd, swap, uncurry) as Reexport
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable as Reexport
+import Debug as Debug
 import Effect (Effect) as Reexport
 import Prelude hiding (mempty, pure, (<<<), (>>>), (<>), ($), (#), (<$>), (<#>), (<@>), (<$), ($>), (<*>), (<*), (*>)) as Reexport
 import Prim.TypeError (class Warn, Text)
@@ -279,7 +280,7 @@ infixl 1 applyFlipped as |>
 -- undefined = unsafeCoerce {}
 
 todo :: forall a. Warn (Text "Todo left in code") => String -> a
-todo _ = unsafeCoerce {}
+todo s = Debug.spy ("TODO: " ++ s) (unsafeCoerce {})
 
 ---- Enums ---------------------------------------------------------------------
 
