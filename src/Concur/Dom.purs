@@ -18,15 +18,16 @@ module Concur.Dom
   ) where
 
 import Preload
+
 import Concur (Widget, Signal) as Concur
+import Concur.Dom.Attr as Attr
+import Concur.Dom.Node as Node
 import Concur.React (HTML) as React
 import Concur.React.Props (unsafeTargetValue) as React
-import Concur.Dom.Node as Node
-import Concur.Dom.Attr as Attr
 import Concur.React.Run (runWidgetInDom) as React
-import React.SyntheticEvent (SyntheticEvent_) as React
 import Data.Int as Int
 import Data.Number as Number
+import React.SyntheticEvent (SyntheticEvent_) as React
 
 ---- Types ---------------------------------------------------------------------
 

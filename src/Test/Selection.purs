@@ -9,13 +9,13 @@ import Concur.Dom.Node as Node
 selection :: Array String -> String -> Widget String
 selection xs s = do
   Node.div'
-    [ Input.picker xs s
+    [ Input.picker_generic xs s
     , Node.text <| show { content: xs, selection: s }
     ]
 
 selection_ :: String -> Array String -> Signal String
 selection_ s xs = do
-  x <- hold s (Input.picker xs s)
+  x <- hold s (Input.picker_generic xs s)
   display <| Node.text <| show { content: xs, selection: x }
   done x
 

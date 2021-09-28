@@ -5,6 +5,7 @@ module Concur.Dom.Input
   , checkbox
   , entry
   , picker
+  , picker_generic
   -- # Extr
   , addon
   , tooltip
@@ -122,7 +123,7 @@ picker groups default = do
 
 ---- Entries -------------------------------------------------------------------
 
--- | Text entry showing `value` and `placeholder` when `value` is empty.
+-- | Text entry showing `placeholder` when `value` is empty.
 -- |
 -- | Commits when hitting the enter-key.
 entry :: Size -> String -> String -> Widget String
