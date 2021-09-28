@@ -332,6 +332,7 @@ infixr 5 subtract as ~~
 neutral :: forall m. Reexport.Monoid m => m
 neutral = mempty
 
+-- class Group a | Monoid a where
 class (Reexport.Monoid a) <= Group a where
   invert :: a -> a
   subtract :: a -> a -> a
@@ -342,19 +343,23 @@ invertDefault x = neutral ~~ x
 subtractDefault :: forall a. Group a => a -> a -> a
 subtractDefault x y = x ++ invert y
 
+-- class Module a s | Group a, Semiring s where
+--   type Factor a = s
 class (Group a, Reexport.Semiring s) <= Module a s | a -> s where
-  -- type Factor a = s
   scale :: s -> a -> a
 
+-- class Torsor a d | Group d where
+--   type Difference a = d
 class (Group d) <= Torsor a d | a -> d where
-  -- type Difference a = d
   diff :: a -> a -> d
   adjust :: d -> a -> a
 
 ---- Foldables, Traversables ---------------------------------------------------
 
+-- | 0 /: [1,2,3,4] add
 infix 4 foldlInfix as /:
 
+-- | [1,2,3,4] :\ 0 add
 infix 4 foldrInfix as :\
 
 foldlInfix :: forall f a b. Reexport.Foldable f => b -> f a -> (b -> a -> b) -> b
