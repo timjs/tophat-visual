@@ -24,6 +24,8 @@ module Task.Script.Syntax
   -- # Matches
   , Match(..)
   -- # Statements
+  , Branches
+  , LabeledBranches
   , Task(..)
   ) where
 
@@ -270,11 +272,15 @@ instance Show Match where
 --     Step' m t s -> unlines [ unwords [ show m, "<-", show t ], show s ]
 --     Task' t -> show t
 
+type Branches t = Array (Expression * t)
+
+type LabeledBranches t = Array (Label * Expression * t)
+
 data Task t
   -- Steps
   = Step Match t t
-  | Branch (Array (Expression * t))
-  | Select (Array (Label * Expression * t))
+  | Branch (Branches t)
+  | Select (LabeledBranches t)
   -- Editors
   | Enter Name Message
   | Update Message Expression
