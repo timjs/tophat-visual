@@ -4,24 +4,31 @@ module Concur.Dom.Style
   , Size(..)
   , Orientation(..)
   , Position(..)
+  , Style(..)
+  , Stroke(..)
   -- # Layout
-  , vertical
-  , horizontal
+  , column
+  , row
+  , branch
+  , group
   , place
   , divider
   -- # Shapes
   , line
+  , triangle
+  , chip
   ) where
 
 import Preload
 
 import Concur.Dom (Widget, block, blockWithData)
+import Concur.Dom.Text as Text
 
 ---- Types ---------------------------------------------------------------------
 
 data Kind = Default | Primary | Link | Success | Error
 
-data Size = Large | Normal | Small
+data Size = Large | Medium | Small
 
 -- data Anchor = North | East | South | West
 
@@ -29,9 +36,13 @@ data Orientation = Horizontal | Vertical
 
 data Position = Above | Below | Before | After
 
+data Style = Outlined | Filled
+
+data Stroke = Dotted | Dashed | Solid | Double
+
 instance Show Kind where
   show = case _ of
-    Default -> ""
+    Default -> "default" -- NOTE: not named in Spectre
     Primary -> "primary"
     Link -> "link"
     Success -> "success"
@@ -40,13 +51,13 @@ instance Show Kind where
 instance Show Size where
   show = case _ of
     Large -> "lg"
-    Normal -> ""
+    Medium -> "md" -- NOTE: not named in Spectre
     Small -> "sm"
 
 instance Show Orientation where
   show = case _ of
-    Horizontal -> ""
-    Vertical -> "-vert"
+    Horizontal -> "hori" -- NOTE: not named in Spectre
+    Vertical -> "vert"
 
 instance Show Position where
   show = case _ of
@@ -55,24 +66,48 @@ instance Show Position where
     Before -> "left"
     After -> "right"
 
+instance Show Style where
+  show = case _ of
+    Outlined -> "outlined" --TODO: was open
+    Filled -> "filled" --TODO: was closed
+
+instance Show Stroke where
+  show = case _ of
+    Dotted -> "dotted"
+    Dashed -> "dashed"
+    Solid -> "solid"
+    Double -> "double"
+
 ---- Layout --------------------------------------------------------------------
 
-vertical :: forall a. Array (Widget a) -> Widget a
-vertical = block [ "layout-vertical" ]
+column :: forall a. Array (Widget a) -> Widget a
+column = block [ "layout-column" ]
 
-horizontal :: forall a. Array (Widget a) -> Widget a
-horizontal = block [ "layout-horizontal" ]
+row :: forall a. Array (Widget a) -> Widget a
+row = block [ "layout-row" ]
+
+branch :: forall a. Array (Widget a) -> Widget a
+branch = block [ "layout-row", "layout-branch" ]
+
+group :: forall a. Stroke -> Array (Widget a) -> Widget a
+group stroke = block [ "layout-row", "layout-group", "stroke-" ++ show stroke ]
 
 place :: forall a. Position -> Widget a -> Widget a
-place pos widget = block [ "layout-side", show pos ] [ widget ]
+place pos widget = block [ "layout-side", "side-" ++ show pos ] [ widget ]
 
-divider :: forall a. Orientation -> Maybe String -> Widget a -> Widget a
-divider orient text widget = blockWithData
-  [ "divider" ++ show orient, if isJust text then "text-center" else "" ]
+divider :: forall a. Orientation -> Maybe String -> Widget a
+divider orient text = blockWithData
+  [ "divider-" ++ show orient, if isJust text then "text-center" else "" ]
   { dataContent: text ?? "" }
-  [ widget ]
+  []
 
 ---- Shapes --------------------------------------------------------------------
 
-line :: forall a. Array (Widget a) -> Widget a
-line = block [ "shape-line" ]
+line :: forall a. Stroke -> Widget a -> Widget a
+line stroke contents = block [ "shape-line", "stroke-" ++ show stroke ] [ contents ]
+
+triangle :: forall a. Style -> Widget a -> Widget a
+triangle style _contents = block [ "shape-triangle", "style-" ++ show style ] []
+
+chip :: forall a. String -> Widget a
+chip text = block [ "chip" ] [ Text.text text ]
