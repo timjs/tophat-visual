@@ -14,8 +14,8 @@ import Data.Either.Nested as Either
 import Data.HashMap as HashMap
 import Task.Script.Annotation (Annotated(..), Checked, Status(..))
 import Task.Script.Context (Context, Typtext, aliases)
-import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Label, LabeledBranches, Match(..), Message, Name, Row_, Task(..))
-import Task.Script.Validator (validate)
+import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..))
+import Task.Script.Loader (validate)
 
 ---- Rendering -----------------------------------------------------------------
 
