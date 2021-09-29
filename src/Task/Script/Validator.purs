@@ -7,12 +7,12 @@ import Data.HashMap as HashMap
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
 import Task.Script.Error (Error(..))
-import Task.Script.Knot (Checked(..), Unchecked(..), withTypeOf, bury, sink, fail, extract, lift, pass)
+import Task.Script.Annotation (Annotated(..), Checked, Status(..), withTypeOf, bury, sink, fail, extractType, lift, pass)
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------
-validate :: Typtext -> Context -> Unchecked Task -> Checked Task
-validate s g (Unchecked i) = case i of
+validate :: Typtext -> Context -> Checked Task -> Checked Task
+validate s g (Annotated _ i) = case i of
   ---- Editors
   Enter n m -> lift g i (Enter n m) (HashMap.lookup n s |> note (UnknownTypeName n) >-> ofBasic >-> wrapValue)
   Update m e -> lift g i (Update m e) (check s g e >>= needBasic >-> wrapValue)
@@ -33,7 +33,7 @@ validate s g (Unchecked i) = case i of
   Select us -> sink g (Select cs) (traverse (snd >> snd >> outofBranch) cs >>= intersect >-> TTask)
     where
     cs = map validate3 us
-  Step m u1@(Unchecked i1) u2@(Unchecked i2) ->
+  Step m u1@(Annotated _ i1) u2@(Annotated _ i2) ->
     withTypeOf c1 (Step m c1 c2) \t1 -> case t1 of
       TTask r1 -> case match m (TRecord r1) of
         Left e2 -> fail g i e2
@@ -78,9 +78,9 @@ validate s g (Unchecked i) = case i of
       else
         throw <| AssignError b1 b2
   where
-  validate1 :: Unchecked Task -> Checked Task
-  validate1 u@(Unchecked i') = case validate s g u of --XXX crashes when eta expanded
-    Pass g' t j -> case t of
+  validate1 :: Checked Task -> Checked Task
+  validate1 u@(Annotated _ i') = case validate s g u of --XXX crashes when eta expanded
+    Annotated (Success g' t) j -> case t of
       TTask _ -> pass g' j t
       _ -> fail g' i' <| TaskNeeded t
     c -> c
@@ -90,19 +90,19 @@ validate s g (Unchecked i) = case i of
   -- Note that errors in the expression are atachted to the task instead of the whole branch.
   -- This is due to the data type: errors can only be saved in a `Fail` constructor of a `Checked Task`,
   -- not in the expression.
-  validate2 :: Expression * Unchecked Task -> Expression * Checked Task
-  validate2 (e ~ u@(Unchecked i')) =
+  validate2 :: Expression * Checked Task -> Expression * Checked Task
+  validate2 (e ~ u@(Annotated _ i')) =
     e
       ~ case check s g e of
           Right (TPrimitive TBool) -> validate1 u
           Right t -> fail g i' <| BoolNeeded t
           Left x -> fail g i' x
 
-  validate3 :: Label * Expression * Unchecked Task -> Label * Expression * Checked Task
+  validate3 :: Label * Expression * Checked Task -> Label * Expression * Checked Task
   validate3 (l ~ e ~ u) = l ~ validate2 (e ~ u)
 
 ---- Helpers -------------------------------------------------------------------
 outofBranch :: Checked Task -> Error + Row_ Type_
-outofBranch = extract >=> outofTask
+outofBranch = extractType >=> outofTask
 
 infixr 5 HashMap.union as \/

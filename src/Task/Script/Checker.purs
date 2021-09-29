@@ -22,7 +22,7 @@ import Data.HashMap as HashMap
 import Data.HashSet as HashSet
 import Task.Script.Context (Context, Typtext)
 import Task.Script.Error (Error(..))
-import Task.Script.Knot (Unchecked(..))
+import Task.Script.Annotation (Annotated(..))
 import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row_, Task(..), Type_(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
@@ -103,8 +103,8 @@ instance Check Expression where
 instance Check Arguments where
   check s g (ARecord es) = traverse (check s g) es >-> TRecord
 
-instance Check (Unchecked Task) where
-  check s g (Unchecked i) = check s g i
+instance Check (Annotated a Task) where
+  check s g (Annotated _ i) = check s g i
 
 instance Check t => Check (Task t) where
   check s g = case _ of

@@ -2,7 +2,7 @@ module Task.Script.Example.Booking where
 
 import Preload
 import Data.HashMap as HashMap
-import Task.Script.Knot (Unchecked(..))
+import Task.Script.Annotation (Checked, unchecked)
 import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type_(..))
 
 ---- Types ---------------------------------------------------------------------
@@ -58,25 +58,25 @@ t_booking =
       ]
 
 ---- Tasks ---------------------------------------------------------------------
-enter_passenger :: Unchecked Task
+enter_passenger :: Checked Task
 enter_passenger =
-  Unchecked
-    <| Step (MRecord <| from [ "value" ~ MBind "passengers" ]) (Unchecked <| Enter "String" "Passenger details")
-    <| Unchecked
+  unchecked
+    <| Step (MRecord <| from [ "value" ~ MBind "passengers" ]) (unchecked <| Enter "String" "Passenger details")
+    <| unchecked
     <| Select
       [ "Continue"
           ~ Constant (B true)
-          ~ (Unchecked <| Lift (Record <| from [ "passengers" ~ Variable "passengers" ]))
+          ~ (unchecked <| Lift (Record <| from [ "passengers" ~ Variable "passengers" ]))
       ]
 
--- choose_seats :: Expression -> Expression -> Unchecked Task
+-- choose_seats :: Expression -> Expression -> Checked Task
 -- choose_seats store record =
---   Unchecked
---     <| Step (MRecord <| from ["values" ~ MBind "seats"]) (Unchecked <| Change "Pick some seats" store)
---     <| Unchecked
+--   unchecked
+--     <| Step (MRecord <| from ["values" ~ MBind "seats"]) (unchecked <| Change "Pick some seats" store)
+--     <| unchecked
 --     <| Select
 --       ["Continue"
 --         ~ Apply (Variable "==") (Apply (Variable "len") (Variable "seats")) (Variable "amount")
---         ~ (Unchecked
+--         ~ (unchecked
 --           <| Step (MBind ""))
 --       ]

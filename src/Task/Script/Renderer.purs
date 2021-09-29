@@ -15,14 +15,14 @@ import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, aliases)
-import Task.Script.Knot (Unchecked(..))
+import Task.Script.Annotation (Annotated(..), Checked)
 import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Label, LabeledBranches, Match(..), Message, Name, Row_, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
 
-type Renderer = Unchecked Task -> Widget (Unchecked Task)
+type Renderer = Checked Task -> Widget (Checked Task)
 
-main :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
+main :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
 main g s u =
   Concur.repeat u \u' ->
     Layout.column
@@ -30,35 +30,35 @@ main g s u =
       , Text.code <| show u'
       ]
 
-renderTask :: Context -> Typtext -> Unchecked Task -> Widget (Unchecked Task)
+renderTask :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
 renderTask g s = go
   where
-  go :: Unchecked Task -> Widget (Unchecked Task)
-  go (Unchecked t) = case t of
+  go :: Checked Task -> Widget (Checked Task)
+  go (Annotated a_t t) = case t of
     ---- Steps
     --INVARIANT third arg of `Step` is always Branch or Select
-    Step m t (Unchecked (Branch bs)) -> do
+    Step m t (Annotated a_bs (Branch bs)) -> do
       m' ~ t' ~ bs' <- renderBranches go m t bs
-      done <| Unchecked (Step m' t' (Unchecked (Branch bs')))
-    Step m t (Unchecked (Select bs)) -> do
+      done <| Annotated a_t (Step m' t' (Annotated a_bs (Branch bs')))
+    Step m t (Annotated a_bs (Select bs)) -> do
       m' ~ t' ~ bs' <- renderSelects go m t bs
-      done <| Unchecked (Step m' t' (Unchecked (Select bs')))
-    Step m t (Unchecked (Lift e)) -> do
+      done <| Annotated a_t (Step m' t' (Annotated a_bs (Select bs')))
+    Step m t (Annotated a_l (Lift e)) -> do
       m' ~ t' <- renderEnd go m t
-      done <| Unchecked (Step m' t' (Unchecked (Lift e)))
+      done <| Annotated a_t (Step m' t' (Annotated a_l (Lift e)))
     Step m t1 t2 -> do
       m' ~ t1' ~ t2' <- renderSingle go m t1 t2
-      done <| Unchecked (Step m' t1' t2')
+      done <| Annotated a_t (Step m' t1' t2')
     Branch _ -> todo "invalid single branch"
     Select _ -> todo "invalid single select"
     -- Branch bs -> do
     --   ts' <- renderContinuation Closed style_branch go (map snd bs)
     --   let bs' = Array.zip (map fst bs) ts'
-    --   done <| Unchecked (Branch bs')
+    --   done <| Annotated ?h (Branch bs')
     -- Select bs -> do
     --   ts' <- renderContinuation Open style_branch go (map trd bs)
     --   let bs' = Array.zip (map fst2 bs) ts' |> map assoc
-    --   done <| Unchecked (Select bs')
+    --   done <| Annotated ?h (Select bs')
     --   where
     --   fst2 (x ~ y ~ _) = x ~ y
     --   assoc ((x ~ y) ~ z) = x ~ (y ~ z)
@@ -66,56 +66,56 @@ renderTask g s = go
     ---- Editors
     Enter n m -> do
       n' ~ m' <- renderEnter s n m
-      done <| Unchecked (Enter n' m')
+      done <| Annotated a_t (Enter n' m')
     Update m e -> do
       m' ~ e' <- renderUpdate m e
-      done <| Unchecked (Update m' e')
+      done <| Annotated a_t (Update m' e')
     Change m e -> todo "change"
     -- Change m e -> do
     --   r <- renderConnect style_line Both (editMessage Icon.edit m) (editExpression Icon.database e)
     --   let m' ~ e' = consolidate m e r
-    --   done <| Unchecked (Change m' e')
+    --   done <| Annotated a_t (Change m' e')
     View m e -> do
       m' ~ e' <- renderView m e
-      done <| Unchecked (View m' e')
+      done <| Annotated a_t (View m' e')
     Watch m e -> todo "watch"
     -- Watch m e -> do
     --   r <- renderConnect style_line Pull (editMessage Icon.eye m) (editExpression Icon.database e)
     --   let m' ~ e' = consolidate m e r
-    --   done <| Unchecked (Watch m' e')
+    --   done <| Annotated a_t (Watch m' e')
 
     ---- Combinators
     Lift e -> do
       e' <- renderLift e
-      done <| Unchecked (Lift e')
+      done <| Annotated a_t (Lift e')
     Pair ts -> do
       ts' <- renderGroup Solid go ts
-      done <| Unchecked (Pair ts')
+      done <| Annotated a_t (Pair ts')
     Choose ts -> do
       ts' <- renderGroup Double go ts
-      done <| Unchecked (Choose ts')
+      done <| Annotated a_t (Choose ts')
 
     ---- Extras
     Execute n as -> do
       n' ~ as' <- renderExecute g n as
-      done <| Unchecked (Execute n' as')
+      done <| Annotated a_t (Execute n' as')
     Hole as -> do
       n' ~ as' <- renderExecute g "??" as
       if n' == "??" then
-        done <| Unchecked (Hole as')
+        done <| Annotated a_t (Hole as')
       else
-        done <| Unchecked (Execute n' as')
+        done <| Annotated a_t (Execute n' as')
 
     ---- Shares
     Assign e1 e2 -> todo "assign"
     -- Assign e1 e2 -> do
     --   r <- renderConnect style_line Push (editExpression Icon.retweet e1) (editExpression Icon.database e2)
     --   let e1' ~ e2' = consolidate e1 e2 r
-    --   done <| Unchecked (Assign e1' e2')
+    --   done <| Annotated ?h (Assign e1' e2')
 
     Share e -> do
       e' <- renderShare e
-      done <| Unchecked (Share e')
+      done <| Annotated a_t (Share e')
 
 ---- Parts ---------------------------------------------------------------------
 
@@ -188,7 +188,7 @@ renderEnd _ _ _ = todo "other matches in end rendering"
 
 ---- Branches ----
 
-renderBranches :: Renderer -> Match -> Unchecked Task -> Branches (Unchecked Task) -> Widget (Match * Unchecked Task * Branches (Unchecked Task))
+renderBranches :: Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Match * Checked Task * Branches (Checked Task))
 renderBranches render match subtask branches =
   Layout.column
     [ render subtask >-> Either.in2
@@ -198,7 +198,7 @@ renderBranches render match subtask branches =
     ]
     >-> fix3 match subtask branches
 
-renderBranch :: Renderer -> Expression * Unchecked Task -> Widget (Expression * Unchecked Task)
+renderBranch :: Renderer -> Expression * Checked Task -> Widget (Expression * Checked Task)
 renderBranch render (guard ~ subtask) =
   Layout.column
     [ renderOption guard >-> Either.in1
@@ -213,7 +213,7 @@ renderBranch render (guard ~ subtask) =
 --     ]
 
 -- renderSelects :: forall a b z. (a -> Widget a) -> Match -> a -> Array b -> Widget (Match + a + Array b + z)
-renderSelects :: Renderer -> Match -> Unchecked Task -> LabeledBranches (Unchecked Task) -> Widget (Match * Unchecked Task * LabeledBranches (Unchecked Task))
+renderSelects :: Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Match * Checked Task * LabeledBranches (Checked Task))
 renderSelects render match subtask branches =
   Layout.column
     [ render subtask >-> Either.in2
@@ -222,7 +222,7 @@ renderSelects render match subtask branches =
     ]
     >-> fix3 match subtask branches
 
-renderSelect :: Renderer -> Label * Expression * Unchecked Task -> Widget (Label * Expression * Unchecked Task)
+renderSelect :: Renderer -> Label * Expression * Checked Task -> Widget (Label * Expression * Checked Task)
 renderSelect render (label ~ guard ~ subtask) =
   Layout.column
     [ renderOption guard >-> Either.in2
@@ -318,7 +318,7 @@ renderContinuation k s f ws =
 -- |  r
 -- |  | m
 -- |  f
-renderStep :: Unchecked Task -> Unchecked Task -> Widget (Both (Unchecked Task))
+renderStep :: Checked Task -> Checked Task -> Widget (Both (Checked Task))
 renderStep t1 t2 = do
   Layout.column
     [ go t1 >-> Left
