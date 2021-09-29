@@ -4,6 +4,7 @@ module Concur.Dom.Input
   , switch
   , checkbox
   , entry
+  , editor
   , picker
   , picker_generic
   -- # Extr
@@ -14,7 +15,7 @@ module Concur.Dom.Input
 
 import Preload
 
-import Concur.Dom (Widget, block, inline, blockWithData, intValue, stringValue)
+import Concur.Dom (Widget, block, blockWithData, intValue, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Concur.Dom.Style (Kind, Size, Position)
@@ -146,6 +147,25 @@ entry size placeholder value = do
         done value
       else
         entry size placeholder value
+
+editor :: Int -> String -> String -> Widget String
+editor lines placeholder value = do
+  result <-
+    Node.textarea
+      [ Attr.classes [ "form-input" ]
+      , Attr.rows lines
+      , Attr.placeholder placeholder
+      , Attr.onInput >-> Left
+      , Attr.onKeyDown >-> Right
+      ]
+      [ Node.text value ]
+  case result of
+    Left event -> editor lines placeholder (stringValue event)
+    Right key ->
+      if Attr.isEnterEvent key then
+        done value
+      else
+        editor lines placeholder value
 
 ---- Extras --------------------------------------------------------------------
 
