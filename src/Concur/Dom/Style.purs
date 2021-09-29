@@ -7,6 +7,7 @@ module Concur.Dom.Style
   , Style(..)
   , Stroke(..)
   -- # Layout
+  , element
   , column
   , row
   , branch
@@ -81,6 +82,9 @@ instance Show Stroke where
 
 ---- Layout --------------------------------------------------------------------
 
+element :: forall a. Kind -> Widget a -> Widget a
+element k w = block [ "has-" ++ show k ] [ w ]
+
 column :: forall a. Array (Widget a) -> Widget a
 column = block [ "layout-column" ]
 
@@ -99,7 +103,7 @@ place pos widget = block [ "layout-side", "side-" ++ show pos ] [ widget ]
 divider :: forall a. Orientation -> Maybe String -> Widget a
 divider orient text = blockWithData
   [ "divider-" ++ show orient, if isJust text then "text-center" else "" ]
-  { dataContent: text ?? "" }
+  { content: text ?? "" }
   []
 
 ---- Shapes --------------------------------------------------------------------

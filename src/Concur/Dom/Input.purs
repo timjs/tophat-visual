@@ -14,7 +14,7 @@ module Concur.Dom.Input
 
 import Preload
 
-import Concur.Dom (Widget, block, inline, inlineWithData, intValue, stringValue)
+import Concur.Dom (Widget, block, inline, blockWithData, intValue, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Concur.Dom.Style (Kind, Size, Position)
@@ -158,8 +158,8 @@ addon size contents widget =
     ]
 
 tooltip :: forall a. Position -> String -> Widget a -> Widget a
-tooltip pos text widget = inlineWithData [ "tooltip", "tooltip-" ++ show pos ]
-  { dataTooltip: text }
+tooltip pos text widget = blockWithData [ "tooltip", "tooltip-" ++ show pos ]
+  { tooltip: text }
   [ widget ]
 
 popover :: forall a. Position -> Widget a -> Widget a -> Widget a
