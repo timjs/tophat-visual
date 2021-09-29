@@ -26,7 +26,7 @@ import Concur.Dom.Text as Text
 
 ---- Types ---------------------------------------------------------------------
 
-data Kind = Default | Primary | Link | Success | Error
+data Kind = Default | Primary | Link | Success | Warning | Error
 
 data Size = Large | Medium | Small
 
@@ -46,6 +46,7 @@ instance Show Kind where
     Primary -> "primary"
     Link -> "link"
     Success -> "success"
+    Warning -> "warning"
     Error -> "error"
 
 instance Show Size where
@@ -109,5 +110,6 @@ line stroke contents = block [ "shape-line", "stroke-" ++ show stroke ] [ conten
 triangle :: forall a. Style -> Widget a -> Widget a
 triangle style _contents = block [ "shape-triangle", "style-" ++ show style ] []
 
-chip :: forall a. String -> Widget a
-chip text = block [ "chip" ] [ Text.text text ]
+chip :: forall a. Kind -> String -> Widget a
+-- chip text = block [ "label", "label-sm", "label-rounded", "label-primary" ] [ Text.text text ]
+chip kind text = block [ "chip", "chip-" ++ show kind ] [ Text.text text ]

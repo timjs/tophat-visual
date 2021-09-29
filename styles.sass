@@ -15,6 +15,11 @@ $gray-color: lighten($dark-color, 55%) !default
 $gray-color-dark: darken($gray-color, 30%) !default
 $gray-color-light: lighten($gray-color, 20%) !default
 
+// Control colors
+$success-color: #32b643 !default
+$warning-color: #ffb700 !default
+$error-color: #e85600 !default
+
 // Styling ////////////////
 
 body
@@ -24,6 +29,26 @@ body
   &:hover
     //background-color: $secondary-color
     border-color: $primary-color-dark
+
+// .label-sm
+//   font-size: 0.75em
+
+.chip
+  &.chip-primary
+    color: $light-color
+    background-color: $primary-color
+  &.chip-secondary
+    color: $primary-color
+    background-color: $secondary-color
+  &.chip-success
+    color: $light-color
+    background-color: $success-color
+  &.chip-warning
+    color: $light-color
+    background-color: $warning-color
+  &.chip-error
+    color: $light-color
+    background-color: $error-color
 
 .btn-gray
   border-color: $gray-color

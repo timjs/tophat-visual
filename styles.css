@@ -7,6 +7,27 @@ body {
   border-color: #4b48d6;
 }
 
+.chip.chip-primary {
+  color: #fff;
+  background-color: #5755d9;
+}
+.chip.chip-secondary {
+  color: #5755d9;
+  background-color: #f1f1fc;
+}
+.chip.chip-success {
+  color: #fff;
+  background-color: #32b643;
+}
+.chip.chip-warning {
+  color: #fff;
+  background-color: #ffb700;
+}
+.chip.chip-error {
+  color: #fff;
+  background-color: #e85600;
+}
+
 .btn-gray {
   border-color: #bcc3ce;
   color: #303742;

@@ -8,7 +8,7 @@ import Concur as Concur
 import Concur.Dom (Widget)
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
-import Concur.Dom.Style (Position(..), Size(..), Stroke(..), Style(..))
+import Concur.Dom.Style (Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Layout
 import Concur.Dom.Text as Text
 import Data.Array as Array
@@ -150,7 +150,7 @@ renderLine row =
 -- | || (( a_1 .. a_n ))
 renderLabels :: forall a. Row_ a -> Widget (Row_ a)
 renderLabels =
-  HashMap.keys >> map Layout.chip >> Layout.row
+  HashMap.keys >> map (Layout.chip Default) >> Layout.row
 
 ---- Steps ----
 
