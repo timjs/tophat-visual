@@ -24,20 +24,19 @@ type Renderer = Checked Task -> Widget (Checked Task)
 main :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
 main g s t =
   Concur.repeat t \t' ->
-    Layout.column
-      [ Layout.row
-          [ renderTask g s t'
-          , Input.button Primary Medium "Check" ->> validate s g t'
-          ]
-      , Text.code "TopHat" (show t')
-      -- , Input.editor 20 "code" (show t') ->> t'
-      ]
+    let
+      t'' = validate s g t'
+    in
+      Layout.column
+        [ renderTask g s t''
+        , Text.code "TopHat" (show t'')
+        ]
 
 renderTask :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
 renderTask g s = go
   where
   go :: Checked Task -> Widget (Checked Task)
-  go (Annotated a_t t) = case t of
+  go (Annotated a_t c_t) = case c_t of
     ---- Steps
     --INVARIANT third arg of `Step` is always Branch or Select
     Step m t (Annotated a_bs (Branch bs)) -> do
@@ -100,10 +99,10 @@ renderTask g s = go
 
     ---- Extras
     Execute n as -> do
-      n' ~ as' <- renderExecute g n as
+      n' ~ as' <- renderExecute g a_t n as
       done <| Annotated a_t (Execute n' as')
     Hole as -> do
-      n' ~ as' <- renderExecute g "??" as
+      n' ~ as' <- renderExecute g a_t "??" as
       if n' == "??" then
         done <| Annotated a_t (Hole as')
       else
@@ -134,15 +133,17 @@ renderStart name = Layout.column
 
 -- |      || as
 -- |  [[  n  ?]]
-renderExecute :: Context -> Name -> Arguments -> Widget (Name * Arguments)
-renderExecute context name args@(ARecord row) =
+renderExecute :: Context -> Status -> Name -> Arguments -> Widget (Name * Arguments)
+renderExecute context status name args@(ARecord row) =
   Layout.column
     [ renderLine row >-> (ARecord >> Either.in2)
-    , Input.picker
-        [ "Builtin" ~ []
-        , "Project" ~ Array.sort (HashMap.keys context)
-        ]
-        name >-> Either.in1
+    , renderError status
+        ( Input.picker
+            [ "Builtin" ~ []
+            , "Project" ~ Array.sort (HashMap.keys context)
+            ]
+            name
+        ) >-> Either.in1
     ]
     >-> fix2 name args
 
