@@ -27,7 +27,7 @@ import Concur.Dom.Text as Text
 
 ---- Types ---------------------------------------------------------------------
 
-data Kind = Default | Primary | Link | Success | Warning | Error
+data Kind = Default | Primary | Secondary | Link | Success | Warning | Error
 
 data Size = Large | Medium | Small
 
@@ -45,6 +45,7 @@ instance Show Kind where
   show = case _ of
     Default -> "default" -- NOTE: not named in Spectre
     Primary -> "primary"
+    Secondary -> "secondary"
     Link -> "link"
     Success -> "success"
     Warning -> "warning"

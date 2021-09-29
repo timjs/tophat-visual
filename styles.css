@@ -28,7 +28,7 @@ body {
   background-color: #e85600;
 }
 
-.btn-gray {
+.btn-secondary {
   border-color: #bcc3ce;
   color: #303742;
 }
@@ -98,6 +98,9 @@ div {
 }
 .layout-row.layout-group.stroke-double:hover {
   border-color: #6362dc;
+}
+.layout-row.layout-group > input {
+  transform: translate(100%, -66%);
 }
 
 .layout-column {

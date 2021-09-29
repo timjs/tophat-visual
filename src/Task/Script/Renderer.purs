@@ -243,7 +243,10 @@ renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
 renderGroup :: forall a. Stroke -> (a -> Widget a) -> Array a -> Widget (Array a)
 renderGroup stroke trans widgets =
   Layout.group stroke
-    [ Concur.traverse trans widgets ]
+    [ Concur.traverse trans widgets
+    --TODO: add branch
+    , Input.button Secondary Small "+" ->> widgets
+    ]
 
 ---- Editors ----
 
