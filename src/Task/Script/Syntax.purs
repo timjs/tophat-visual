@@ -192,6 +192,7 @@ data Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
   | Case Expression (Row_ (Match * Expression))
+  --TODO add Record wildcard
   | Record (Row_ Expression)
   | Variant Label Expression Type_
   | Nil Type_

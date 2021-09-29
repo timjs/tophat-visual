@@ -43,6 +43,9 @@ renderTask g s = go
     Step m t (Unchecked (Select bs)) -> do
       m' ~ t' ~ bs' <- renderSelects go m t bs
       done <| Unchecked (Step m' t' (Unchecked (Select bs')))
+    Step m t (Unchecked (Lift e)) -> do
+      m' ~ t' <- renderEnd go m t
+      done <| Unchecked (Step m' t' (Unchecked (Lift e)))
     Step m t1 t2 -> do
       m' ~ t1' ~ t2' <- renderSingle go m t1 t2
       done <| Unchecked (Step m' t1' t2')
@@ -131,7 +134,7 @@ renderStart name = Layout.column
 renderExecute :: Context -> Name -> Arguments -> Widget (Name * Arguments)
 renderExecute context name args@(ARecord row) =
   Layout.column
-    [ Layout.line Solid (Layout.place After (renderLabels row)) >-> (ARecord >> Either.in2)
+    [ renderLine row >-> (ARecord >> Either.in2)
     , Input.picker
         [ "Builtin" ~ []
         , "Project" ~ Array.sort (HashMap.keys context)
@@ -139,6 +142,10 @@ renderExecute context name args@(ARecord row) =
         name >-> Either.in1
     ]
     >-> fix2 name args
+
+renderLine :: forall a. Row_ a -> Widget (Row_ a)
+renderLine row =
+  Layout.line Solid (Layout.place After (renderLabels row))
 
 -- | || (( a_1 .. a_n ))
 renderLabels :: forall a. Row_ a -> Widget (Row_ a)
@@ -152,7 +159,7 @@ renderLabels =
 renderStep :: Style -> Match -> Widget Match
 renderStep style (MRecord row) =
   Layout.column
-    [ Layout.line Solid (Layout.place After (renderLabels row)) >-> MRecord
+    [ renderLine row >-> MRecord
     , Layout.triangle style empty
     ]
 renderStep _ _ = todo "other matches in step rendering"
@@ -169,6 +176,15 @@ renderSingle render match sub1 sub2 =
     , render sub2 >-> Either.in3
     ]
     >-> fix3 match sub1 sub2
+
+renderEnd :: forall a. (a -> Widget a) -> Match -> a -> Widget (Match * a)
+renderEnd render args@(MRecord row) subtask =
+  Layout.column
+    [ render subtask >-> Either.in2
+    , renderLine row >-> (MRecord >> Either.in1)
+    ]
+    >-> fix2 args subtask
+renderEnd _ _ _ = todo "other matches in end rendering"
 
 ---- Branches ----
 
@@ -187,6 +203,7 @@ renderBranch render (guard ~ subtask) =
   Layout.column
     [ renderOption guard >-> Either.in1
     , render subtask >-> Either.in2
+    , Layout.line Solid empty
     ]
     >-> fix2 guard subtask
 
