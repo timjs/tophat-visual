@@ -66,24 +66,24 @@ renderTask g s = go
     --   assoc ((x ~ y) ~ z) = x ~ (y ~ z)
 
     ---- Editors
-    Enter n m -> do
-      n' ~ m' <- renderEnter s n m
-      done <| Annotated a_t (Enter n' m')
-    Update m e -> do
-      m' ~ e' <- renderUpdate m e
-      done <| Annotated a_t (Update m' e')
-    Change m e -> todo "change"
-    -- Change m e -> do
+    Enter n -> do
+      n' <- renderEnter s n
+      done <| Annotated a_t (Enter n')
+    Update e -> do
+      e' <- renderUpdate e
+      done <| Annotated a_t (Update e')
+    Change e -> todo "change"
+    -- Change  e -> do
     --   r <- renderConnect style_line Both (editMessage Icon.edit m) (editExpression Icon.database e)
-    --   let m' ~ e' = consolidate m e r
+    --   let e' = consolidate m e r
     --   done <| Annotated a_t (Change m' e')
-    View m e -> do
-      m' ~ e' <- renderView m e
-      done <| Annotated a_t (View m' e')
-    Watch m e -> todo "watch"
-    -- Watch m e -> do
+    View e -> do
+      e' <- renderView e
+      done <| Annotated a_t (View e')
+    Watch e -> todo "watch"
+    -- Watch  e -> do
     --   r <- renderConnect style_line Pull (editMessage Icon.eye m) (editExpression Icon.database e)
-    --   let m' ~ e' = consolidate m e r
+    --   let e' = consolidate m e r
     --   done <| Annotated a_t (Watch m' e')
 
     ---- Combinators
@@ -250,20 +250,17 @@ renderEditor :: forall a. Widget a -> Widget a -> Widget a
 renderEditor =
   Input.addon Medium
 
-renderEnter :: Row_ BasicType -> Name -> Message -> Widget (Name * Message)
-renderEnter types name msg =
-  renderEditor Icon.pen (selectType types name) >-> Either.in1
-    >-> fix2 name msg
+renderEnter :: Row_ BasicType -> Name -> Widget Name
+renderEnter types name =
+  renderEditor Icon.pen (selectType types name)
 
-renderUpdate :: Message -> Expression -> Widget (Message * Expression)
-renderUpdate msg expr =
-  renderEditor Icon.edit (editExpression expr) >-> Either.in2
-    >-> fix2 msg expr
+renderUpdate :: Expression -> Widget Expression
+renderUpdate expr =
+  renderEditor Icon.edit (editExpression expr)
 
-renderView :: Message -> Expression -> Widget (Message * Expression)
-renderView msg expr =
-  renderEditor Icon.eye (editExpression expr) >-> Either.in2
-    >-> fix2 msg expr
+renderView :: Expression -> Widget Expression
+renderView expr =
+  renderEditor Icon.eye (editExpression expr)
 
 renderLift :: Expression -> Widget Expression
 renderLift expr =
@@ -358,7 +355,7 @@ renderStep t1 t2 = do
 ---- Inputs --------------------------------------------------------------------
 
 -- | [[ i m ]]
-editMessage :: Icon -> Message -> Widget Message
+editMessage :: Icon ->  Widget Message
 editMessage i m =
   renderBox style_box
     [ i, Input.entry m m ]

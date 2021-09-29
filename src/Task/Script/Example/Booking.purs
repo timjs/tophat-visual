@@ -61,7 +61,7 @@ t_booking =
 enter_passenger :: Checked Task
 enter_passenger =
   unchecked
-    <| Step (MRecord <| from [ "value" ~ MBind "passengers" ]) (unchecked <| Enter "String" "Passenger details")
+    <| Step (MRecord <| from [ "value" ~ MBind "passengers" ]) (unchecked <| Enter "String")
     <| unchecked
     <| Select
       [ "Continue"

@@ -108,11 +108,11 @@ instance Check (Annotated a Task) where
 
 instance Check t => Check (Task t) where
   check s g = case _ of
-    Enter b _ -> HashMap.lookup b s |> note (UnknownTypeName b) >-> ofBasic >-> wrapValue
-    Update _ e -> check s g e >>= needBasic >-> wrapValue
-    Change _ e -> check s g e >>= outofReference >-> wrapValue
-    View _ e -> check s g e >>= needBasic >-> wrapValue
-    Watch _ e -> check s g e >>= outofReference >-> wrapValue
+    Enter b -> HashMap.lookup b s |> note (UnknownTypeName b) >-> ofBasic >-> wrapValue
+    Update e -> check s g e >>= needBasic >-> wrapValue
+    Change e -> check s g e >>= outofReference >-> wrapValue
+    View e -> check s g e >>= needBasic >-> wrapValue
+    Watch e -> check s g e >>= outofReference >-> wrapValue
     Lift e -> check s g e >>= outofRecord >-> TTask
     Pair ss -> traverse subcheck ss >>= unite >-> TTask
     Choose ss -> traverse subcheck ss >>= intersect >-> TTask

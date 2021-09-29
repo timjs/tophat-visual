@@ -14,11 +14,11 @@ import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type
 validate :: Typtext -> Context -> Checked Task -> Checked Task
 validate s g (Annotated _ i) = case i of
   ---- Editors
-  Enter n m -> lift g i (Enter n m) (HashMap.lookup n s |> note (UnknownTypeName n) >-> ofBasic >-> wrapValue)
-  Update m e -> lift g i (Update m e) (check s g e >>= needBasic >-> wrapValue)
-  Change m e -> lift g i (Change m e) (check s g e >>= outofReference >-> wrapValue)
-  View m e -> lift g i (View m e) (check s g e >>= needBasic >-> wrapValue)
-  Watch m e -> lift g i (Watch m e) (check s g e >>= outofReference >-> wrapValue)
+  Enter n -> lift g i (Enter n) (HashMap.lookup n s |> note (UnknownTypeName n) >-> ofBasic >-> wrapValue)
+  Update e -> lift g i (Update e) (check s g e >>= needBasic >-> wrapValue)
+  Change e -> lift g i (Change e) (check s g e >>= outofReference >-> wrapValue)
+  View e -> lift g i (View e) (check s g e >>= needBasic >-> wrapValue)
+  Watch e -> lift g i (Watch e) (check s g e >>= outofReference >-> wrapValue)
   Lift e -> lift g i (Lift e) (check s g e >>= outofRecord >-> TTask)
   ---- Combinators
   Pair us -> sink g (Pair cs) (traverse outofBranch cs >>= unite >-> TTask)

@@ -283,11 +283,11 @@ data Task t
   | Branch (Branches t)
   | Select (LabeledBranches t)
   -- Editors
-  | Enter Name Message
-  | Update Message Expression
-  | Change Message Expression
-  | View Message Expression
-  | Watch Message Expression
+  | Enter Name
+  | Update Expression
+  | Change Expression
+  | View Expression
+  | Watch Expression
   -- Combinators
   | Lift Expression
   | Pair (Array t)
@@ -311,11 +311,11 @@ instance Display t => Display (Task t) where
     Step m t s -> Doc.lines [ Doc.words [ Doc.show m, Doc.text "<-", display t ], display s ]
     Branch bs -> Doc.lines [ Doc.text "branch", inner' bs ]
     Select bs -> Doc.lines [ Doc.text "select", inner'' bs ]
-    Enter t m -> Doc.words [ Doc.text "enter", Doc.text t, Doc.quotes (Doc.text m) ]
-    Update m e -> Doc.words [ Doc.text "update", Doc.quotes (Doc.text m), Doc.show e ]
-    Change m e -> Doc.words [ Doc.text "change", Doc.quotes (Doc.text m), Doc.show e ]
-    View m e -> Doc.words [ Doc.text "view", Doc.quotes (Doc.text m), Doc.show e ]
-    Watch m e -> Doc.words [ Doc.text "watch", Doc.quotes (Doc.text m), Doc.show e ]
+    Enter t -> Doc.words [ Doc.text "enter", Doc.text t ]
+    Update e -> Doc.words [ Doc.text "update", Doc.show e ]
+    Change e -> Doc.words [ Doc.text "change", Doc.show e ]
+    View e -> Doc.words [ Doc.text "view", Doc.show e ]
+    Watch e -> Doc.words [ Doc.text "watch", Doc.show e ]
     Lift e -> Doc.words [ Doc.text "done", Doc.show e ]
     Pair ss -> Doc.lines [ Doc.text "pair", inner ss ]
     Choose ss -> Doc.lines [ Doc.text "choose", inner ss ]

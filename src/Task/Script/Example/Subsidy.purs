@@ -5,7 +5,7 @@ import Preload
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Annotation (Checked, unchecked)
-import Task.Script.Syntax (Arguments(..), BasicType(..), Expression(..), Match(..), Task(..))
+import Task.Script.Syntax (Arguments(..), BasicType(..), Expression(..), Match(..), Task(..), Constant(..))
 
 ---- Context -------------------------------------------------------------------
 types :: Typtext
@@ -86,7 +86,7 @@ context =
 request_subsidy :: Checked Task
 request_subsidy =
   unchecked
-    <| Step (MRecord <| from [ "value" ~ MBind "details" ]) (unchecked <| Enter "Citizen" "Citizen details")
+    <| Step (MRecord <| from [ "value" ~ MBind "details" ]) (unchecked <| Enter "Citizen")
     <| unchecked
     <| Step (MRecord <| from [ "approved" ~ MBind "approved" ]) (unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
     <| unchecked
@@ -94,7 +94,7 @@ request_subsidy =
       [ Apply (Variable "not") (Variable "approved")
           ~
             ( unchecked
-                <| View "Cannot approve" (Record HashMap.empty)
+                <| View (Constant (S "Cannot approve"))
             )
       , Variable "approved"
           ~
