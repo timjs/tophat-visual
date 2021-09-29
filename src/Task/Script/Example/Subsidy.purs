@@ -1,6 +1,7 @@
 module Task.Script.Example.Subsidy where
 
 import Preload
+
 import Data.HashMap as HashMap
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Knot (Unchecked(..))
@@ -102,7 +103,9 @@ request_subsidy =
                   ( Unchecked
                       <| Pair
                         [ Unchecked
-                            <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ])
+                            <| Step (MRecord <| from [ "documents" ~ MBind "documents" ]) (Unchecked <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
+                            <| Unchecked
+                            <| Lift (Record <| from [ "documents" ~ Variable "documents" ])
                         , Unchecked
                             <| Step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (Unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
                             <| Unchecked
