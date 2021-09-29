@@ -17,6 +17,7 @@ module Concur.Dom.Text
 import Preload
 import Concur.Dom (Widget, Attr)
 import Concur.Dom.Node as Node
+import Concur.Dom.Attr as Attr
 
 activate :: forall a. Array (Attr a) -> Widget a -> Widget a
 activate = Node.div_
@@ -34,8 +35,12 @@ activate = Node.div_
 text :: forall a. String -> Widget a
 text = Node.text
 
-code :: forall a. String -> Widget a
-code s = Node.pre [] [ Node.text s ]
+code :: forall a. String -> String -> Widget a
+code lang text = Node.pre
+  [ Attr.classes [ "code" ]
+  , Attr._data { lang }
+  ]
+  [ Node.code [] [ Node.text text ] ]
 
 -- lines :: forall a. Array String -> Widget a
 -- lines xs = Layout.column <| map Node.text xs

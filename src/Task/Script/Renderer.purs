@@ -29,7 +29,8 @@ main g s t =
           [ renderTask g s t'
           , Input.button Primary Medium "Check" ->> validate s g t'
           ]
-      , Text.code <| show t'
+      , Text.code "TopHat" (show t')
+      -- , Input.editor 20 "code" (show t') ->> t'
       ]
 
 renderTask :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
