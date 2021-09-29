@@ -14,20 +14,24 @@ import Concur.Dom.Text as Text
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
-import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Annotation (Annotated(..), Checked)
+import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Label, LabeledBranches, Match(..), Message, Name, Row_, Task(..))
+import Task.Script.Validator (validate)
 
 ---- Rendering -----------------------------------------------------------------
 
 type Renderer = Checked Task -> Widget (Checked Task)
 
 main :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
-main g s u =
-  Concur.repeat u \u' ->
+main g s t =
+  Concur.repeat t \t' ->
     Layout.column
-      [ renderTask g s u'
-      , Text.code <| show u'
+      [ Layout.row
+          [ renderTask g s t'
+          , Input.button Primary Medium "Check" ->> validate s g t'
+          ]
+      , Text.code <| show t'
       ]
 
 renderTask :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
