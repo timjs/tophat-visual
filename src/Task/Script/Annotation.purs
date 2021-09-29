@@ -4,9 +4,9 @@ import Preload
 
 import Data.Doc (class Display, display)
 import Data.Doc as Doc
-import Task.Script.Syntax (Task, Type_)
 import Task.Script.Context (Context)
 import Task.Script.Error (Error(..))
+import Task.Script.Syntax (Task, Type_)
 
 ---- Annotations ---------------------------------------------------------------
 
@@ -64,3 +64,7 @@ withTypeOf :: forall f. Checked f -> f (Checked f) -> (Type_ -> Checked f) -> Ch
 withTypeOf c b f = case c of
   Annotated (Success _ t) _ -> f t
   _ -> Annotated Unknown b
+
+extractError :: Status -> Maybe String
+extractError (Failure _ e) = Just <| show e
+extractError _ = Nothing

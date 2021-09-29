@@ -43,12 +43,10 @@ validate s g (Annotated _ i) = case i of
             _ -> bury (Step m c1 (fail g' i2 <| TaskNeeded t2))
           where
           c2' = validate s g' u2
-
           g' = g \/ d
       _ -> bury (Step m (fail g i1 <| TaskNeeded t1) c2)
     where
     c1 = validate s g u1
-
     c2 = validate s g u2 --NOTE: this is a first approximation, complete checking is in `c2'`
   ---- Builtins
   Execute n a ->
@@ -78,6 +76,7 @@ validate s g (Annotated _ i) = case i of
       else
         throw <| AssignError b1 b2
   where
+
   validate1 :: Checked Task -> Checked Task
   validate1 u@(Annotated _ i') = case validate s g u of --XXX crashes when eta expanded
     Annotated (Success g' t) j -> case t of

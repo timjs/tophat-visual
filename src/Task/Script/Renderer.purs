@@ -1,6 +1,4 @@
-module Task.Script.Renderer
-  ( main
-  ) where
+module Task.Script.Renderer where
 
 import Preload
 
@@ -14,7 +12,7 @@ import Concur.Dom.Text as Text
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
-import Task.Script.Annotation (Annotated(..), Checked)
+import Task.Script.Annotation (Annotated(..), Checked, Status(..))
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Label, LabeledBranches, Match(..), Message, Name, Row_, Task(..))
 import Task.Script.Validator (validate)
@@ -168,9 +166,9 @@ renderStep style (MRecord row) =
     ]
 renderStep _ _ = todo "other matches in step rendering"
 
-renderOption :: Expression -> Widget Expression
-renderOption guard =
-  Layout.line Dashed (Layout.place After (renderGuard guard))
+renderOption :: Status -> Expression -> Widget Expression
+renderOption status guard =
+  Layout.line Dashed (Layout.place After (renderGuard status guard))
 
 renderSingle :: forall a. (a -> Widget a) -> Match -> a -> a -> Widget (Match * a * a)
 renderSingle render match sub1 sub2 =
@@ -203,9 +201,9 @@ renderBranches render match subtask branches =
     >-> fix3 match subtask branches
 
 renderBranch :: Renderer -> Expression * Checked Task -> Widget (Expression * Checked Task)
-renderBranch render (guard ~ subtask) =
+renderBranch render (guard ~ subtask@(Annotated status _)) =
   Layout.column
-    [ renderOption guard >-> Either.in1
+    [ renderOption status guard >-> Either.in1
     , render subtask >-> Either.in2
     , Layout.line Solid empty
     ]
@@ -227,9 +225,9 @@ renderSelects render match subtask branches =
     >-> fix3 match subtask branches
 
 renderSelect :: Renderer -> Label * Expression * Checked Task -> Widget (Label * Expression * Checked Task)
-renderSelect render (label ~ guard ~ subtask) =
+renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
   Layout.column
-    [ renderOption guard >-> Either.in2
+    [ renderOption status guard >-> Either.in2
     , renderLabel label >-> Either.in1
     , render subtask >-> Either.in3
     ]
@@ -275,12 +273,21 @@ renderShare :: Expression -> Widget Expression
 renderShare expr =
   renderEditor Icon.retweet (editExpression expr)
 
-renderGuard :: Expression -> Widget Expression
-renderGuard expr =
-  Input.addon Small Icon.question (editGuard expr)
+renderGuard :: Status -> Expression -> Widget Expression
+renderGuard status expr =
+  renderError status
+    (Input.addon Small Icon.question (editGuard expr))
 
 renderLabel :: Label -> Widget Label
 renderLabel = editLabel
+
+---- Helpers -------------------------------------------------------------------
+
+renderError :: forall a. Status -> Widget a -> Widget a
+renderError (Failure _ err) =
+  Layout.element Error << Input.tooltip Before (show err)
+renderError _ =
+  Layout.element Default
 
 ---- Entries -------------------------------------------------------------------
 
