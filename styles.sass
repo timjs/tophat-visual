@@ -122,7 +122,9 @@ div
 
 .shape-line
   border: 1pt solid $gray-color
-  &.option
+  &.stroke-solid
+    border-style: solid
+  &.stroke-dashed
     border-style: dashed
 
 .shape-caret
@@ -146,34 +148,35 @@ div
 //   &:hover
 //     border-color: $primary-color-dark
 
-.shape-triangle.style-outlined
-  &::before
-    content: "▽"
-    font-size: 1.1pc
-    font-weight: bold
-    margin: -6pt
-    color: $gray-color
-  &:hover::before
-    content: "▽"
-    font-size: 1.1pc
-    font-weight: bold
-    margin: -6pt
-    color: $primary-color-dark
-    cursor: default
-.shape-triangle.style-filled
-  &::before
-    content: "▼"
-    font-size: 1.1pc
-    font-weight: bold
-    margin: -6pt
-    color: $gray-color
-  &:hover::before
-    content: "▼"
-    font-size: 1.1pc
-    font-weight: bold
-    margin: -6pt
-    color: $primary-color-dark
-    cursor: default
+.shape-triangle
+  margin: -6pt 0
+  &.style-outlined
+    &::before
+      content: "▽"
+      font-size: 1.1pc
+      font-weight: bold
+      color: $gray-color
+    &:hover::before
+      // content: "▽"
+      // font-size: 1.1pc
+      // font-weight: bold
+      // margin: -6pt
+      color: $primary-color-dark
+      cursor: default
+  &.style-filled
+    &::before
+      content: "▼"
+      font-size: 1.1pc
+      font-weight: bold
+      color: $gray-color
+    &:hover::before
+      // Aparently not needed to repeat...
+      // content: "▼"
+      // font-size: 1.1pc
+      // font-weight: bold
+      // margin: 0 -6pt
+      color: $primary-color-dark
+      cursor: default
 
 .shape-diamond
   height: 1pc
@@ -185,7 +188,7 @@ div
   background-color: white
   &:hover
     border: 1pt solid $primary-color-dark
-  &.closed
+  &.style-filled
     background-color: $gray-color
     &:hover
       background-color: $primary-color-dark

@@ -1,0 +1,178 @@
+@charset "UTF-8";
+body {
+  font-family: Lucida Grande;
+}
+
+.form-select:hover, .form-input:hover, .btn-gray:hover, .step:hover {
+  border-color: #4b48d6;
+}
+
+.btn-gray {
+  border-color: #bcc3ce;
+  color: #303742;
+}
+
+.input-group-addon > .fas, .input-group-addon > .far {
+  padding-top: 2pt;
+}
+
+.sym {
+  font-size: 1.1pc;
+  margin: -6pt;
+  color: #bcc3ce;
+}
+.sym:hover {
+  color: #4b48d6;
+  cursor: default;
+}
+
+div {
+  position: relative;
+}
+
+.layout-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+}
+.layout-row.layout-branch > .layout-column::before {
+  outline: dashed 1pt #bcc3ce;
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+}
+.layout-row.layout-branch > .layout-column:first-child::before {
+  left: 50%;
+}
+.layout-row.layout-branch > .layout-column:last-child::before {
+  right: 50%;
+}
+.layout-row.layout-branch > .layout-column::after {
+  outline: solid 1pt #bcc3ce;
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.layout-row.layout-branch > .layout-column:first-child::after {
+  left: 50%;
+}
+.layout-row.layout-branch > .layout-column:last-child::after {
+  right: 50%;
+}
+.layout-row.layout-group.stroke-solid {
+  border-top: solid 6pt #bcc3ce;
+  border-bottom: solid 6pt #bcc3ce;
+  padding: 0 1pc;
+}
+.layout-row.layout-group.stroke-solid:hover {
+  border-color: #6362dc;
+}
+.layout-row.layout-group.stroke-double {
+  border-top: double 6pt #bcc3ce;
+  border-bottom: double 6pt #bcc3ce;
+}
+.layout-row.layout-group.stroke-double:hover {
+  border-color: #6362dc;
+}
+
+.layout-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.5pc;
+}
+.layout-column > .shape-line {
+  height: 2pc;
+  flex-grow: 1;
+}
+
+.layout-side {
+  position: absolute;
+}
+.layout-side.side-left {
+  right: 1.5pc;
+}
+.layout-side.side-right {
+  left: 0.5pc;
+  min-width: 10pc;
+}
+
+.shape-line {
+  border: 1pt solid #bcc3ce;
+}
+.shape-line.stroke-solid {
+  border-style: solid;
+}
+.shape-line.stroke-dashed {
+  border-style: dashed;
+}
+
+.shape-caret {
+  width: 0;
+  height: 0;
+}
+.shape-caret.down {
+  border-left: 0.5pc solid transparent;
+  border-right: 0.5pc solid transparent;
+  border-top: 1pc solid #bcc3ce;
+}
+.shape-caret.down:hover {
+  border-left: 0.5pc solid transparent;
+  border-right: 0.5pc solid transparent;
+  border-top: 1pc solid #4b48d6;
+}
+
+.shape-triangle {
+  margin: -6pt 0;
+}
+.shape-triangle.style-outlined::before {
+  content: "▽";
+  font-size: 1.1pc;
+  font-weight: bold;
+  color: #bcc3ce;
+}
+.shape-triangle.style-outlined:hover::before {
+  color: #4b48d6;
+  cursor: default;
+}
+.shape-triangle.style-filled::before {
+  content: "▼";
+  font-size: 1.1pc;
+  font-weight: bold;
+  color: #bcc3ce;
+}
+.shape-triangle.style-filled:hover::before {
+  color: #4b48d6;
+  cursor: default;
+}
+
+.shape-diamond {
+  height: 1pc;
+  width: 1pc;
+  transform: rotate(45deg);
+  margin: -0.5pc;
+  z-index: 1;
+  border: 1pt solid #bcc3ce;
+  background-color: white;
+}
+.shape-diamond:hover {
+  border: 1pt solid #4b48d6;
+}
+.shape-diamond.style-filled {
+  background-color: #bcc3ce;
+}
+.shape-diamond.style-filled:hover {
+  background-color: #4b48d6;
+}
+
+.shape-circle {
+  height: 1pc;
+  width: 1pc;
+  background-color: #bcc3ce;
+  border: 1pt solid #bcc3ce;
+  border-radius: 50%;
+}
