@@ -2,6 +2,7 @@ module Concur.Dom.Text
   ( activate
   -- # Text
   , text
+  , gray
   , code
   -- # Heads
   , title
@@ -15,7 +16,7 @@ module Concur.Dom.Text
   ) where
 
 import Preload
-import Concur.Dom (Widget, Attr)
+import Concur.Dom (Widget, Attr, block)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
 
@@ -36,11 +37,14 @@ text :: forall a. String -> Widget a
 text = Node.text
 
 code :: forall a. String -> String -> Widget a
-code lang text = Node.pre
+code lang str = Node.pre
   [ Attr.classes [ "code" ]
   , Attr._data { lang }
   ]
-  [ Node.code [] [ Node.text text ] ]
+  [ Node.code [] [ text str ] ]
+
+gray :: forall a. String -> Widget a
+gray s = block [ "text-gray" ] [ text s ]
 
 -- lines :: forall a. Array String -> Widget a
 -- lines xs = Layout.column <| map Node.text xs
