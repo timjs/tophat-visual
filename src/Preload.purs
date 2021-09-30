@@ -122,6 +122,7 @@ import Data.Enum (enumFromTo)
 import Data.Foldable (foldM)
 import Data.Foldable hiding (foldM) as Reexport
 import Data.FoldableWithIndex hiding (foldlDefault, foldrDefault, foldMapDefault) as Reexport
+import Data.Function (on) as Reexport
 import Data.Function (apply, applyFlipped)
 import Data.Functor (mapFlipped, voidLeft, voidRight) as Reexport
 import Data.HashMap (HashMap) as Reexport
