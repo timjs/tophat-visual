@@ -84,10 +84,12 @@ div {
 .layout-row.layout-branch > .layout-column:last-child::after {
   right: 50%;
 }
+.layout-row.layout-group {
+  padding: 0 1pc;
+}
 .layout-row.layout-group.stroke-solid {
   border-top: solid 6pt #bcc3ce;
   border-bottom: solid 6pt #bcc3ce;
-  padding: 0 1pc;
 }
 .layout-row.layout-group.stroke-solid:hover {
   border-color: #6362dc;
@@ -101,6 +103,7 @@ div {
 }
 .layout-row.layout-group > input {
   transform: translate(100%, -66%);
+  border-radius: 50%;
 }
 
 .layout-column {
