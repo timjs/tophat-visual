@@ -13,10 +13,10 @@ import Concur.Dom.Text as Text
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
-import Task.Script.Annotation (Annotated(..), Checked, Status(..))
+import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Loader (validate)
-import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Constant(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..))
+import Task.Script.Syntax (Arguments(..), BasicType, Branches, Constant(..), Expression(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..), isFunction)
 
 ---- Rendering -----------------------------------------------------------------
 
@@ -46,23 +46,23 @@ renderTask g s = go
       done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])))
 
     Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ t2 ])) -> do
-      c' ~ m' ~ t1' ~ t2' <- renderSingle go Hurry m t1 t2
+      c' ~ m' ~ t1' ~ t2' <- renderSingle a_t go Hurry m t1 t2
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b case c' of
         Hurry -> Branch [ Constant (B true) ~ t2' ]
         Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
     Step m t1 (Annotated a_b (Branch bs)) -> do
-      c' ~ m' ~ t1' ~ bs' <- renderBranches go m t1 bs
+      c' ~ m' ~ t1' ~ bs' <- renderBranches a_t go m t1 bs
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
         Hurry -> Branch bs'
         Delay -> Select (addLabels bs')
 
     Step m t1 (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2 ])) -> do
-      c' ~ m' ~ t1' ~ t2' <- renderSingle go Delay m t1 t2
+      c' ~ m' ~ t1' ~ t2' <- renderSingle a_t go Delay m t1 t2
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
         Hurry -> Branch [ Constant (B true) ~ t2' ]
         Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
     Step m t1 (Annotated a_b (Select bs)) -> do
-      c' ~ m' ~ t1' ~ bs' <- renderSelects go m t1 bs
+      c' ~ m' ~ t1' ~ bs' <- renderSelects a_t go m t1 bs
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
         Hurry -> Branch (removeLabels bs')
         Delay -> Select bs'
@@ -156,12 +156,21 @@ renderExecute :: Context -> Status -> Name -> Arguments -> Widget (Name * Argume
 renderExecute context status name args@(ARecord row) =
   Layout.column
     [ renderLine row >-> (ARecord >> Either.in2)
-    , renderError status
-        ( Input.picker
-            [ "Builtin" ~ []
-            , "Project" ~ Array.sort (HashMap.keys context)
+    , Input.popover After
+        ( Input.card
+            [ Text.subsubhead "Title"
+            , Text.gray "Subtitle"
             ]
-            name
+            [ Text.text "body" ]
+            []
+        )
+        ( renderError status
+            ( Input.picker
+                [ "Builtin" ~ []
+                , "Project" ~ Array.sort (HashMap.keys context)
+                ]
+                name
+            )
         ) >-> Either.in1
     ]
     >-> fix2 name args
@@ -175,18 +184,24 @@ renderLabels :: forall a. Row_ a -> Widget (Row_ a)
 renderLabels =
   HashMap.keys >> map (Layout.chip Normal) >> Layout.row
 
+renderContext :: Status -> String
+renderContext = extractContext >> (_ ?? HashMap.empty) >> HashMap.filter (isFunction >> not) >> HashMap.toArrayBy (~) >> Array.sortBy (compare `on` fst) >> foldMap go
+  where
+  go (n ~ t) = n ++ " : " ++ show t ++ "\n"
+
 ---- Steps ----
 
 -- |   || as
 -- |   V
-renderStep :: Cont -> Match -> Widget (Cont * Match)
-renderStep cont match@(MRecord row) =
+renderStep :: Status -> Cont -> Match -> Widget (Cont * Match)
+renderStep status cont match@(MRecord row) =
   Layout.column
     [ renderLine row >-> (MRecord >> Either.in2)
-    , Layout.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Layout.triangle (style cont) empty ]
+    , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
+        Layout.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Layout.triangle (style cont) empty ]
     ]
     >-> fix2 cont match
-renderStep _ _ = todo "other matches in step rendering"
+renderStep _ _ _ = todo "other matches in step rendering"
 
 renderOption :: Status -> Expression -> Widget Expression
 renderOption status guard =
@@ -201,11 +216,11 @@ renderOptionWithLabel status label guard =
     ]
     >-> fix2 label guard
 
-renderSingle :: forall a. (a -> Widget a) -> Cont -> Match -> a -> a -> Widget (Cont * Match * a * a)
-renderSingle render cont match sub1 sub2 =
+renderSingle :: forall a. Status -> (a -> Widget a) -> Cont -> Match -> a -> a -> Widget (Cont * Match * a * a)
+renderSingle g render cont match sub1 sub2 =
   Layout.column
     [ render sub1 >-> Either.in1
-    , renderStep cont match >-> Either.in3
+    , renderStep g cont match >-> Either.in3
     , render sub2 >-> Either.in2
     ]
     >-> fix3 sub1 sub2 (cont ~ match)
@@ -222,11 +237,11 @@ renderEnd _ _ _ = todo "other matches in end rendering"
 
 ---- Branches ----
 
-renderBranches :: Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Cont * Match * Checked Task * Branches (Checked Task))
-renderBranches render match subtask branches =
+renderBranches :: Status -> Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Cont * Match * Checked Task * Branches (Checked Task))
+renderBranches g render match subtask branches =
   Layout.column
     [ render subtask >-> Either.in1
-    , renderStep Hurry match >-> Either.in3
+    , renderStep g Hurry match >-> Either.in3
     , Layout.branch [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
     ]
     >-> fix3 subtask branches (Hurry ~ match)
@@ -255,11 +270,11 @@ renderBranch render (guard ~ subtask@(Annotated status _)) =
 --     , renderTask task
 --     ]
 
-renderSelects :: Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Cont * Match * Checked Task * LabeledBranches (Checked Task))
-renderSelects render match subtask branches =
+renderSelects :: Status -> Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Cont * Match * Checked Task * LabeledBranches (Checked Task))
+renderSelects status render match subtask branches =
   Layout.column
     [ render subtask >-> Either.in1
-    , renderStep Delay match >-> Either.in3
+    , renderStep status Delay match >-> Either.in3
     , Layout.branch [ Concur.traverse (renderSelect render) branches ] >-> Either.in2
     ]
     >-> fix3 subtask branches (Delay ~ match)
@@ -371,7 +386,6 @@ renderContinuation k s f ws =
     -- TODO either group or single, depending on count
     , renderGroup s f ws
     ]
-
 -- |  r
 -- |  | m
 -- |  f
@@ -382,7 +396,6 @@ renderStep t1 t2 = do
     , Layout.line
     , go t2 >-> Right
     ]
-
 -- -- | w_1 *--* w_2
 -- renderConnect :: forall a b r. LineStyle r -> Connect -> Widget a -> Widget b -> Widget (Either a b)
 -- renderConnect s m a b = do
@@ -395,31 +408,25 @@ renderStep t1 t2 = do
 --   --TODO: factor out style
 --   dot = Layout.dot 0.33 "black"
 --   connection = Layout.line Layout.Horizontal 4.0 s
-
 -- data Connect
 --   = Pull
 --   | Push
 --   | Both
-
 ---- Inputs --------------------------------------------------------------------
-
 -- | [[ i m ]]
 editMessage :: Icon ->  Widget Message
 editMessage i m =
   renderBox style_box
     [ i, Input.entry m m ]
-
 editLabels :: Context -> Arguments -> Widget Arguments
 editLabels g (ARecord as) =
   --TODO show labels and expressions
   Layout.column (map (show >> text) (HashMap.keys as))
-
 -- -- | [[ i n ]]
 -- selectValues :: Context -> Icon -> Row_ Name -> Widget (Row_ Name)
 -- selectValues g i ns = do
 --   _ <- renderBox style_box []
 --   done ns
-
 -}
 
 ---- Helpers -------------------------------------------------------------------

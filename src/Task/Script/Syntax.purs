@@ -8,6 +8,7 @@ module Task.Script.Syntax
   , Message
   -- # Types
   , Type_(..)
+  , isFunction
   , ofRecord
   , ofVariant
   , ofReference
@@ -103,6 +104,10 @@ instance Show Type_ where
     TReference t -> unwords [ "Ref", show t ]
     TTask t -> unwords [ "Task", showFields ":" t ]
     TPrimitive p -> show p
+
+isFunction :: Type_ -> Bool
+isFunction (TFunction _ _) = true
+isFunction _ = false
 
 ofRecord :: Type_ -> Maybe (Row_ Type_)
 ofRecord = case _ of

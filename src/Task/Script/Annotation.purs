@@ -68,3 +68,8 @@ withTypeOf c b f = case c of
 extractError :: Status -> Maybe String
 extractError (Failure _ e) = Just <| show e
 extractError _ = Nothing
+
+extractContext :: Status -> Maybe Context
+extractContext (Failure g _) = Just g
+extractContext (Success g _) = Just g
+extractContext (Unknown) = Nothing
