@@ -7,6 +7,7 @@ module Concur.Dom
   -- # Elements
   , block
   , blockWithData
+  , blockWithAttr
   , inline
   , inlineWithData
   -- # Values
@@ -42,16 +43,21 @@ type Signal a = Concur.Signal Dom a
 ---- Elements ------------------------------------------------------------------
 
 block :: forall a. Array String -> Array (Widget a) -> Widget a
-block cs = Node.div [Attr.classes cs]
+block cs = blockWithAttr [Attr.classes cs]
 
 blockWithData :: forall a r. Array String -> Record r -> Array (Widget a) -> Widget a
-blockWithData cs r = Node.div [Attr.classes cs, Attr._data r ]
+blockWithData cs r = blockWithAttr [Attr.classes cs, Attr._data r ]
+
+blockWithAttr :: forall a. Array (Attr a) -> Array (Widget a) -> Widget a
+blockWithAttr = Node.div
 
 inline :: forall a. Array String -> Array (Widget a) -> Widget a
-inline cs = Node.span [Attr.classes cs]
+inline cs = inlineWithAttr [Attr.classes cs]
 
 inlineWithData :: forall a r. Array String -> Record r -> Array (Widget a) -> Widget a
-inlineWithData cs r = Node.span [Attr.classes cs, Attr._data r ]
+inlineWithData cs r = inlineWithAttr [Attr.classes cs, Attr._data r ]
+
+inlineWithAttr = Node.span
 
 ---- Target values -------------------------------------------------------------
 

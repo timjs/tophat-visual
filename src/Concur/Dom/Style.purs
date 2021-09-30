@@ -1,6 +1,7 @@
 module Concur.Dom.Style
   -- # Types
   ( Kind(..)
+  , Button(..)
   , Size(..)
   , Orientation(..)
   , Position(..)
@@ -8,6 +9,7 @@ module Concur.Dom.Style
   , Stroke(..)
   -- # Layout
   , element
+  , has
   , column
   , row
   , branch
@@ -22,12 +24,14 @@ module Concur.Dom.Style
 
 import Preload
 
-import Concur.Dom (Widget, block, blockWithData)
+import Concur.Dom (Widget, Attr, block, blockWithData, blockWithAttr)
 import Concur.Dom.Text as Text
 
 ---- Types ---------------------------------------------------------------------
 
-data Kind = Default | Primary | Secondary | Link | Success | Warning | Error
+data Kind = Normal | Primary | Secondary | Link | Success | Warning | Error
+
+data Button = Default | Action
 
 data Size = Large | Medium | Small
 
@@ -43,13 +47,18 @@ data Stroke = Dotted | Dashed | Solid | Double
 
 instance Show Kind where
   show = case _ of
-    Default -> "default" -- NOTE: not named in Spectre
+    Normal -> "normal" -- NOTE: not named in Spectre
     Primary -> "primary"
     Secondary -> "secondary"
     Link -> "link"
     Success -> "success"
     Warning -> "warning"
     Error -> "error"
+
+instance Show Button where
+  show = case _ of
+    Default -> "default" -- NOTE: not named in Spectre
+    Action -> "action"
 
 instance Show Size where
   show = case _ of
@@ -83,8 +92,11 @@ instance Show Stroke where
 
 ---- Layout --------------------------------------------------------------------
 
-element :: forall a. Kind -> Widget a -> Widget a
-element k w = block [ "has-" ++ show k ] [ w ]
+element :: forall a. Array (Attr a) -> Array (Widget a) -> Widget a
+element = blockWithAttr
+
+has :: forall a. Kind -> Widget a -> Widget a
+has k w = block [ "has-" ++ show k ] [ w ]
 
 column :: forall a. Array (Widget a) -> Widget a
 column = block [ "layout-column" ]

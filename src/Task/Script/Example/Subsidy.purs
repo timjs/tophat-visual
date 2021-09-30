@@ -3,11 +3,12 @@ module Task.Script.Example.Subsidy where
 import Preload
 
 import Data.HashMap as HashMap
-import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Annotation (Checked, unchecked)
-import Task.Script.Syntax (Arguments(..), BasicType(..), Expression(..), Match(..), Task(..), Constant(..))
+import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
+import Task.Script.Syntax (Arguments(..), BasicType(..), Constant(..), Expression(..), Match(..), Task(..), Label)
 
 ---- Context -------------------------------------------------------------------
+
 types :: Typtext
 types =
   from
@@ -69,6 +70,7 @@ context =
     ]
 
 ---- Tasks ---------------------------------------------------------------------
+
 {-
   {value = details} <- enter Citizen "Passenger details"
   {approved} <- check_conditions {details}
@@ -85,36 +87,53 @@ context =
 -}
 request_subsidy :: Checked Task
 request_subsidy =
-  unchecked
-    <| Step (MRecord <| from [ "value" ~ MBind "details" ]) (unchecked <| Enter "Citizen")
-    <| unchecked
-    <| Step (MRecord <| from [ "approved" ~ MBind "approved" ]) (unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
-    <| unchecked
-    <| Branch
+  step (MRecord <| from [ "value" ~ MBind "details" ]) (unchecked <| Enter "Citizen")
+    <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
       [ Apply (Variable "not") (Variable "approved")
           ~
-            ( unchecked
-                <| View (Constant (S "Cannot approve"))
+            ( view (Constant (S "Cannot approve"))
             )
       , Variable "approved"
           ~
-            ( unchecked
-                <| Step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
-                  ( unchecked
-                      <| Pair
-                        [ unchecked
-                            <| Step (MRecord <| from [ "documents" ~ MBind "documents" ]) (unchecked <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
-                            <| unchecked
-                            <| Lift (Record <| from [ "documents" ~ Variable "documents" ])
-                        , unchecked
-                            <| Step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
-                            <| unchecked
-                            <| Step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
-                            <| unchecked
-                            <| Lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
-                        ]
-                  )
-                <| unchecked
-                <| Execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
+            ( step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
+                ( pair
+                    [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (unchecked <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
+                        <| lift (Record <| from [ "documents" ~ Variable "documents" ])
+                    , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
+                        <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
+                        <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
+                    ]
+                )
+                <| execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
             )
       ]
+
+---- Helpers -------------------------------------------------------------------
+
+view :: Expression -> Checked Task
+view e = unchecked <| View e
+
+step :: Match -> Checked Task -> Checked Task -> Checked Task
+-- step m t1 t2 = unchecked <| Step m t1 t2
+step m t1 t2 = unchecked <| Step m t1 (unchecked <| Branch [ Constant (B true) ~ t2 ])
+
+cont :: Match -> Checked Task -> Checked Task -> Checked Task
+cont m t1 t2 = unchecked <| Step m t1 (unchecked <| Select [ "Continue" ~ Constant (B true) ~ t2 ])
+
+branch :: Match -> Checked Task -> Array (Expression * Checked Task) -> Checked Task
+branch m t1 bs = unchecked <| Step m t1 (unchecked <| Branch bs)
+
+select :: Match -> Checked Task -> Array (Label * Expression * Checked Task) -> Checked Task
+select m t1 bs = unchecked <| Step m t1 (unchecked <| Select bs)
+
+pair :: Array (Checked Task) -> Checked Task
+pair ts = unchecked <| Pair ts
+
+choose :: Array (Checked Task) -> Checked Task
+choose ts = unchecked <| Choose ts
+
+execute :: String -> Arguments -> Checked Task
+execute n as = unchecked <| Execute n as
+
+lift :: Expression -> Checked Task
+lift e = unchecked <| Lift e

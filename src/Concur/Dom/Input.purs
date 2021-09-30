@@ -4,7 +4,7 @@ module Concur.Dom.Input
   , switch
   , checkbox
   , entry
-  , editor
+  , area
   , picker
   , picker_generic
   -- # Extr
@@ -18,18 +18,18 @@ import Preload
 import Concur.Dom (Widget, block, blockWithData, intValue, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
-import Concur.Dom.Style (Kind, Size, Position)
+import Concur.Dom.Style (Kind, Button, Size, Position)
 import Data.Array as Array
 
 ---- Buttons -------------------------------------------------------------------
 -- * [normal|radio|image]button
 
-button :: Kind -> Size -> String -> Widget Unit
-button kind size label = do
+button :: Button -> Kind -> Size -> String -> Widget Unit
+button but kind size label = do
   result <-
     Node.input
       [ Attr._type "button"
-      , Attr.classes [ "btn", "btn-" ++ show kind, "btn-" ++ show size ]
+      , Attr.classes [ "btn", "btn-" ++ show but, "btn-" ++ show kind, "btn-" ++ show size ]
       , Attr.value label
       , Attr.onClick ->> Nothing
       , Attr.onKeyDown >-> Just
@@ -40,7 +40,7 @@ button kind size label = do
       if Attr.isEnterEvent key then
         done unit
       else
-        button kind size label
+        button but kind size label
 
 -- group :: forall a. Array (Widget a) -> Widget a
 -- group = block [ "btn-group", "btn-group-block" ]
@@ -148,8 +148,8 @@ entry size placeholder value = do
       else
         entry size placeholder value
 
-editor :: Int -> String -> String -> Widget String
-editor lines placeholder value = do
+area :: Int -> String -> String -> Widget String
+area lines placeholder value = do
   result <-
     Node.textarea
       [ Attr.classes [ "form-input" ]
@@ -160,12 +160,12 @@ editor lines placeholder value = do
       ]
       [ Node.text value ]
   case result of
-    Left event -> editor lines placeholder (stringValue event)
+    Left event -> area lines placeholder (stringValue event)
     Right key ->
       if Attr.isEnterEvent key then
         done value
       else
-        editor lines placeholder value
+        area lines placeholder value
 
 ---- Extras --------------------------------------------------------------------
 

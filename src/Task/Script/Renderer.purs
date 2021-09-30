@@ -4,18 +4,21 @@ import Preload
 
 import Concur as Concur
 import Concur.Dom (Widget)
+import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
-import Concur.Dom.Style (Kind(..), Position(..), Size(..), Stroke(..), Style(..))
+import Concur.Dom.Style (Kind(..), Button(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Layout
 import Concur.Dom.Text as Text
+
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
+
 import Task.Script.Annotation (Annotated(..), Checked, Status(..))
 import Task.Script.Context (Context, Typtext, aliases)
-import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..))
 import Task.Script.Loader (validate)
+import Task.Script.Syntax (Arguments(..), BasicType, Branches, Expression(..), Constant(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..))
 
 ---- Rendering -----------------------------------------------------------------
 
@@ -36,23 +39,32 @@ renderTask :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
 renderTask g s = go
   where
   go :: Checked Task -> Widget (Checked Task)
-  go (Annotated a_t c_t) = case c_t of
+  go (Annotated a_t t) = case t of
     ---- Steps
     --INVARIANT third arg of `Step` is always Branch or Select
-    Step m t (Annotated a_bs (Branch bs)) -> do
-      m' ~ t' ~ bs' <- renderBranches go m t bs
-      done <| Annotated a_t (Step m' t' (Annotated a_bs (Branch bs')))
-    Step m t (Annotated a_bs (Select bs)) -> do
-      m' ~ t' ~ bs' <- renderSelects go m t bs
-      done <| Annotated a_t (Step m' t' (Annotated a_bs (Select bs')))
-    Step m t (Annotated a_l (Lift e)) -> do
-      m' ~ t' <- renderEnd go m t
-      done <| Annotated a_t (Step m' t' (Annotated a_l (Lift e)))
-    Step m t1 t2 -> do
-      m' ~ t1' ~ t2' <- renderSingle go m t1 t2
-      done <| Annotated a_t (Step m' t1' t2')
-    Branch _ -> todo "invalid single branch"
-    Select _ -> todo "invalid single select"
+
+    Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])) -> do
+      m' ~ t1' <- renderEnd go m t1
+      done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])))
+    Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ t2 ])) -> do
+      m' ~ t1' ~ t2' <- renderSingle Filled go m t1 t2
+      done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ t2' ])))
+    Step m t1 (Annotated a_b (Branch bs)) -> do
+      m' ~ t1' ~ bs' <- renderBranches go m t1 bs
+      done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch bs')))
+
+    Step m t1 (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2 ])) -> do
+      m' ~ t1' ~ t2' <- renderSingle Outlined go m t1 t2
+      done <| Annotated a_t (Step m' t1' (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2' ])))
+    Step m t1 (Annotated a_b (Select bs)) -> do
+      m' ~ t1' ~ bs' <- renderSelects go m t1 bs
+      done <| Annotated a_t (Step m' t1' (Annotated a_b (Select bs')))
+
+    Step _ _ _ -> panic "invalid single step"
+    -- m' ~ t1' ~ t2' <- renderSingle Filled go m t1 t2
+    -- done <| Annotated a_t (Step m' t1' t2')
+    Branch _ -> panic "invalid single branch"
+    Select _ -> panic "invalid single select"
     -- Branch bs -> do
     --   ts' <- renderContinuation Closed style_branch go (map snd bs)
     --   let bs' = Array.zip (map fst bs) ts'
@@ -91,11 +103,11 @@ renderTask g s = go
       e' <- renderLift e
       done <| Annotated a_t (Lift e')
     Pair ts -> do
-      ts' <- renderGroup Solid go ts
-      done <| Annotated a_t (Pair ts')
+      t' <- renderGroup And go ts
+      done <| Annotated a_t t'
     Choose ts -> do
-      ts' <- renderGroup Double go ts
-      done <| Annotated a_t (Choose ts')
+      t' <- renderGroup Or go ts
+      done <| Annotated a_t t'
 
     ---- Extras
     Execute n as -> do
@@ -154,7 +166,7 @@ renderLine row =
 -- | || (( a_1 .. a_n ))
 renderLabels :: forall a. Row_ a -> Widget (Row_ a)
 renderLabels =
-  HashMap.keys >> map (Layout.chip Default) >> Layout.row
+  HashMap.keys >> map (Layout.chip Normal) >> Layout.row
 
 ---- Steps ----
 
@@ -172,11 +184,11 @@ renderOption :: Status -> Expression -> Widget Expression
 renderOption status guard =
   Layout.line Dashed (Layout.place After (renderGuard status guard))
 
-renderSingle :: forall a. (a -> Widget a) -> Match -> a -> a -> Widget (Match * a * a)
-renderSingle render match sub1 sub2 =
+renderSingle :: forall a. Style -> (a -> Widget a) -> Match -> a -> a -> Widget (Match * a * a)
+renderSingle style render match sub1 sub2 =
   Layout.column
     [ render sub1 >-> Either.in2
-    , renderStep Filled match >-> Either.in1
+    , renderStep style match >-> Either.in1
     , render sub2 >-> Either.in3
     ]
     >-> fix3 match sub1 sub2
@@ -198,9 +210,17 @@ renderBranches render match subtask branches =
     [ render subtask >-> Either.in2
     , renderStep Filled match >-> Either.in1
     , Layout.branch [ Concur.traverse (renderBranch render) branches >-> Either.in3 ]
-    -- , Layout.branch (Concur.traverse ?renderBranch branches) >-> Either.in3
     ]
     >-> fix3 match subtask branches
+
+-- renderSingleBranch :: Renderer -> Match -> Checked Task -> Expression * Checked Task -> Widget (Match * Checked Task * Checked Task)
+-- renderSingleBranch render match sub1 (guard ~ sub2) =
+--   Layout.column
+--     [ render sub1 >-> Either.in2
+--     , renderStep Filled match >-> Either.in1
+--     , render sub2
+--     ]
+--     >-> fix3 match sub1 sub2
 
 renderBranch :: Renderer -> Expression * Checked Task -> Widget (Expression * Checked Task)
 renderBranch render (guard ~ subtask@(Annotated status _)) =
@@ -237,15 +257,36 @@ renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
 
 ---- Combinators ----
 
+data Par = And | Or
+
+switch :: Par -> Par
+switch And = Or
+switch Or = And
+
+this :: forall a. Par -> Array a -> Task a
+this And = Pair
+this Or = Choose
+
+other :: forall a. Par -> Array a -> Task a
+other And = Choose
+other Or = Pair
+
+stroke :: Par -> Stroke
+stroke And = Solid
+stroke Or = Double
+
 -- | ==============
 -- |  t_1 ... t_n
 -- | =============
-renderGroup :: forall a. Stroke -> (a -> Widget a) -> Array a -> Widget (Array a)
-renderGroup stroke trans widgets =
-  Layout.group stroke
-    [ Concur.traverse trans widgets
-    --TODO: add branch
-    , Input.button Secondary Small "+" ->> widgets
+-- renderGroup :: forall a. Stroke -> (a -> Widget a) -> Array a -> Widget (Array a)
+renderGroup :: Par -> (Checked Task -> Widget (Checked Task)) -> Array (Checked Task) -> Widget (Task (Checked Task))
+renderGroup par trans tasks =
+  Layout.element [ void Attr.onDoubleClick ->> other par tasks ]
+    [ Layout.group (stroke par)
+        [ Concur.traverse trans tasks >-> this par
+        --TODO: add branch
+        , Input.button Action Secondary Small "+" ->> this par tasks
+        ]
     ]
 
 ---- Editors ----
@@ -287,9 +328,9 @@ renderLabel = editLabel
 
 renderError :: forall a. Status -> Widget a -> Widget a
 renderError (Failure _ err) =
-  Layout.element Error << Input.tooltip Before (show err)
+  Layout.has Error << Input.tooltip Before (show err)
 renderError _ =
-  Layout.element Default
+  Layout.has Normal
 
 ---- Entries -------------------------------------------------------------------
 
