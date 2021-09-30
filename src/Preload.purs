@@ -47,6 +47,7 @@ module Preload
   , (|>)
   , (<|)
   , todo
+  , panic
   -- Enums
   , (..)
   -- Naturals
@@ -280,7 +281,10 @@ infixl 1 applyFlipped as |>
 -- undefined = unsafeCoerce {}
 
 todo :: forall a. Warn (Text "Todo left in code") => String -> a
-todo s = Debug.spy ("TODO: " ++ s) (unsafeCoerce {})
+todo = panic
+
+panic :: forall a. String -> a
+panic s = Debug.spy ("TODO: " ++ s) (unsafeCoerce {})
 
 ---- Enums ---------------------------------------------------------------------
 
@@ -422,6 +426,7 @@ pair x y = done (~) -<< x -<< y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit
+
 
 ---- Newtypes ------------------------------------------------------------------
 
