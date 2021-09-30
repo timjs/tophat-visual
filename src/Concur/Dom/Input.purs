@@ -11,6 +11,7 @@ module Concur.Dom.Input
   , addon
   , tooltip
   , popover
+  , card
   ) where
 
 import Preload
@@ -184,10 +185,21 @@ tooltip pos text widget = blockWithData [ "tooltip", "tooltip-" ++ show pos ]
 
 popover :: forall a. Position -> Widget a -> Widget a -> Widget a
 popover pos contents widget =
-  block [ "poppover", "popover-" ++ show pos ]
+  block [ "popover", "popover-" ++ show pos ]
     [ widget
     , block [ "popover-container" ]
         [ contents ]
+    ]
+
+card :: forall a. Array (Widget a) -> Array (Widget a) -> Array (Widget a) -> Widget a
+card header body footer =
+  block [ "card" ]
+    [ if Array.null header then empty else block [ "card-header" ] header
+    -- [ Text.subsubhead title
+    -- , Text.text subtitle
+    -- ]
+    , block [ "card-body" ] body
+    , if Array.null footer then empty else block [ "card-footer" ] footer
     ]
 
 ---- Derived -------------------------------------------------------------------
