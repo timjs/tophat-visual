@@ -82,6 +82,9 @@ div
 
   &.layout-branch
     >.layout-column
+      >.shape-line:first-of-type
+        height: 4pc
+
       // Need to spell everything out here because of `:before` specifier, use @mixin?
       &::before
         outline: dashed 1pt $gray-color

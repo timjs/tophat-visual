@@ -7,14 +7,12 @@ import Concur.Dom (Widget)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input as Input
-import Concur.Dom.Style (Kind(..), Button(..), Position(..), Size(..), Stroke(..), Style(..))
+import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Layout
 import Concur.Dom.Text as Text
-
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
-
 import Task.Script.Annotation (Annotated(..), Checked, Status(..))
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Loader (validate)
@@ -46,22 +44,31 @@ renderTask g s = go
     Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])) -> do
       m' ~ t1' <- renderEnd go m t1
       done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])))
+
     Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ t2 ])) -> do
-      m' ~ t1' ~ t2' <- renderSingle Filled go m t1 t2
-      done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ t2' ])))
+      c' ~ m' ~ t1' ~ t2' <- renderSingle go Hurry m t1 t2
+      done <| Annotated a_t <| Step m' t1' <| Annotated a_b case c' of
+        Hurry -> Branch [ Constant (B true) ~ t2' ]
+        Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
     Step m t1 (Annotated a_b (Branch bs)) -> do
-      m' ~ t1' ~ bs' <- renderBranches go m t1 bs
-      done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch bs')))
+      c' ~ m' ~ t1' ~ bs' <- renderBranches go m t1 bs
+      done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
+        Hurry -> Branch bs'
+        Delay -> Select (addLabels bs')
 
     Step m t1 (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2 ])) -> do
-      m' ~ t1' ~ t2' <- renderSingle Outlined go m t1 t2
-      done <| Annotated a_t (Step m' t1' (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2' ])))
+      c' ~ m' ~ t1' ~ t2' <- renderSingle go Delay m t1 t2
+      done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
+        Hurry -> Branch [ Constant (B true) ~ t2' ]
+        Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
     Step m t1 (Annotated a_b (Select bs)) -> do
-      m' ~ t1' ~ bs' <- renderSelects go m t1 bs
-      done <| Annotated a_t (Step m' t1' (Annotated a_b (Select bs')))
+      c' ~ m' ~ t1' ~ bs' <- renderSelects go m t1 bs
+      done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
+        Hurry -> Branch (removeLabels bs')
+        Delay -> Select bs'
 
     Step _ _ _ -> panic "invalid single step"
-    -- m' ~ t1' ~ t2' <- renderSingle Filled go m t1 t2
+    -- m' ~ t1' ~ t2' <- renderSingle Hurry go m t1 t2
     -- done <| Annotated a_t (Step m' t1' t2')
     Branch _ -> panic "invalid single branch"
     Select _ -> panic "invalid single select"
@@ -161,7 +168,7 @@ renderExecute context status name args@(ARecord row) =
 
 renderLine :: forall a. Row_ a -> Widget (Row_ a)
 renderLine row =
-  Layout.line Solid (Layout.place After (renderLabels row))
+  Layout.line Solid [ Layout.place After [ renderLabels row ] ]
 
 -- | || (( a_1 .. a_n ))
 renderLabels :: forall a. Row_ a -> Widget (Row_ a)
@@ -172,26 +179,37 @@ renderLabels =
 
 -- |   || as
 -- |   V
-renderStep :: Style -> Match -> Widget Match
-renderStep style (MRecord row) =
+renderStep :: Cont -> Match -> Widget (Cont * Match)
+renderStep cont match@(MRecord row) =
   Layout.column
-    [ renderLine row >-> MRecord
-    , Layout.triangle style empty
+    [ renderLine row >-> (MRecord >> Either.in2)
+    , Layout.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Layout.triangle (style cont) empty ]
     ]
+    >-> fix2 cont match
 renderStep _ _ = todo "other matches in step rendering"
 
 renderOption :: Status -> Expression -> Widget Expression
 renderOption status guard =
-  Layout.line Dashed (Layout.place After (renderGuard status guard))
+  Layout.line Dashed
+    [ Layout.place After [ renderGuard status guard ] ]
 
-renderSingle :: forall a. Style -> (a -> Widget a) -> Match -> a -> a -> Widget (Match * a * a)
-renderSingle style render match sub1 sub2 =
-  Layout.column
-    [ render sub1 >-> Either.in2
-    , renderStep style match >-> Either.in1
-    , render sub2 >-> Either.in3
+renderOptionWithLabel :: Status -> Label -> Expression -> Widget (Label * Expression)
+renderOptionWithLabel status label guard =
+  Layout.line Dashed
+    [ Layout.place After [ renderLabel label >-> Either.in1, renderGuard status guard >-> Either.in2 ]
+    -- , Layout.place Before [  ] >-> Either.in1
     ]
-    >-> fix3 match sub1 sub2
+    >-> fix2 label guard
+
+renderSingle :: forall a. (a -> Widget a) -> Cont -> Match -> a -> a -> Widget (Cont * Match * a * a)
+renderSingle render cont match sub1 sub2 =
+  Layout.column
+    [ render sub1 >-> Either.in1
+    , renderStep cont match >-> Either.in3
+    , render sub2 >-> Either.in2
+    ]
+    >-> fix3 sub1 sub2 (cont ~ match)
+    >-> reorder4
 
 renderEnd :: forall a. (a -> Widget a) -> Match -> a -> Widget (Match * a)
 renderEnd render args@(MRecord row) subtask =
@@ -204,20 +222,21 @@ renderEnd _ _ _ = todo "other matches in end rendering"
 
 ---- Branches ----
 
-renderBranches :: Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Match * Checked Task * Branches (Checked Task))
+renderBranches :: Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Cont * Match * Checked Task * Branches (Checked Task))
 renderBranches render match subtask branches =
   Layout.column
-    [ render subtask >-> Either.in2
-    , renderStep Filled match >-> Either.in1
-    , Layout.branch [ Concur.traverse (renderBranch render) branches >-> Either.in3 ]
+    [ render subtask >-> Either.in1
+    , renderStep Hurry match >-> Either.in3
+    , Layout.branch [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
     ]
-    >-> fix3 match subtask branches
+    >-> fix3 subtask branches (Hurry ~ match)
+    >-> reorder4
 
 -- renderSingleBranch :: Renderer -> Match -> Checked Task -> Expression * Checked Task -> Widget (Match * Checked Task * Checked Task)
 -- renderSingleBranch render match sub1 (guard ~ sub2) =
 --   Layout.column
 --     [ render sub1 >-> Either.in2
---     , renderStep Filled match >-> Either.in1
+--     , renderStep Hurry match >-> Either.in1
 --     , render sub2
 --     ]
 --     >-> fix3 match sub1 sub2
@@ -236,44 +255,28 @@ renderBranch render (guard ~ subtask@(Annotated status _)) =
 --     , renderTask task
 --     ]
 
--- renderSelects :: forall a b z. (a -> Widget a) -> Match -> a -> Array b -> Widget (Match + a + Array b + z)
-renderSelects :: Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Match * Checked Task * LabeledBranches (Checked Task))
+renderSelects :: Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Cont * Match * Checked Task * LabeledBranches (Checked Task))
 renderSelects render match subtask branches =
   Layout.column
-    [ render subtask >-> Either.in2
-    , renderStep Outlined match >-> Either.in1
-    , Layout.branch [ Concur.traverse (renderSelect render) branches ] >-> Either.in3
+    [ render subtask >-> Either.in1
+    , renderStep Delay match >-> Either.in3
+    , Layout.branch [ Concur.traverse (renderSelect render) branches ] >-> Either.in2
     ]
-    >-> fix3 match subtask branches
+    >-> fix3 subtask branches (Delay ~ match)
+    >-> reorder4
 
 renderSelect :: Renderer -> Label * Expression * Checked Task -> Widget (Label * Expression * Checked Task)
 renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
   Layout.column
-    [ renderOption status guard >-> Either.in2
-    , renderLabel label >-> Either.in1
-    , render subtask >-> Either.in3
+    [ renderOptionWithLabel status label guard >-> Either.in2
+    -- , Layout.line Solid empty
+    , render subtask >-> Either.in1
+    , Layout.line Solid empty
     ]
-    >-> fix3 label guard subtask
+    >-> fix2 subtask (label ~ guard)
+    >-> reorder3
 
 ---- Combinators ----
-
-data Par = And | Or
-
-switch :: Par -> Par
-switch And = Or
-switch Or = And
-
-this :: forall a. Par -> Array a -> Task a
-this And = Pair
-this Or = Choose
-
-other :: forall a. Par -> Array a -> Task a
-other And = Choose
-other Or = Pair
-
-stroke :: Par -> Stroke
-stroke And = Solid
-stroke Or = Double
 
 -- | ==============
 -- |  t_1 ... t_n
@@ -327,10 +330,10 @@ renderLabel = editLabel
 ---- Helpers -------------------------------------------------------------------
 
 renderError :: forall a. Status -> Widget a -> Widget a
-renderError (Failure _ err) =
-  Layout.has Error << Input.tooltip Before (show err)
-renderError _ =
-  Layout.has Normal
+renderError (Failure _ err) w =
+  Layout.has Error [ Input.tooltip Before (show err) w ]
+renderError _ w =
+  Layout.has Normal [ w ]
 
 ---- Entries -------------------------------------------------------------------
 
@@ -425,14 +428,59 @@ type Both a
   = Either a a
 
 fix2 :: forall a b. a -> b -> a + b + Void -> a * b
-fix2 x y = case _ of
-  Left x' -> x' ~ y
-  Right (Left y') -> x ~ y'
+fix2 _1 _2 = case _ of
+  Left _1' -> _1' ~ _2
+  Right (Left _2') -> _1 ~ _2'
   Right (Right contra) -> absurd contra
 
 fix3 :: forall a b c. a -> b -> c -> a + b + c + Void -> a * b * c
-fix3 x y z = case _ of
-  Left x' -> x' ~ y ~ z
-  Right (Left y') -> x ~ y' ~ z
-  Right (Right (Left z')) -> x ~ y ~ z'
+fix3 _1 _2 z = case _ of
+  Left _1' -> _1' ~ _2 ~ z
+  Right (Left _2') -> _1 ~ _2' ~ z
+  Right (Right (Left _3')) -> _1 ~ _2 ~ _3'
   Right (Right (Right contra)) -> absurd contra
+
+fix4 :: forall a b c d. a -> b -> c -> d -> a + b + c + d + Void -> a * b * c * d
+fix4 _1 _2 _3 _4 = case _ of
+  Left _1' -> _1' ~ _2 ~ _3 ~ _4
+  Right (Left _2') -> _1 ~ _2' ~ _3 ~ _4
+  Right (Right (Left _3')) -> _1 ~ _2 ~ _3' ~ _4
+  Right (Right (Right (Left _4'))) -> _1 ~ _2 ~ _3 ~ _4'
+  Right (Right (Right (Right contra))) -> absurd contra
+
+reorder3 (a ~ b ~ c) = b ~ c ~ a
+reorder4 (a ~ b ~ c ~ d) = (c ~ d ~ a ~ b)
+
+data Par = And | Or
+
+this :: forall a. Par -> Array a -> Task a
+this And = Pair
+this Or = Choose
+
+other :: forall a. Par -> Array a -> Task a
+other And = Choose
+other Or = Pair
+
+stroke :: Par -> Stroke
+stroke And = Solid
+stroke Or = Double
+
+data Cont = Hurry | Delay
+
+style :: Cont -> Style
+style Hurry = Filled
+style Delay = Outlined
+
+class Switch a where
+  switch :: a -> a
+
+instance Switch Par where
+  switch And = Or
+  switch Or = And
+
+instance Switch Cont where
+  switch Hurry = Delay
+  switch Delay = Hurry
+
+addLabels = map ("" ~ _)
+removeLabels = map snd

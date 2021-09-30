@@ -56,6 +56,9 @@ div {
   flex-direction: row;
   align-items: stretch;
 }
+.layout-row.layout-branch > .layout-column > .shape-line:first-of-type {
+  height: 4pc;
+}
 .layout-row.layout-branch > .layout-column::before {
   outline: dashed 1pt #bcc3ce;
   content: "";

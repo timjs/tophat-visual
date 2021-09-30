@@ -95,8 +95,8 @@ instance Show Stroke where
 element :: forall a. Array (Attr a) -> Array (Widget a) -> Widget a
 element = blockWithAttr
 
-has :: forall a. Kind -> Widget a -> Widget a
-has k w = block [ "has-" ++ show k ] [ w ]
+has :: forall a. Kind -> Array (Widget a) -> Widget a
+has k = block [ "has-" ++ show k ]
 
 column :: forall a. Array (Widget a) -> Widget a
 column = block [ "layout-column" ]
@@ -110,8 +110,8 @@ branch = block [ "layout-row", "layout-branch" ]
 group :: forall a. Stroke -> Array (Widget a) -> Widget a
 group stroke = block [ "layout-row", "layout-group", "stroke-" ++ show stroke ]
 
-place :: forall a. Position -> Widget a -> Widget a
-place pos widget = block [ "layout-side", "side-" ++ show pos ] [ widget ]
+place :: forall a. Position -> Array (Widget a) -> Widget a
+place pos = block [ "layout-side", "side-" ++ show pos ]
 
 divider :: forall a. Orientation -> Maybe String -> Widget a
 divider orient text = blockWithData
@@ -121,10 +121,10 @@ divider orient text = blockWithData
 
 ---- Shapes --------------------------------------------------------------------
 
-line :: forall a. Stroke -> Widget a -> Widget a
-line stroke contents = block [ "shape-line", "stroke-" ++ show stroke ] [ contents ]
+line :: forall a. Stroke -> Array (Widget a) -> Widget a
+line stroke = block [ "shape-line", "stroke-" ++ show stroke ]
 
-triangle :: forall a. Style -> Widget a -> Widget a
+triangle :: forall a. Style -> Array (Widget a) -> Widget a
 triangle style _contents = block [ "shape-triangle", "style-" ++ show style ] []
 
 chip :: forall a. Kind -> String -> Widget a

@@ -48,8 +48,8 @@ tree (Tree name children) = do
   result <- Text.bullets
     [ Layout.element {}
         [ Rename <-< title name
-        , Create <<- Input.button Style.Default Style.Medium "Create"
-        , Delete <<- Input.button Style.Default Style.Medium "Delete"
+        , Create <<- Input.button Style.Default Style.Normal Style.Medium "Create"
+        , Delete <<- Input.button Style.Default Style.Normal Style.Medium "Delete"
         , Modify <-< wither tree children
         ]
     ]
@@ -62,7 +62,7 @@ tree (Tree name children) = do
 title :: String -> Widget String
 title old = do
   Text.activate [ void Attr.onDoubleClick ] (Text.subhead old)
-  new <- Layout.element {} [ Input.entry Style.Medium old old, Input.button Style.Default Style.Medium "Cancel" ->> old ]
+  new <- Layout.element {} [ Input.entry Style.Medium old old, Input.button Style.Default Style.Normal Style.Medium "Cancel" ->> old ]
   done <| if new == "" then old else new
 
 render :: forall a. Tree String -> Widget a
@@ -85,11 +85,11 @@ tree_ :: Tree String -> Signal (Maybe (Tree String))
 tree_ (Tree name children) =
   Node.li_ [] do
     name' <- loop name title
-    deleting <- step false (Input.button Style.Default Style.Medium "Delete" ->> done true)
+    deleting <- step false (Input.button Style.Default Style.Normal Style.Medium "Delete" ->> done true)
     if deleting then
       done Nothing
     else do
-      child' <- step Nothing (Input.button Style.Default Style.Medium "New" ->> done (Just newTree))
+      child' <- step Nothing (Input.button Style.Default Style.Normal Style.Medium "New" ->> done (Just newTree))
       let
         children' = case child' of
           Nothing -> children
