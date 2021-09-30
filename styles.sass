@@ -20,6 +20,13 @@ $success-color: #32b643 !default
 $warning-color: #ffb700 !default
 $error-color: #e85600 !default
 
+// Sizes
+$control-width-xs: 180px !default
+$control-width-sm: 320px !default
+$control-width-md: 640px !default
+$control-width-lg: 960px !default
+$control-width-xl: 1280px !default
+
 // Styling ////////////////
 
 body
@@ -32,6 +39,14 @@ body
 
 // .label-sm
 //   font-size: 0.75em
+
+// .popover
+//   .popover-container
+//     width: $control-width-md
+
+.tooltip
+  &::after
+    max-width: $control-width-lg
 
 .chip
   &.chip-primary

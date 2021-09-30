@@ -346,6 +346,7 @@ renderLabel = editLabel
 
 renderError :: forall a. Status -> Widget a -> Widget a
 renderError (Failure _ err) w =
+  -- Layout.has Error [ Input.popover Before (Input.card [ Text.subsubhead "Error" ] [ Text.code "TopHat" (show err) ] []) w ]
   Layout.has Error [ Input.tooltip Before (show err) w ]
 renderError _ w =
   Layout.has Normal [ w ]

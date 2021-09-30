@@ -7,6 +7,10 @@ body {
   border-color: #4b48d6;
 }
 
+.tooltip::after {
+  max-width: 960px;
+}
+
 .chip.chip-primary {
   color: #fff;
   background-color: #5755d9;
