@@ -1,6 +1,9 @@
 module Concur.Dom.Input
   -- # Basic
-  ( button
+  ( Action(..)
+  , button
+  , chip
+  , group
   , switch
   , checkbox
   , entry
@@ -20,6 +23,7 @@ import Concur.Dom (Widget, block, blockWithData, intValue, stringValue)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Node as Node
 import Concur.Dom.Style (Kind, Button, Size, Position)
+import Concur.Dom.Text as Text
 import Data.Array as Array
 
 ---- Buttons -------------------------------------------------------------------
@@ -43,8 +47,30 @@ button but kind size label = do
       else
         button but kind size label
 
--- group :: forall a. Array (Widget a) -> Widget a
--- group = block [ "btn-group", "btn-group-block" ]
+group :: forall a. Array (Widget a) -> Widget a
+group = block [ "btn-group", "btn-group-block" ]
+
+data Action = Add | Remove | None
+
+instance Show Action where
+  show = case _ of
+    Add -> "add"
+    Remove -> "clear"
+    None -> "none"
+
+chip :: Kind -> Action -> String -> Widget Unit
+-- chip text = block [ "label", "label-sm", "label-rounded", "label-primary" ] [ Text.text text ]
+chip kind action text = block [ "chip", "chip-" ++ show kind ]
+  [ Text.text text
+  , case action of
+      None -> empty
+      _ -> Node.a
+        [ Attr.classes [ "btn", "btn-" ++ show action ]
+        , Attr.role "button"
+        , Attr.onClick ->> unit
+        ]
+        []
+  ]
 
 ---- Toggles -------------------------------------------------------------------
 -- * toggle/switch/checkbox

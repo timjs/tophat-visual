@@ -19,7 +19,6 @@ module Concur.Dom.Style
   -- # Shapes
   , line
   , triangle
-  , chip
   ) where
 
 import Preload
@@ -126,7 +125,3 @@ line stroke = block [ "shape-line", "stroke-" ++ show stroke ]
 
 triangle :: forall a. Style -> Array (Widget a) -> Widget a
 triangle style _contents = block [ "shape-triangle", "style-" ++ show style ] []
-
-chip :: forall a. Kind -> String -> Widget a
--- chip text = block [ "label", "label-sm", "label-rounded", "label-primary" ] [ Text.text text ]
-chip kind text = block [ "chip", "chip-" ++ show kind ] [ Text.text text ]

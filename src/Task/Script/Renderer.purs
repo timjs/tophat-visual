@@ -6,6 +6,7 @@ import Concur as Concur
 import Concur.Dom (Widget)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
+import Concur.Dom.Input (Action(..))
 import Concur.Dom.Input as Input
 import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Layout
@@ -16,7 +17,7 @@ import Data.HashMap as HashMap
 import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Loader (validate)
-import Task.Script.Syntax (Arguments(..), BasicType, Branches, Constant(..), Expression(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..), isFunction)
+import Task.Script.Syntax (Arguments(..), BasicType, Branches, Constant(..), Expression(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..), isFunction, isTask)
 
 ---- Rendering -----------------------------------------------------------------
 
@@ -118,10 +119,10 @@ renderTask g s = go
 
     ---- Extras
     Execute n as -> do
-      n' ~ as' <- renderExecute g a_t n as
+      n' ~ as' <- renderExecute a_t n as
       done <| Annotated a_t (Execute n' as')
     Hole as -> do
-      n' ~ as' <- renderExecute g a_t "??" as
+      n' ~ as' <- renderExecute a_t "??" as
       if n' == "??" then
         done <| Annotated a_t (Hole as')
       else
@@ -152,14 +153,14 @@ renderStart name = Layout.column
 
 -- |      || as
 -- |  [[  n  ?]]
-renderExecute :: Context -> Status -> Name -> Arguments -> Widget (Name * Arguments)
-renderExecute context status name args =
+renderExecute :: Status -> Name -> Arguments -> Widget (Name * Arguments)
+renderExecute status name args =
   Layout.column
-    [ renderArgs args >-> Either.in2
+    [ renderArgs status args >-> Either.in2
     , renderError status
         ( Input.picker
             [ "Builtin" ~ []
-            , "Project" ~ Array.sort (HashMap.keys context)
+            , "Project" ~ (extractContext status |> HashMap.filter isTask |> HashMap.keys |> Array.sort)
             ]
             name
         )
@@ -167,29 +168,63 @@ renderExecute context status name args =
     ]
     >-> fix2 name args
 
-renderArgs :: Arguments -> Widget Arguments
-renderArgs (ARecord row) =
+renderArgs :: Status -> Arguments -> Widget Arguments
+renderArgs status args@(ARecord argrow) =
   Input.popover After
     ( Input.card
-        -- [ Text.subsubhead "Title"
-        -- , Text.gray "Subtitle"
         []
-        [ Text.text "body" ]
+        [ Layout.row [ Concur.traverse renderArg select >-> unselect ] ]
         []
     )
-    (Layout.line Solid [ Layout.place After [ renderLabels row ] ] >-> ARecord)
+    (Layout.line Solid [ Layout.place After [ renderLabels argrow ] ] ->> args)
+  where
+  --TODO: renaming of variables
+  select = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> map check
+  check label = (if HashMap.member label argrow then Yes else No) label
+  unselect = catYes >> map (\l -> l ~ Variable l) >> HashMap.fromArray >> ARecord
 
-renderLine :: forall a. Row_ a -> Widget (Row_ a)
+renderArg :: Selected Label -> Widget (Selected Label)
+renderArg sel = case sel of
+  Yes l -> Input.chip Primary Remove l ->> No l
+  No l -> Input.chip Secondary Add l ->> Yes l
+
+data Selected a
+  = Yes a
+  | No a
+
+catYes :: forall a. Array (Selected a) -> Array a
+catYes = Array.concatMap
+  ( case _ of
+      Yes x -> [ x ]
+      No _ -> []
+  )
+
+isYes :: forall a. Selected a -> Bool
+isYes = case _ of
+  Yes _ -> true
+  No _ -> false
+
+renderPossibleArgs :: Status -> Arguments -> Widget Arguments
+renderPossibleArgs status args@(ARecord argrow) =
+  Layout.row
+    [ Concur.traverse go labels >-> toArgs ]
+  where
+  labels = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> Array.sort
+  go label = Input.chip Normal (action label) label ->> label
+  action label = if HashMap.member label argrow then Remove else Add
+  toArgs labels = ARecord (HashMap.fromArrayBy identity Variable labels)
+
+renderLine :: forall a. Row_ a -> Widget Unit
 renderLine row =
   Layout.line Solid [ Layout.place After [ renderLabels row ] ]
 
 -- | || (( a_1 .. a_n ))
-renderLabels :: forall a. Row_ a -> Widget (Row_ a)
+renderLabels :: forall a. Row_ a -> Widget Unit
 renderLabels =
-  HashMap.keys >> map (Layout.chip Normal) >> Layout.row
+  HashMap.keys >> map (Input.chip Normal None) >> Layout.row
 
 renderContext :: Status -> String
-renderContext = extractContext >> (_ ?? HashMap.empty) >> HashMap.filter (isFunction >> not) >> HashMap.toArrayBy (~) >> Array.sortBy (compare `on` fst) >> foldMap go
+renderContext = extractContext >> HashMap.filter (isFunction >> not) >> HashMap.toArrayBy (~) >> Array.sortBy (compare `on` fst) >> foldMap go
   where
   go (n ~ t) = n ++ " : " ++ show t ++ "\n"
 
@@ -200,7 +235,7 @@ renderContext = extractContext >> (_ ?? HashMap.empty) >> HashMap.filter (isFunc
 renderStep :: Status -> Cont -> Match -> Widget (Cont * Match)
 renderStep status cont match@(MRecord row) =
   Layout.column
-    [ renderLine row >-> (MRecord >> Either.in2)
+    [ renderLine row ->> (Either.in2 match)
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
         Layout.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Layout.triangle (style cont) empty ]
     ]
@@ -234,7 +269,7 @@ renderEnd :: forall a. (a -> Widget a) -> Match -> a -> Widget (Match * a)
 renderEnd render args@(MRecord row) subtask =
   Layout.column
     [ render subtask >-> Either.in2
-    , renderLine row >-> (MRecord >> Either.in1)
+    , renderLine row ->> Either.in1 args
     ]
     >-> fix2 args subtask
 renderEnd _ _ _ = todo "other matches in end rendering"

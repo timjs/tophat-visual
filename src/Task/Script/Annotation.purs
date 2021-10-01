@@ -4,6 +4,7 @@ import Preload
 
 import Data.Doc (class Display, display)
 import Data.Doc as Doc
+import Data.HashMap as HashMap
 import Task.Script.Context (Context)
 import Task.Script.Error (Error(..))
 import Task.Script.Syntax (Task, Type_)
@@ -69,7 +70,7 @@ extractError :: Status -> Maybe String
 extractError (Failure _ e) = Just <| show e
 extractError _ = Nothing
 
-extractContext :: Status -> Maybe Context
-extractContext (Failure g _) = Just g
-extractContext (Success g _) = Just g
-extractContext (Unknown) = Nothing
+extractContext :: Status -> Context
+extractContext (Failure g _) = g
+extractContext (Success g _) = g
+extractContext (Unknown) = HashMap.empty
