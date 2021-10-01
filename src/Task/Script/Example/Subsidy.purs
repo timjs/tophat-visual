@@ -5,7 +5,7 @@ import Preload
 import Data.HashMap as HashMap
 import Task.Script.Annotation (Checked, unchecked)
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
-import Task.Script.Syntax (Arguments(..), BasicType(..), Constant(..), Expression(..), Match(..), Task(..), Label)
+import Task.Script.Syntax (Arguments(..), BasicType(..), Constant(..), Expression(..), Label, Match(..), PrimType(..), Task(..))
 
 ---- Context -------------------------------------------------------------------
 
@@ -13,35 +13,40 @@ types :: Typtext
 types =
   from
     [ "Citizen"
-        ~ recordOf'
-            [ "ssn" ~ BName "Nat"
-            , "name" ~ BName "String"
-            , "address" ~ BName "Address"
-            ]
+        ~ BPrimitive TString
+    -- ~ recordOf'
+    --     [ "ssn" ~ BName "Nat"
+    --     , "name" ~ BName "String"
+    --     , "address" ~ BName "Address"
+    --     ]
     , "Company"
-        ~ recordOf'
-            [ "coc" ~ BName "Nat"
-            , "name" ~ BName "String"
-            , "address" ~ BName "Address"
-            ]
+        ~ BPrimitive TString
+    -- ~ recordOf'
+    --     [ "coc" ~ BName "Nat"
+    --     , "name" ~ BName "String"
+    --     , "address" ~ BName "Address"
+    --     ]
     , "Address"
-        ~ recordOf'
-            [ "street" ~ BName "String"
-            , "house_number" ~ BName "Nat"
-            , "postal_code" ~ BName "Nat"
-            , "city" ~ BName "String"
-            ]
+        ~ BPrimitive TString
+    -- ~ recordOf'
+    --     [ "street" ~ BName "String"
+    --     , "house_number" ~ BName "Nat"
+    --     , "postal_code" ~ BName "Nat"
+    --     , "city" ~ BName "String"
+    --     ]
     , "Documents"
-        ~ recordOf'
-            [ "invoice_amount" ~ BName "Nat"
-            , "invoice_date" ~ BName "Date"
-            , "roof_photos" ~ BList (BName "String")
-            ]
+        ~ BPrimitive TInt
+    -- ~ recordOf'
+    --     [ "invoice_amount" ~ BName "Nat"
+    --     , "invoice_date" ~ BName "Date"
+    --     , "roof_photos" ~ BList (BName "String")
+    --     ]
     , "Declaration"
-        ~ recordOf'
-            [ "roof_photos" ~ BList (BName "String")
-            , "date" ~ BName "Date"
-            ]
+        ~ BPrimitive TInt
+    -- ~ recordOf'
+    --     [ "roof_photos" ~ BList (BName "String")
+    --     , "date" ~ BName "Date"
+    --     ]
     , "Dossier"
         ~ recordOf'
             [ "documents" ~ BName "Documents"
@@ -65,7 +70,11 @@ context =
         ~ recordOf [ "contractor" ~ BName "Company", "details" ~ BName "Citizen" ]
         :-> taskOf [ "declaration" ~ BName "Declaration" ]
     , "submit_request"
-        ~ recordOf [ "dossier" ~ BName "Dossier" ]
+        -- ~ recordOf [ "dossier" ~ BName "Dossier" ]
+        ~ recordOf
+            [ "documents" ~ BName "Documents"
+            , "declaration" ~ BName "Declaration"
+            ]
         :-> taskOf []
     ]
 
@@ -104,7 +113,8 @@ request_subsidy =
                         <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
                     ]
                 )
-                <| execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
+                -- <| execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
+                <| execute "submit_request" (ARecord <| from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ])
             )
       ]
 
