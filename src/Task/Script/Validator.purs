@@ -11,8 +11,10 @@ import Task.Script.Annotation (Annotated(..), Checked, Status(..), withTypeOf, b
 import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
 
 ---- Validator -----------------------------------------------------------------
+
 validate :: Typtext -> Context -> Checked Task -> Checked Task
 validate s g (Annotated _ i) = case i of
+
   ---- Editors
   Enter n -> lift g i (Enter n) (HashMap.lookup n s |> note (UnknownTypeName n) >-> ofBasic >-> wrapValue)
   Update e -> lift g i (Update e) (check s g e >>= needBasic >-> wrapValue)
@@ -20,6 +22,7 @@ validate s g (Annotated _ i) = case i of
   View e -> lift g i (View e) (check s g e >>= needBasic >-> wrapValue)
   Watch e -> lift g i (Watch e) (check s g e >>= outofReference >-> wrapValue)
   Lift e -> lift g i (Lift e) (check s g e >>= outofRecord >-> TTask)
+
   ---- Combinators
   Pair us -> sink g (Pair cs) (traverse outofBranch cs >>= unite >-> TTask)
     where
@@ -48,6 +51,7 @@ validate s g (Annotated _ i) = case i of
     where
     c1 = validate s g u1
     c2 = validate s g u2 --NOTE: this is a first approximation, complete checking is in `c2'`
+
   ---- Builtins
   Execute n a ->
     lift g i (Execute n a) do
@@ -75,6 +79,7 @@ validate s g (Annotated _ i) = case i of
         done <| TRecord HashMap.empty
       else
         throw <| AssignError b1 b2
+
   where
 
   validate1 :: Checked Task -> Checked Task
@@ -101,6 +106,7 @@ validate s g (Annotated _ i) = case i of
   validate3 (l ~ e ~ u) = l ~ validate2 (e ~ u)
 
 ---- Helpers -------------------------------------------------------------------
+
 outofBranch :: Checked Task -> Error + Row_ Type_
 outofBranch = extractType >=> outofTask
 

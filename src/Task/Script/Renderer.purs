@@ -9,7 +9,7 @@ import Concur.Dom.Icon as Icon
 import Concur.Dom.Input (Action(..))
 import Concur.Dom.Input as Input
 import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
-import Concur.Dom.Style as Layout
+import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
 import Data.Array as Array
 import Data.Either.Nested as Either
@@ -29,7 +29,7 @@ main g s t =
     let
       t'' = validate s g t'
     in
-      Layout.column
+      Style.column
         [ renderTask g s t''
         , Text.code "TopHat" (show t'')
         ]
@@ -146,16 +146,16 @@ renderTask g s = go
 -- | [[ * |   n   ]]
 -- |     ||
 renderStart :: Name -> Widget Name
-renderStart name = Layout.column
+renderStart name = Style.column
   [ Input.addon Medium Icon.clipboard (Input.entry Medium "name of flow" name)
-  , Layout.line Solid empty
+  , Style.line Solid empty
   ]
 
 -- |      || as
 -- |  [[  n  ?]]
 renderExecute :: Status -> Name -> Arguments -> Widget (Name * Arguments)
 renderExecute status name args =
-  Layout.column
+  Style.column
     [ renderArgs status args >-> Either.in2
     , renderError status
         ( Input.picker
@@ -173,10 +173,10 @@ renderArgs status args@(ARecord argrow) =
   Input.popover After
     ( Input.card
         []
-        [ Layout.row [ Concur.traverse renderArg select >-> unselect ] ]
+        [ Style.row [ Concur.traverse renderArg select >-> unselect ] ]
         []
     )
-    (Layout.line Solid [ Layout.place After [ renderLabels argrow ] ] ->> args)
+    (Style.line Solid [ Style.place After [ renderLabels argrow ] ] ->> args)
   where
   --TODO: renaming of variables
   select = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> map check
@@ -206,7 +206,7 @@ isYes = case _ of
 
 renderPossibleArgs :: Status -> Arguments -> Widget Arguments
 renderPossibleArgs status args@(ARecord argrow) =
-  Layout.row
+  Style.row
     [ Concur.traverse go labels >-> toArgs ]
   where
   labels = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> Array.sort
@@ -216,12 +216,12 @@ renderPossibleArgs status args@(ARecord argrow) =
 
 renderLine :: forall a. Row_ a -> Widget Unit
 renderLine row =
-  Layout.line Solid [ Layout.place After [ renderLabels row ] ]
+  Style.line Solid [ Style.place After [ renderLabels row ] ]
 
 -- | || (( a_1 .. a_n ))
 renderLabels :: forall a. Row_ a -> Widget Unit
 renderLabels =
-  HashMap.keys >> map (Input.chip Normal None) >> Layout.row
+  HashMap.keys >> map (Input.chip Normal None) >> Style.row
 
 renderContext :: Status -> String
 renderContext = extractContext >> HashMap.filter (isFunction >> not) >> HashMap.toArrayBy (~) >> Array.sortBy (compare `on` fst) >> foldMap go
@@ -234,30 +234,30 @@ renderContext = extractContext >> HashMap.filter (isFunction >> not) >> HashMap.
 -- |   V
 renderStep :: Status -> Cont -> Match -> Widget (Cont * Match)
 renderStep status cont match@(MRecord row) =
-  Layout.column
+  Style.column
     [ renderLine row ->> (Either.in2 match)
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
-        Layout.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Layout.triangle (style cont) empty ]
+        Style.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Style.triangle (style cont) empty ]
     ]
     >-> fix2 cont match
 renderStep _ _ _ = todo "other matches in step rendering"
 
 renderOption :: Status -> Expression -> Widget Expression
 renderOption status guard =
-  Layout.line Dashed
-    [ Layout.place After [ renderGuard status guard ] ]
+  Style.line Dashed
+    [ Style.place After [ renderGuard status guard ] ]
 
 renderOptionWithLabel :: Status -> Label -> Expression -> Widget (Label * Expression)
 renderOptionWithLabel status label guard =
-  Layout.line Dashed
-    [ Layout.place After [ renderLabel label >-> Either.in1, renderGuard status guard >-> Either.in2 ]
-    -- , Layout.place Before [  ] >-> Either.in1
+  Style.line Dashed
+    [ Style.place After [ renderLabel label >-> Either.in1, renderGuard status guard >-> Either.in2 ]
+    -- , Style.place Before [  ] >-> Either.in1
     ]
     >-> fix2 label guard
 
 renderSingle :: forall a. Status -> (a -> Widget a) -> Cont -> Match -> a -> a -> Widget (Cont * Match * a * a)
 renderSingle g render cont match sub1 sub2 =
-  Layout.column
+  Style.column
     [ render sub1 >-> Either.in1
     , renderStep g cont match >-> Either.in3
     , render sub2 >-> Either.in2
@@ -267,7 +267,7 @@ renderSingle g render cont match sub1 sub2 =
 
 renderEnd :: forall a. (a -> Widget a) -> Match -> a -> Widget (Match * a)
 renderEnd render args@(MRecord row) subtask =
-  Layout.column
+  Style.column
     [ render subtask >-> Either.in2
     , renderLine row ->> Either.in1 args
     ]
@@ -278,17 +278,17 @@ renderEnd _ _ _ = todo "other matches in end rendering"
 
 renderBranches :: Status -> Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Cont * Match * Checked Task * Branches (Checked Task))
 renderBranches g render match subtask branches =
-  Layout.column
+  Style.column
     [ render subtask >-> Either.in1
     , renderStep g Hurry match >-> Either.in3
-    , Layout.branch [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
+    , Style.branch [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
     ]
     >-> fix3 subtask branches (Hurry ~ match)
     >-> reorder4
 
 -- renderSingleBranch :: Renderer -> Match -> Checked Task -> Expression * Checked Task -> Widget (Match * Checked Task * Checked Task)
 -- renderSingleBranch render match sub1 (guard ~ sub2) =
---   Layout.column
+--   Style.column
 --     [ render sub1 >-> Either.in2
 --     , renderStep Hurry match >-> Either.in1
 --     , render sub2
@@ -297,35 +297,35 @@ renderBranches g render match subtask branches =
 
 renderBranch :: Renderer -> Expression * Checked Task -> Widget (Expression * Checked Task)
 renderBranch render (guard ~ subtask@(Annotated status _)) =
-  Layout.column
+  Style.column
     [ renderOption status guard >-> Either.in1
     , render subtask >-> Either.in2
-    , Layout.line Solid empty
+    , Style.line Solid empty
     ]
     >-> fix2 guard subtask
 
---   Layout.column
---     [ Layout.line Dashed [ Layout.place After (Input.addon Icon.question (Input.entry Small ?holder ?value)) ]
+--   Style.column
+--     [ Style.line Dashed [ Style.place After (Input.addon Icon.question (Input.entry Small ?holder ?value)) ]
 --     , renderTask task
 --     ]
 
 renderSelects :: Status -> Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Cont * Match * Checked Task * LabeledBranches (Checked Task))
 renderSelects status render match subtask branches =
-  Layout.column
+  Style.column
     [ render subtask >-> Either.in1
     , renderStep status Delay match >-> Either.in3
-    , Layout.branch [ Concur.traverse (renderSelect render) branches ] >-> Either.in2
+    , Style.branch [ Concur.traverse (renderSelect render) branches ] >-> Either.in2
     ]
     >-> fix3 subtask branches (Delay ~ match)
     >-> reorder4
 
 renderSelect :: Renderer -> Label * Expression * Checked Task -> Widget (Label * Expression * Checked Task)
 renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
-  Layout.column
+  Style.column
     [ renderOptionWithLabel status label guard >-> Either.in2
-    -- , Layout.line Solid empty
+    -- , Style.line Solid empty
     , render subtask >-> Either.in1
-    , Layout.line Solid empty
+    , Style.line Solid empty
     ]
     >-> fix2 subtask (label ~ guard)
     >-> reorder3
@@ -338,8 +338,8 @@ renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
 -- renderGroup :: forall a. Stroke -> (a -> Widget a) -> Array a -> Widget (Array a)
 renderGroup :: Par -> (Checked Task -> Widget (Checked Task)) -> Array (Checked Task) -> Widget (Task (Checked Task))
 renderGroup par trans tasks =
-  Layout.element [ void Attr.onDoubleClick ->> other par tasks ]
-    [ Layout.group (stroke par)
+  Style.element [ void Attr.onDoubleClick ->> other par tasks ]
+    [ Style.group (stroke par)
         [ Concur.traverse trans tasks >-> this par
         --TODO: add branch
         , Input.button Action Secondary Small "+" ->> this par tasks
@@ -385,10 +385,10 @@ renderLabel = editLabel
 
 renderError :: forall a. Status -> Widget a -> Widget a
 renderError (Failure _ err) w =
-  -- Layout.has Error [ Input.popover Before (Input.card [ Text.subsubhead "Error" ] [ Text.code "TopHat" (show err) ] []) w ]
-  Layout.has Error [ Input.tooltip Before (show err) w ]
+  -- Style.has Error [ Input.popover Before (Input.card [ Text.subsubhead "Error" ] [ Text.code "TopHat" (show err) ] []) w ]
+  Style.has Error [ Input.tooltip Before (show err) w ]
 renderError _ w =
-  Layout.has Normal [ w ]
+  Style.has Normal [ w ]
 
 ---- Entries -------------------------------------------------------------------
 
@@ -421,8 +421,8 @@ editLabel lbl =
 -- | =============
 renderContinuation :: forall a. Kind -> ShapeStyle () -> (a -> Widget a) -> Array a -> Widget (Array a)
 renderContinuation k s f ws =
-  Layout.column
-    [ Layout.head Downward style_line
+  Style.column
+    [ Style.head Downward style_line
     -- TODO either group or single, depending on count
     , renderGroup s f ws
     ]
@@ -431,23 +431,23 @@ renderContinuation k s f ws =
 -- |  f
 renderStep :: Checked Task -> Checked Task -> Widget (Both (Checked Task))
 renderStep t1 t2 = do
-  Layout.column
+  Style.column
     [ go t1 >-> Left
-    , Layout.line
+    , Style.line
     , go t2 >-> Right
     ]
 -- -- | w_1 *--* w_2
 -- renderConnect :: forall a b r. LineStyle r -> Connect -> Widget a -> Widget b -> Widget (Either a b)
 -- renderConnect s m a b = do
---   Layout.row [ a >-> Left, line, b >-> Right ]
+--   Style.row [ a >-> Left, line, b >-> Right ]
 --   where
 --   line = case m of
---     Pull -> Layout.row [ dot, connection ]
---     Push -> Layout.row [ connection, dot ]
---     Both -> Layout.row [ dot, connection, dot ]
+--     Pull -> Style.row [ dot, connection ]
+--     Push -> Style.row [ connection, dot ]
+--     Both -> Style.row [ dot, connection, dot ]
 --   --TODO: factor out style
---   dot = Layout.dot 0.33 "black"
---   connection = Layout.line Layout.Horizontal 4.0 s
+--   dot = Style.dot 0.33 "black"
+--   connection = Style.line Style.Horizontal 4.0 s
 -- data Connect
 --   = Pull
 --   | Push
@@ -461,7 +461,7 @@ editMessage i m =
 editLabels :: Context -> Arguments -> Widget Arguments
 editLabels g (ARecord as) =
   --TODO show labels and expressions
-  Layout.column (map (show >> text) (HashMap.keys as))
+  Style.column (map (show >> text) (HashMap.keys as))
 -- -- | [[ i n ]]
 -- selectValues :: Context -> Icon -> Row_ Name -> Widget (Row_ Name)
 -- selectValues g i ns = do

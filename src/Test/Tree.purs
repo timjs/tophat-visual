@@ -6,7 +6,6 @@ import Concur (dynamic, step, loop, fix, wither)
 import Concur.Dom (Widget, Signal)
 import Concur.Dom.Attr as Attr
 import Concur.Dom.Input as Input
-import Concur.Dom.Layout as Layout
 import Concur.Dom.Node as Node
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
@@ -46,7 +45,7 @@ data Action
 tree :: Tree String -> Widget (Maybe (Tree String))
 tree (Tree name children) = do
   result <- Text.bullets
-    [ Layout.element {}
+    [ Style.element []
         [ Rename <-< title name
         , Create <<- Input.button Style.Default Style.Normal Style.Medium "Create"
         , Delete <<- Input.button Style.Default Style.Normal Style.Medium "Delete"
@@ -61,8 +60,8 @@ tree (Tree name children) = do
 
 title :: String -> Widget String
 title old = do
-  Text.activate [ void Attr.onDoubleClick ] (Text.subhead old)
-  new <- Layout.element {} [ Input.entry Style.Medium old old, Input.button Style.Default Style.Normal Style.Medium "Cancel" ->> old ]
+  Style.element [ void Attr.onDoubleClick ] [ Text.subhead old ]
+  new <- Style.element [] [ Input.entry Style.Medium old old, Input.button Style.Default Style.Normal Style.Medium "Cancel" ->> old ]
   done <| if new == "" then old else new
 
 render :: forall a. Tree String -> Widget a

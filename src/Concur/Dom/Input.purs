@@ -1,8 +1,6 @@
 module Concur.Dom.Input
   -- # Basic
-  ( Action(..)
-  , button
-  , chip
+  ( button
   , group
   , switch
   , checkbox
@@ -10,11 +8,13 @@ module Concur.Dom.Input
   , area
   , picker
   , picker_generic
-  -- # Extr
+  -- # Extra
   , addon
   , tooltip
   , popover
   , card
+  , Action(..)
+  , chip
   ) where
 
 import Preload
@@ -49,28 +49,6 @@ button but kind size label = do
 
 group :: forall a. Array (Widget a) -> Widget a
 group = block [ "btn-group", "btn-group-block" ]
-
-data Action = Add | Remove | None
-
-instance Show Action where
-  show = case _ of
-    Add -> "add"
-    Remove -> "clear"
-    None -> "none"
-
-chip :: Kind -> Action -> String -> Widget Unit
--- chip text = block [ "label", "label-sm", "label-rounded", "label-primary" ] [ Text.text text ]
-chip kind action text = block [ "chip", "chip-" ++ show kind ]
-  [ Text.text text
-  , case action of
-      None -> empty
-      _ -> Node.a
-        [ Attr.classes [ "btn", "btn-" ++ show action ]
-        , Attr.role "button"
-        , Attr.onClick ->> unit
-        ]
-        []
-  ]
 
 ---- Toggles -------------------------------------------------------------------
 -- * toggle/switch/checkbox
@@ -227,6 +205,28 @@ card header body footer =
     , block [ "card-body" ] body
     , if Array.null footer then empty else block [ "card-footer" ] footer
     ]
+
+data Action = Add | Remove | None
+
+instance Show Action where
+  show = case _ of
+    Add -> "add"
+    Remove -> "clear"
+    None -> "none"
+
+chip :: Kind -> Action -> String -> Widget Unit
+-- chip text = block [ "label", "label-sm", "label-rounded", "label-primary" ] [ Text.text text ]
+chip kind action text = block [ "chip", "chip-" ++ show kind ]
+  [ Text.text text
+  , case action of
+      None -> empty
+      _ -> Node.a
+        [ Attr.classes [ "btn", "btn-" ++ show action ]
+        , Attr.role "button"
+        , Attr.onClick ->> unit
+        ]
+        []
+  ]
 
 ---- Derived -------------------------------------------------------------------
 

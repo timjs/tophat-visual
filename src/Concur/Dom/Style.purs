@@ -24,7 +24,6 @@ module Concur.Dom.Style
 import Preload
 
 import Concur.Dom (Widget, Attr, block, blockWithData, blockWithAttr)
-import Concur.Dom.Text as Text
 
 ---- Types ---------------------------------------------------------------------
 

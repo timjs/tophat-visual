@@ -1,7 +1,6 @@
 module Concur.Dom.Text
-  ( activate
   -- # Text
-  , text
+  ( text
   , gray
   , code
   -- # Heads
@@ -16,12 +15,9 @@ module Concur.Dom.Text
   ) where
 
 import Preload
-import Concur.Dom (Widget, Attr, block)
+import Concur.Dom (Widget, block)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
-
-activate :: forall a. Array (Attr a) -> Widget a -> Widget a
-activate = Node.div_
 
 ---- Text ----------------------------------------------------------------------
 -- type TextStyle r
