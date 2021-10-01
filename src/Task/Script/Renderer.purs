@@ -153,27 +153,31 @@ renderStart name = Layout.column
 -- |      || as
 -- |  [[  n  ?]]
 renderExecute :: Context -> Status -> Name -> Arguments -> Widget (Name * Arguments)
-renderExecute context status name args@(ARecord row) =
+renderExecute context status name args =
   Layout.column
-    [ renderLine row >-> (ARecord >> Either.in2)
-    , Input.popover After
-        ( Input.card
-            [ Text.subsubhead "Title"
-            , Text.gray "Subtitle"
+    [ renderArgs args >-> Either.in2
+    , renderError status
+        ( Input.picker
+            [ "Builtin" ~ []
+            , "Project" ~ Array.sort (HashMap.keys context)
             ]
-            [ Text.text "body" ]
-            []
+            name
         )
-        ( renderError status
-            ( Input.picker
-                [ "Builtin" ~ []
-                , "Project" ~ Array.sort (HashMap.keys context)
-                ]
-                name
-            )
-        ) >-> Either.in1
+        >-> Either.in1
     ]
     >-> fix2 name args
+
+renderArgs :: Arguments -> Widget Arguments
+renderArgs (ARecord row) =
+  Input.popover After
+    ( Input.card
+        -- [ Text.subsubhead "Title"
+        -- , Text.gray "Subtitle"
+        []
+        [ Text.text "body" ]
+        []
+    )
+    (Layout.line Solid [ Layout.place After [ renderLabels row ] ] >-> ARecord)
 
 renderLine :: forall a. Row_ a -> Widget (Row_ a)
 renderLine row =
