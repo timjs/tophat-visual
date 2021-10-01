@@ -5,9 +5,10 @@ import Preload hiding (pair)
 import Data.HashMap as HashMap
 
 import Task.Script.Annotation (Checked, unchecked)
-import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
-import Task.Script.Syntax (Arguments(..), BasicType(..), Constant(..), Expression(..), Match(..), PrimType(..), Task(..))
 import Task.Script.Builder (branch, execute, lift, pair, step, view)
+import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
+import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task(..))
+import Task.Script.Type (BasicType(..), PrimType(..))
 
 ---- Context -------------------------------------------------------------------
 
@@ -109,10 +110,10 @@ request_subsidy =
             ( step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
                 ( pair
                     [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (unchecked <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
-                        <| lift (Record <| from [ "documents" ~ Variable "documents" ])
+                        <| lift Wildcard
                     , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
                         <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
-                        <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
+                        <| lift Wildcard
                     ]
                 )
                 -- <| execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])

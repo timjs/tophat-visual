@@ -7,15 +7,15 @@ import Preload
 
 import Data.HashMap as HashMap
 import Task.Script.Error (Error(..))
-import Task.Script.Syntax (BasicType(..), Type_(..), ofBasic)
 import Task.Script.Context (Typtext)
+import Task.Script.Type (BasicType(..), FullType(..), ofBasic)
 
 ---- Alias expansion -----------------------------------------------------------
 
 class Expand t where
   expand :: Typtext -> t -> Error + t
 
-instance Expand Type_ where
+instance Expand FullType where
   expand s = case _ of
     TFunction t1 t2 -> TFunction <-< expand s t1 -<< expand s t2
     TName n -> HashMap.lookup n s |> note (UnknownTypeName n) >-> ofBasic >>= expand s

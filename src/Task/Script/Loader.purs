@@ -1,7 +1,6 @@
 module Task.Script.Loader where
 
 import Preload
-import Prelude
 
 import Data.HashMap as HashMap
 import Task.Script.Annotation (Annotated(..), Checked, Status(..))
@@ -9,10 +8,9 @@ import Task.Script.Checker as Checker
 import Task.Script.Context (Context, Typtext, aliases, builtins)
 import Task.Script.Error (Error)
 import Task.Script.Expander (expand)
-import Task.Script.Syntax (Task, Type_)
+import Task.Script.Syntax (Task)
+import Task.Script.Type (FullType)
 import Task.Script.Validator as Validator
-
--- load :: Typtext -> Context -> Checked Task -> Error +
 
 load :: Typtext -> Context -> Error + Typtext * Context
 load s g = do
@@ -23,7 +21,7 @@ load s g = do
   types = s \/ aliases
   names = g \/ builtins
 
-check :: Typtext -> Context -> Checked Task -> Error + Type_
+check :: Typtext -> Context -> Checked Task -> Error + FullType
 check s g t = do
   types' ~ names' <- load s g
   Checker.check types' names' t

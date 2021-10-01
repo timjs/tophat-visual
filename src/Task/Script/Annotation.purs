@@ -7,7 +7,8 @@ import Data.Doc as Doc
 import Data.HashMap as HashMap
 import Task.Script.Context (Context)
 import Task.Script.Error (Error(..))
-import Task.Script.Syntax (Task, Type_)
+import Task.Script.Syntax (Task)
+import Task.Script.Type (FullType)
 
 ---- Annotations ---------------------------------------------------------------
 
@@ -19,7 +20,7 @@ data Annotated a f =
 type Checked = Annotated Status
 
 data Status
-  = Success Context Type_
+  = Success Context FullType
   | Failure Context Error
   | Unknown
 
@@ -37,12 +38,12 @@ instance Show (Checked Task) where
 unchecked :: forall f. f (Checked f) -> Checked f
 unchecked = Annotated Unknown
 
-lift :: forall f. Context -> f (Checked f) -> f (Checked f) -> Error + Type_ -> Checked f
+lift :: forall f. Context -> f (Checked f) -> f (Checked f) -> Error + FullType -> Checked f
 lift g u c = case _ of
   Left e -> Annotated (Failure g e) u
   Right a -> Annotated (Success g a) c
 
-sink :: forall f. Context -> f (Checked f) -> Error + Type_ -> Checked f
+sink :: forall f. Context -> f (Checked f) -> Error + FullType -> Checked f
 sink g c = case _ of
   Left _ -> Annotated Unknown c
   Right a -> Annotated (Success g a) c
@@ -50,18 +51,18 @@ sink g c = case _ of
 fail :: forall f. Context -> f (Checked f) -> Error -> Checked f
 fail g u e = Annotated (Failure g e) u
 
-pass :: forall f. Context -> f (Checked f) -> Type_ -> Checked f
+pass :: forall f. Context -> f (Checked f) -> FullType -> Checked f
 pass g c a = Annotated (Success g a) c
 
 bury :: forall f. f (Checked f) -> Checked f
 bury = Annotated Unknown
 
-extractType :: forall f. Checked f -> Error + Type_
+extractType :: forall f. Checked f -> Error + FullType
 extractType = case _ of
   Annotated (Success _ t) _ -> Right t
   _ -> Left UndeterminedType
 
-withTypeOf :: forall f. Checked f -> f (Checked f) -> (Type_ -> Checked f) -> Checked f
+withTypeOf :: forall f. Checked f -> f (Checked f) -> (FullType -> Checked f) -> Checked f
 withTypeOf c b f = case c of
   Annotated (Success _ t) _ -> f t
   _ -> Annotated Unknown b

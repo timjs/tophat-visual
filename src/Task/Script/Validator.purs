@@ -4,11 +4,13 @@ module Task.Script.Validator
 
 import Preload
 import Data.HashMap as HashMap
+import Task.Script.Annotation (Annotated(..), Checked, Status(..), withTypeOf, bury, sink, fail, extractType, lift, pass)
 import Task.Script.Checker (check, match, needBasic, outofBasic, outofRecord, outofReference, outofTask, unite, intersect, wrapValue)
 import Task.Script.Context (Typtext, Context)
 import Task.Script.Error (Error(..))
-import Task.Script.Annotation (Annotated(..), Checked, Status(..), withTypeOf, bury, sink, fail, extractType, lift, pass)
-import Task.Script.Syntax (Expression, Label, PrimType(..), Row_, Task(..), Type_(..), ofBasic)
+import Task.Script.Label
+import Task.Script.Syntax
+import Task.Script.Type
 
 ---- Validator -----------------------------------------------------------------
 
@@ -107,7 +109,7 @@ validate s g (Annotated _ i) = case i of
 
 ---- Helpers -------------------------------------------------------------------
 
-outofBranch :: Checked Task -> Error + Row_ Type_
+outofBranch :: Checked Task -> Error + Labeled FullType
 outofBranch = extractType >=> outofTask
 
 infixr 5 HashMap.union as \/

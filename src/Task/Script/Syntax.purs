@@ -1,26 +1,6 @@
 module Task.Script.Syntax
-  -- # Synonyms
-  ( Row_
-  , Labels
-  , Name
-  , Label
-  , showLabels
-  , Message
-  -- # Types
-  , Type_(..)
-  , isFunction
-  , isTask
-  , ofRecord
-  , ofVariant
-  , ofReference
-  , ofTask
-  , PrimType(..)
-  , BasicType(..)
-  , ofType
-  , ofBasic
-  , isBasic
   -- # Expressions
-  , Expression(..)
+  ( Expression(..)
   , Arguments(..)
   , Constant(..)
   -- # Matches
@@ -32,182 +12,26 @@ module Task.Script.Syntax
   ) where
 
 import Preload
+
 import Data.Doc as Doc
 import Data.Doc (class Display, display)
 import Data.HashMap as HashMap
-import Data.HashSet as HashSet
 
----- Synonyms ------------------------------------------------------------------
-
-type Row_ a
-  = HashMap Label a
-
-showRow :: forall a. Show a => Char -> Char -> String -> Row_ a -> String
-showRow beg end sep as =
-  as
-    |> HashMap.toArrayBy check
-    |> intercalate ", "
-    |> enclose beg end
-  where
-  check l x =
-    let
-      r = show x
-    in
-      if l == r then
-        l
-      else
-        unwords [ l, sep, r ]
-
-showFields :: forall a. Show a => String -> Row_ a -> String
-showFields = showRow '{' '}'
-
-showVariants :: forall a. Show a => Row_ a -> String
-showVariants = showRow '[' ']' ":"
-
-type Labels
-  = HashSet Label
-
-showLabels :: HashSet Label -> String
-showLabels = HashSet.toArray >> intercalate "," >> enclose '{' '}'
-
-type Name
-  = String
-
-type Label
-  = String
-
-type Message
-  = String
-
----- Types ---------------------------------------------------------------------
-
-data Type_
-  = TFunction Type_ Type_
-  | TName Name
-  | TList Type_
-  | TRecord (Row_ Type_)
-  | TVariant (Row_ Type_)
-  | TReference BasicType
-  | TTask (Row_ Type_)
-  | TPrimitive PrimType
-
-derive instance Eq Type_
-
-instance Show Type_ where
-  show = case _ of
-    TFunction t1 t2 ->
-      unwords [ show t1, "->", show t2 ]
-        |> enclose '(' ')'
-    TName n -> n
-    TList t -> unwords [ "List", show t ]
-    TRecord ts -> showFields ":" ts
-    TVariant ts -> showVariants ts
-    TReference t -> unwords [ "Ref", show t ]
-    TTask t -> unwords [ "Task", showFields ":" t ]
-    TPrimitive p -> show p
-
-isFunction :: Type_ -> Bool
-isFunction = case _ of
-  TFunction _ _ -> true
-  _ -> false
-
-isTask :: Type_ -> Bool
-isTask = case _ of
-  TFunction _ (TTask _) -> true
-  _ -> false
-
-ofRecord :: Type_ -> Maybe (Row_ Type_)
-ofRecord = case _ of
-  TRecord r -> Just r
-  _ -> Nothing
-
-ofVariant :: Type_ -> Maybe (Row_ Type_)
-ofVariant = case _ of
-  TVariant r -> Just r
-  _ -> Nothing
-
-ofReference :: Type_ -> Maybe BasicType
-ofReference = case _ of
-  TReference b -> Just b
-  _ -> Nothing
-
-ofTask :: Type_ -> Maybe (Row_ Type_)
-ofTask = case _ of
-  TTask r -> Just r
-  _ -> Nothing
-
-data PrimType
-  = TBool
-  | TInt
-  | TString
-
-derive instance Eq PrimType
-
-instance Show PrimType where
-  show = case _ of
-    TBool -> "Bool"
-    TInt -> "Int"
-    TString -> "String"
-
-data BasicType
-  = BName Name
-  | BList BasicType
-  | BRecord (Row_ BasicType)
-  | BVariant (Row_ BasicType)
-  | BPrimitive PrimType
-
-derive instance Eq BasicType
-
-instance Show BasicType where
-  show = case _ of
-    BName n -> n
-    BList t -> unwords [ "List", show t ]
-    BRecord ts -> showFields ":" ts
-    BVariant ts -> showVariants ts
-    BPrimitive p -> show p
-
-ofType :: Type_ -> Maybe BasicType
-ofType = case _ of
-  TPrimitive p -> Just <| BPrimitive p
-  TName n -> Just <| BName n
-  TList t
-    | Just t' <- ofType t -> Just <| BList t'
-    | otherwise -> Nothing
-  TRecord r
-    | Just ts <- traverse ofType r -> Just <| BRecord ts
-    | otherwise -> Nothing
-  TVariant r
-    | Just ts <- traverse ofType r -> Just <| BVariant ts
-    | otherwise -> Nothing
-  TFunction _ _ -> Nothing
-  TReference _ -> Nothing
-  TTask _ -> Nothing
-
-ofBasic :: BasicType -> Type_
-ofBasic = case _ of
-  BList t -> TList <| ofBasic t
-  BRecord r -> TRecord <| map ofBasic r
-  BVariant r -> TVariant <| map ofBasic r
-  BName n -> TName n
-  BPrimitive p -> TPrimitive p
-
-isBasic :: Type_ -> Bool
-isBasic t
-  | Just _ <- ofType t = true
-  | otherwise = false
+import Task.Script.Label (Label, Labeled, Name, showFields)
+import Task.Script.Type (FullType)
 
 ---- Expressions ---------------------------------------------------------------
 
 data Expression
-  = Lambda Match Type_ Expression
+  = Lambda Match FullType Expression
   | Apply Expression Expression
   | Variable Name
   | IfThenElse Expression Expression Expression
-  | Case Expression (Row_ (Match * Expression))
-  --TODO add Record wildcard
-  | Record (Row_ Expression)
-  | Variant Label Expression Type_
-  | Nil Type_
+  | Case Expression (Labeled (Match * Expression))
+  | Record (Labeled Expression)
+  | Wildcard
+  | Variant Label Expression FullType
+  | Nil FullType
   | Cons Expression Expression
   | Constant Constant
 
@@ -230,13 +54,14 @@ instance Show Expression where
         , unlines (HashMap.toArrayBy (\m e -> unwords [ show m, "|->", show e ] |> indent 2) ms)
         ]
     Record es -> showFields "=" es
+    Wildcard -> "{..}"
     Variant l e t -> unwords [ l, show e, "as", show t ]
     Nil t -> unwords [ "[]", "as", show t ]
     Cons e1 e2 -> unwords [ show e1, "::", show e2 ]
     Constant c -> show c
 
 data Arguments
-  = ARecord (Row_ Expression)
+  = ARecord (Labeled Expression)
 
 derive instance Eq Arguments
 
@@ -262,7 +87,7 @@ instance Show Constant where
 data Match
   = MIgnore
   | MBind Name
-  | MRecord (Row_ Match)
+  | MRecord (Labeled Match)
   | MUnpack
 
 derive instance Eq Match

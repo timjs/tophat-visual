@@ -1,12 +1,15 @@
 module Task.Script.Example.Booking where
 
 import Preload
+
 import Data.HashMap as HashMap
+
 import Task.Script.Annotation (Checked, unchecked)
-import Task.Script.Syntax (Constant(..), Expression(..), Match(..), PrimType(..), Task(..), Type_(..))
+import Task.Script.Syntax (Constant(..), Expression(..), Match(..), Task(..))
+import Task.Script.Type (FullType(..), PrimType(..))
 
 ---- Types ---------------------------------------------------------------------
-t_nationality :: Type_
+t_nationality :: FullType
 t_nationality =
   TVariant
     <| from
@@ -15,7 +18,7 @@ t_nationality =
       , "German" ~ TRecord HashMap.empty
       ]
 
-t_passenger :: Type_
+t_passenger :: FullType
 t_passenger =
   TRecord
     <| from
@@ -25,7 +28,7 @@ t_passenger =
       , "age" ~ TPrimitive TInt
       ]
 
-t_flight :: Type_
+t_flight :: FullType
 t_flight =
   TVariant
     <| from
@@ -34,13 +37,13 @@ t_flight =
       , "ToBerlin" ~ TRecord HashMap.empty
       ]
 
-t_row :: Type_
+t_row :: FullType
 t_row = TPrimitive TInt
 
-t_chair :: Type_
+t_chair :: FullType
 t_chair = TPrimitive TString
 
-t_seat :: Type_
+t_seat :: FullType
 t_seat =
   TRecord
     <| from
@@ -48,7 +51,7 @@ t_seat =
       , "chair" ~ t_chair
       ]
 
-t_booking :: Type_
+t_booking :: FullType
 t_booking =
   TRecord
     <| from

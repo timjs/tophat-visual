@@ -12,11 +12,13 @@ module Task.Script.Context
   ) where
 
 import Preload
-import Task.Script.Syntax (BasicType(..), Name, PrimType(..), Type_(..), ofBasic)
+import Task.Script.Label (Name)
+import Task.Script.Type (BasicType(..),  PrimType(..), FullType(..), ofBasic)
 
 ---- Context -------------------------------------------------------------------
+
 type Context
-  = HashMap Name Type_
+  = HashMap Name FullType
 
 builtins :: Context
 builtins =
@@ -46,16 +48,17 @@ aliases =
     ]
 
 ---- Types ---------------------------------------------------------------------
+
 infixr 3 TFunction as :->
 
-listOf :: BasicType -> Type_
+listOf :: BasicType -> FullType
 listOf = BList >> ofBasic
 
 recordOf' :: Array (String * BasicType) -> BasicType
 recordOf' = from >> BRecord
 
-recordOf :: Array (String * BasicType) -> Type_
+recordOf :: Array (String * BasicType) -> FullType
 recordOf = recordOf' >> ofBasic
 
-taskOf :: Array (String * BasicType) -> Type_
+taskOf :: Array (String * BasicType) -> FullType
 taskOf = from >> map ofBasic >> TTask

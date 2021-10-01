@@ -11,13 +11,17 @@ import Concur.Dom.Input as Input
 import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
+
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
+
 import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
 import Task.Script.Context (Context, Typtext, aliases)
+import Task.Script.Label (Label, Labeled, Name)
 import Task.Script.Loader (validate)
-import Task.Script.Syntax (Arguments(..), BasicType, Branches, Constant(..), Expression(..), Label, LabeledBranches, Match(..), Name, Row_, Task(..), isFunction, isTask)
+import Task.Script.Syntax (Arguments(..), Branches, Constant(..), Expression(..), LabeledBranches, Match(..), Task(..))
+import Task.Script.Type (BasicType, isFunction, isTask)
 
 ---- Rendering -----------------------------------------------------------------
 
@@ -214,12 +218,12 @@ renderPossibleArgs status args@(ARecord argrow) =
   action label = if HashMap.member label argrow then Remove else Add
   toArgs labels = ARecord (HashMap.fromArrayBy identity Variable labels)
 
-renderLine :: forall a. Row_ a -> Widget Unit
+renderLine :: forall a. Labeled a -> Widget Unit
 renderLine row =
   Style.line Solid [ Style.place After [ renderLabels row ] ]
 
 -- | || (( a_1 .. a_n ))
-renderLabels :: forall a. Row_ a -> Widget Unit
+renderLabels :: forall a. Labeled a -> Widget Unit
 renderLabels =
   HashMap.keys >> map (Input.chip Normal None) >> Style.row
 
@@ -353,7 +357,7 @@ renderEditor :: forall a. Widget a -> Widget a -> Widget a
 renderEditor =
   Input.addon Medium
 
-renderEnter :: Row_ BasicType -> Name -> Widget Name
+renderEnter :: Labeled BasicType -> Name -> Widget Name
 renderEnter types name =
   renderEditor Icon.pen (selectType types name)
 
@@ -463,7 +467,7 @@ editLabels g (ARecord as) =
   --TODO show labels and expressions
   Style.column (map (show >> text) (HashMap.keys as))
 -- -- | [[ i n ]]
--- selectValues :: Context -> Icon -> Row_ Name -> Widget (Row_ Name)
+-- selectValues :: Context -> Icon -> Labeled Name -> Widget (Labeled Name)
 -- selectValues g i ns = do
 --   _ <- renderBox style_box []
 --   done ns
@@ -495,7 +499,10 @@ fix4 _1 _2 _3 _4 = case _ of
   Right (Right (Right (Left _4'))) -> _1 ~ _2 ~ _3 ~ _4'
   Right (Right (Right (Right contra))) -> absurd contra
 
+reorder3 :: forall a b c. a * b * c -> b * c * a
 reorder3 (a ~ b ~ c) = b ~ c ~ a
+
+reorder4 :: forall a b c d. a * b * c * d -> c * d * a * b
 reorder4 (a ~ b ~ c ~ d) = (c ~ d ~ a ~ b)
 
 data Par = And | Or
@@ -529,5 +536,8 @@ instance Switch Cont where
   switch Hurry = Delay
   switch Delay = Hurry
 
+addLabels :: forall f v. Functor f => f v -> f (String * v)
 addLabels = map ("" ~ _)
+
+removeLabels :: forall f v k. Functor f => f (k * v) -> f v
 removeLabels = map snd

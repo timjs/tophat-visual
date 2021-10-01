@@ -3,10 +3,27 @@ module Task.Script.Builder where
 import Preload
 
 import Task.Script.Annotation (Checked, unchecked)
-import Task.Script.Syntax (Arguments, Constant(..), Expression(..), Label, Match, Task(..))
+import Task.Script.Label (Label, Name)
+import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task(..))
+
+---- Editors ----
+
+enter :: Name -> Checked Task
+enter n = unchecked <| Enter n
+
+update :: Expression -> Checked Task
+update e = unchecked <| Update e
 
 view :: Expression -> Checked Task
 view e = unchecked <| View e
+
+watch :: Expression -> Checked Task
+watch e = unchecked <| Watch e
+
+change :: Expression -> Checked Task
+change e = unchecked <| Change e
+
+---- Steps ----
 
 step :: Match -> Checked Task -> Checked Task -> Checked Task
 -- step m t1 t2 = unchecked <| Step m t1 t2
@@ -21,14 +38,24 @@ branch m t1 bs = unchecked <| Step m t1 (unchecked <| Branch bs)
 select :: Match -> Checked Task -> Array (Label * Expression * Checked Task) -> Checked Task
 select m t1 bs = unchecked <| Step m t1 (unchecked <| Select bs)
 
+---- Combinators ----
+
 pair :: Array (Checked Task) -> Checked Task
 pair ts = unchecked <| Pair ts
 
 choose :: Array (Checked Task) -> Checked Task
 choose ts = unchecked <| Choose ts
 
+group :: Checked Task
+group = step (MRecord <| from []) hole (lift Wildcard)
+
+---- Tasks ----
+
 execute :: String -> Arguments -> Checked Task
 execute n as = unchecked <| Execute n as
+
+hole :: Checked Task
+hole = unchecked <| Hole (ARecord <| from [])
 
 lift :: Expression -> Checked Task
 lift e = unchecked <| Lift e

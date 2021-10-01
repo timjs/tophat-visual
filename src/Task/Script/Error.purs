@@ -6,35 +6,37 @@ module Task.Script.Error
 import Preload
 
 import Task.Script.Context (Context)
-import Task.Script.Syntax (Label, Labels, Match, Name, Row_, Type_, showLabels)
+import Task.Script.Label (Label, Labels, Name, Labeled, showLabels)
+import Task.Script.Syntax (Match)
+import Task.Script.Type (FullType)
 
 ---- Errors --------------------------------------------------------------------
 data Error
   = UnknownVariable Name
   | UnknownTypeName Name
-  | UnknownLabel Label Type_
-  | ArgumentError Type_ Type_
-  | VariantError Label Type_ Type_
-  | BranchError Type_ Type_
-  | BranchesError (Row_ Type_)
-  | AssignError Type_ Type_
-  | ListError Type_ Type_
-  | FunctionNeeded Type_
-  | BoolNeeded Type_
-  | RecordNeeded Type_
-  | VariantNeeded Type_
-  | ListNeeded Type_
-  | ReferenceNeeded Type_
-  | TaskNeeded Type_
-  | BasicNeeded Type_
+  | UnknownLabel Label FullType
+  | ArgumentError FullType FullType
+  | VariantError Label FullType FullType
+  | BranchError FullType FullType
+  | BranchesError (Labeled FullType)
+  | AssignError FullType FullType
+  | ListError FullType FullType
+  | FunctionNeeded FullType
+  | BoolNeeded FullType
+  | RecordNeeded FullType
+  | VariantNeeded FullType
+  | ListNeeded FullType
+  | ReferenceNeeded FullType
+  | TaskNeeded FullType
+  | BasicNeeded FullType
   | UnknownLabels Labels Labels
   | DoubleLabels Labels Labels
   | UndeterminedType
   | EmptyCase
   | EmptyChoice
   | HoleFound Context
-  | RecordMismatch (Row_ Match) Type_
-  | UnpackMismatch Type_
+  | RecordMismatch (Labeled Match) FullType
+  | UnpackMismatch FullType
 
 instance Show Error where
   show = case _ of

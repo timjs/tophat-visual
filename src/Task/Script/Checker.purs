@@ -17,17 +17,21 @@ module Task.Script.Checker
   ) where
 
 import Preload
+
 import Data.Array as Array
 import Data.HashMap as HashMap
 import Data.HashSet as HashSet
+
+import Task.Script.Annotation (Annotated(..))
 import Task.Script.Context (Context, Typtext)
 import Task.Script.Error (Error(..))
-import Task.Script.Annotation (Annotated(..))
-import Task.Script.Syntax (Arguments(..), BasicType, Constant(..), Expression(..), Match(..), PrimType(..), Row_, Task(..), Type_(..), isBasic, ofBasic, ofRecord, ofReference, ofTask, ofType)
+import Task.Script.Label (Labeled)
+import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task(..))
+import Task.Script.Type (BasicType, FullType(..), PrimType(..), isBasic, isFunction, ofBasic, ofRecord, ofReference, ofTask, ofType)
 
 ---- Checker -------------------------------------------------------------------
 class Check a where
-  check :: Typtext -> Context -> a -> Error + Type_
+  check :: Typtext -> Context -> a -> Error + FullType
 
 instance Check Expression where
   check s g = case _ of
@@ -72,6 +76,7 @@ instance Check Expression where
         _ -> throw <| VariantNeeded t0
     ---- Records & Variants
     Record es -> traverse (check s g) es >-> TRecord
+    Wildcard -> done <| TRecord (g |> HashMap.filter (isFunction >> not))
     Variant l e t -> case t of
       TVariant r -> do
         t_e <- check s g e
@@ -157,7 +162,7 @@ instance Check t => Check (Task t) where
     subcheck'' (_ ~ e ~ t) = subcheck' (e ~ t)
 
 ---- Matcher -------------------------------------------------------------------
-match :: Match -> Type_ -> Error + Context
+match :: Match -> FullType -> Error + Context
 match m t = case m of
   MIgnore -> done HashMap.empty
   MBind x -> done <| from [ x ~ t ]
@@ -171,14 +176,14 @@ match m t = case m of
       _ -> throw <| UnpackMismatch t
 
 ---- Helpers -------------------------------------------------------------------
----- Row_ helpers
+---- Labeled helpers
 -- | Unite multiple rows into one.
 --
 -- Throws an error on double lables.
-unite :: forall t a. Foldable t => t (Row_ a) -> Error + Row_ a
+unite :: forall t a. Foldable t => t (Labeled a) -> Error + Labeled a
 unite = gather go HashMap.empty
   where
-  go :: Row_ a -> Row_ a -> Error + Row_ a
+  go :: Labeled a -> Labeled a -> Error + Labeled a
   go acc r =
     if null is then
       done <| acc \/ r
@@ -190,13 +195,13 @@ unite = gather go HashMap.empty
 -- | Intersect multiple rows into one.
 --
 -- Throws if the intersection is empty.
-intersect :: forall t a. Foldable t => t (Row_ a) -> Error + Row_ a
+intersect :: forall t a. Foldable t => t (Labeled a) -> Error + Labeled a
 intersect rs = foldr1 HashMap.intersection rs |> note EmptyChoice
 
 -- | Merge the values of a second row into the first row with the same labels.
 --
 -- Throws if `r1` has labels not in `r2`.
-merge :: forall a b. Row_ a -> Row_ b -> Error + Row_ (a * b)
+merge :: forall a b. Labeled a -> Labeled b -> Error + Labeled (a * b)
 merge r1 r2 =
   if HashMap.isEmpty ds then
     done <| HashMap.intersectionWith (~) r1 r2
@@ -208,7 +213,7 @@ merge r1 r2 =
 -- | Smash a row of types together into one type.
 --
 -- Throws if the row is empty or if labels have different types.
-smash :: Row_ Type_ -> Error + Type_
+smash :: Labeled FullType -> Error + FullType
 smash r = case HashMap.values r |> Array.uncons of
   Nothing -> throw <| EmptyCase
   Just { head, tail } ->
@@ -217,33 +222,33 @@ smash r = case HashMap.values r |> Array.uncons of
     else
       throw <| BranchesError r
 
----- Type_ helpers
-needBasic :: Type_ -> Error + Type_
+---- FullType helpers
+needBasic :: FullType -> Error + FullType
 needBasic t
   | isBasic t = done t
   | otherwise = throw <| BasicNeeded t
 
-outofBasic :: Type_ -> Error + BasicType
+outofBasic :: FullType -> Error + BasicType
 outofBasic t
   | Just b <- ofType t = done b
   | otherwise = throw <| BasicNeeded t
 
-outofRecord :: Type_ -> Error + Row_ Type_
+outofRecord :: FullType -> Error + Labeled FullType
 outofRecord t
   | Just r <- ofRecord t = done r
   | otherwise = throw <| RecordNeeded t
 
-outofReference :: Type_ -> Error + Type_
+outofReference :: FullType -> Error + FullType
 outofReference t
   | Just b <- ofReference t = done <| ofBasic b
   | otherwise = throw <| ReferenceNeeded t
 
-outofTask :: Type_ -> Error + Row_ Type_
+outofTask :: FullType -> Error + Labeled FullType
 outofTask t
   | Just r <- ofTask t = done r
   | otherwise = throw <| TaskNeeded t
 
-wrapValue :: Type_ -> Type_
+wrapValue :: FullType -> FullType
 wrapValue t = TTask <| from [ "value" ~ t ]
 
 ---- General helpers
