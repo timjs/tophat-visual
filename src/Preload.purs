@@ -144,7 +144,7 @@ import Data.Traversable as Reexport
 import Data.Tuple (curry, fst, snd, swap, uncurry) as Reexport
 import Data.Tuple (Tuple(..))
 import Data.Unfoldable as Reexport
-import Debug as Debug
+import Debug (spy) as Reexport
 import Effect (Effect) as Reexport
 import Prelude hiding (mempty, pure, (<<<), (>>>), (<>), ($), (#), (<$>), (<#>), (<@>), (<$), ($>), (<*>), (<*), (*>)) as Reexport
 import Prim.TypeError (class Warn, Text)
@@ -285,7 +285,7 @@ todo :: forall a. Warn (Text "Todo left in code") => String -> a
 todo = panic
 
 panic :: forall a. String -> a
-panic s = Debug.spy ("TODO: " ++ s) (unsafeCoerce {})
+panic s = Reexport.spy ("TODO: " ++ s) (unsafeCoerce {})
 
 ---- Enums ---------------------------------------------------------------------
 
@@ -427,7 +427,6 @@ pair x y = done (~) -<< x -<< y
 
 skip :: forall f. Reexport.Applicative f => f Reexport.Unit
 skip = done Reexport.unit
-
 
 ---- Newtypes ------------------------------------------------------------------
 

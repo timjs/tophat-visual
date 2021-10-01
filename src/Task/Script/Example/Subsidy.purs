@@ -110,9 +110,11 @@ request_subsidy =
             ( step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
                 ( pair
                     [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (unchecked <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
-                        <| lift Wildcard
+                        -- <| lift Wildcard -- XXX Something is wrong with Wildcard...
+                        <| lift (Record <| from [ "documents" ~ Variable "documents" ])
                     , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
                         <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
+                        -- <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
                         <| lift Wildcard
                     ]
                 )
