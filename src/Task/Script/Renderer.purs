@@ -17,6 +17,7 @@ import Data.Either.Nested as Either
 import Data.HashMap as HashMap
 
 import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
+import Task.Script.Builder as Builder
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Label (Label, Labeled, Name)
 import Task.Script.Loader (validate)
@@ -163,7 +164,7 @@ renderExecute status name args =
     [ renderArgs status args >-> Either.in2
     , renderError status
         ( Input.picker
-            [ "Builtin" ~ []
+            [ "Builtin" ~ [ "??" ]
             , "Project" ~ (extractContext status |> HashMap.filter isTask |> HashMap.keys |> Array.sort)
             ]
             name
@@ -347,8 +348,7 @@ renderGroup par trans tasks =
   Style.element [ void Attr.onDoubleClick ->> other par tasks ]
     [ Style.group (stroke par)
         [ Concur.traverse trans tasks >-> this par
-        --TODO: add branch
-        , Input.button Action Secondary Small "+" ->> this par tasks
+        , Input.button Action Secondary Small "+" ->> this par (tasks ++ [ Builder.item ])
         ]
     ]
 

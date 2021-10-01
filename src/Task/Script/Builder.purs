@@ -46,8 +46,8 @@ pair ts = unchecked <| Pair ts
 choose :: Array (Checked Task) -> Checked Task
 choose ts = unchecked <| Choose ts
 
-group :: Checked Task
-group = step (MRecord <| from []) hole (lift Wildcard)
+item :: Checked Task
+item = step (MRecord <| from []) hole (lift Wildcard)
 
 ---- Tasks ----
 
