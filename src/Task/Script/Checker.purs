@@ -176,7 +176,9 @@ match m t = case m of
       _ -> throw <| UnpackMismatch t
 
 ---- Helpers -------------------------------------------------------------------
----- Labeled helpers
+
+---- Labeled helpers ----
+
 -- | Unite multiple rows into one.
 --
 -- Throws an error on double lables.
@@ -222,7 +224,8 @@ smash r = case HashMap.values r |> Array.uncons of
     else
       throw <| BranchesError r
 
----- FullType helpers
+---- Type helpers ----
+
 needBasic :: FullType -> Error + FullType
 needBasic t
   | isBasic t = done t
@@ -251,7 +254,8 @@ outofTask t
 wrapValue :: FullType -> FullType
 wrapValue t = TTask <| from [ "value" ~ t ]
 
----- General helpers
+---- General helpers ----
+
 keys :: forall k v. Hashable k => HashMap k v -> HashSet k
 keys = HashMap.keys >> from
 

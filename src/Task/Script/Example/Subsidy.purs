@@ -4,10 +4,10 @@ import Preload hiding (pair)
 
 import Data.HashMap as HashMap
 
-import Task.Script.Annotation (Checked, unchecked)
-import Task.Script.Builder (branch, execute, lift, pair, step, view)
+import Task.Script.Annotation (Checked)
+import Task.Script.Builder (branch, enter, execute, lift, pair, step, view)
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
-import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task(..))
+import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task)
 import Task.Script.Type (BasicType(..), PrimType(..))
 
 ---- Context -------------------------------------------------------------------
@@ -99,8 +99,8 @@ context =
 -}
 request_subsidy :: Checked Task
 request_subsidy =
-  step (MRecord <| from [ "value" ~ MBind "details" ]) (unchecked <| Enter "Citizen")
-    <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (unchecked <| Execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
+  step (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
+    <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
       [ Apply (Variable "not") (Variable "approved")
           ~
             ( view (Constant (S "Cannot approve"))
@@ -109,13 +109,13 @@ request_subsidy =
           ~
             ( step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
                 ( pair
-                    [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (unchecked <| Execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
+                    [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
                         -- <| lift Wildcard -- XXX Something is wrong with Wildcard...
                         <| lift (Record <| from [ "documents" ~ Variable "documents" ])
-                    , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (unchecked <| Execute "select_contractor" (ARecord HashMap.empty))
-                        <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (unchecked <| Execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
-                        -- <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
-                        <| lift Wildcard
+                    , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (execute "select_contractor" (ARecord HashMap.empty))
+                        <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
+                        <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
+                    -- <| lift Wildcard
                     ]
                 )
                 -- <| execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])

@@ -242,7 +242,11 @@ renderStep status cont match@(MRecord row) =
   Style.column
     [ renderLine row ->> (Either.in2 match)
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
-        Style.element [ void Attr.onDoubleClick ->> (switch cont |> Either.in1) ] [ Style.triangle (style cont) empty ]
+        Style.element
+          [ void Attr.onDoubleClick ->> (switch cont |> Either.in1)
+          -- , void Attr.onClick ->> ?h
+          ]
+          [ Style.triangle (style cont) empty ]
     ]
     >-> fix2 cont match
 renderStep _ _ _ = todo "other matches in step rendering"
