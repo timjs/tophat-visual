@@ -47,27 +47,27 @@ renderTask g s = go
     --INVARIANT third arg of `Step` is always Branch or Select
 
     Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])) -> do
-      m' ~ t1' <- renderEnd go m t1
+      m' ~ t1' <- renderEnd go a_t m t1
       done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])))
 
     Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ t2 ])) -> do
-      c' ~ m' ~ t1' ~ t2' <- renderSingle a_t go Hurry m t1 t2
+      c' ~ m' ~ t1' ~ t2' <- renderSingle go a_t Hurry m t1 t2
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b case c' of
         Hurry -> Branch [ Constant (B true) ~ t2' ]
         Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
     Step m t1 (Annotated a_b (Branch bs)) -> do
-      c' ~ m' ~ t1' ~ bs' <- renderBranches a_t go m t1 bs
+      c' ~ m' ~ t1' ~ bs' <- renderBranches go a_t m t1 bs
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
         Hurry -> Branch bs'
         Delay -> Select (addLabels bs')
 
     Step m t1 (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2 ])) -> do
-      c' ~ m' ~ t1' ~ t2' <- renderSingle a_t go Delay m t1 t2
+      c' ~ m' ~ t1' ~ t2' <- renderSingle go a_t Delay m t1 t2
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
         Hurry -> Branch [ Constant (B true) ~ t2' ]
         Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
     Step m t1 (Annotated a_b (Select bs)) -> do
-      c' ~ m' ~ t1' ~ bs' <- renderSelects a_t go m t1 bs
+      c' ~ m' ~ t1' ~ bs' <- renderSelects go a_t m t1 bs
       done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
         Hurry -> Branch (removeLabels bs')
         Delay -> Select bs'
@@ -259,32 +259,34 @@ renderOptionWithLabel status label guard =
     ]
     >-> fix2 label guard
 
-renderSingle :: forall a. Status -> (a -> Widget a) -> Cont -> Match -> a -> a -> Widget (Cont * Match * a * a)
-renderSingle g render cont match sub1 sub2 =
+renderSingle :: forall a. (a -> Widget a) -> Status -> Cont -> Match -> a -> a -> Widget (Cont * Match * a * a)
+renderSingle render status cont match sub1 sub2 =
   Style.column
     [ render sub1 >-> Either.in1
-    , renderStep g cont match >-> Either.in3
+    , renderStep status cont match >-> Either.in3
     , render sub2 >-> Either.in2
     ]
     >-> fix3 sub1 sub2 (cont ~ match)
     >-> reorder4
 
-renderEnd :: forall a. (a -> Widget a) -> Match -> a -> Widget (Match * a)
-renderEnd render args@(MRecord row) subtask =
+renderEnd :: forall a. (a -> Widget a) -> Status -> Match -> a -> Widget (Match * a)
+renderEnd render status args@(MRecord row) subtask =
   Style.column
     [ render subtask >-> Either.in2
     , renderLine row ->> Either.in1 args
+    , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
+        Style.triangle (style Hurry) empty
     ]
     >-> fix2 args subtask
-renderEnd _ _ _ = todo "other matches in end rendering"
+renderEnd _ _ _ _ = todo "other matches in end rendering"
 
 ---- Branches ----
 
-renderBranches :: Status -> Renderer -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Cont * Match * Checked Task * Branches (Checked Task))
-renderBranches g render match subtask branches =
+renderBranches :: Renderer -> Status -> Match -> Checked Task -> Branches (Checked Task) -> Widget (Cont * Match * Checked Task * Branches (Checked Task))
+renderBranches render status match subtask branches =
   Style.column
     [ render subtask >-> Either.in1
-    , renderStep g Hurry match >-> Either.in3
+    , renderStep status Hurry match >-> Either.in3
     , Style.branch [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
     ]
     >-> fix3 subtask branches (Hurry ~ match)
@@ -313,8 +315,8 @@ renderBranch render (guard ~ subtask@(Annotated status _)) =
 --     , renderTask task
 --     ]
 
-renderSelects :: Status -> Renderer -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Cont * Match * Checked Task * LabeledBranches (Checked Task))
-renderSelects status render match subtask branches =
+renderSelects :: Renderer -> Status -> Match -> Checked Task -> LabeledBranches (Checked Task) -> Widget (Cont * Match * Checked Task * LabeledBranches (Checked Task))
+renderSelects render status match subtask branches =
   Style.column
     [ render subtask >-> Either.in1
     , renderStep status Delay match >-> Either.in3
