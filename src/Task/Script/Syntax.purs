@@ -2,6 +2,7 @@ module Task.Script.Syntax
   -- # Expressions
   ( Expression(..)
   , Arguments(..)
+  , Parameters(..)
   , Constant(..)
   -- # Matches
   , Match(..)
@@ -67,6 +68,13 @@ derive instance Eq Arguments
 
 instance Show Arguments where
   show (ARecord es) = showFields "=" es
+
+data Parameters
+  = PRecord (Labeled Match)
+
+derive instance Eq Parameters
+instance Show Parameters where
+  show (PRecord ms) = showFields "~" ms
 
 data Constant
   = B Bool

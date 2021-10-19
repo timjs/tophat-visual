@@ -3,12 +3,13 @@ module Task.Script.Example.Subsidy where
 import Preload hiding (pair)
 
 import Data.HashMap as HashMap
-
 import Task.Script.Annotation (Checked)
 import Task.Script.Builder (branch, enter, execute, lift, pair, step, view)
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
-import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task)
+import Task.Script.Label (Labeled)
+import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Parameters(..), Task)
 import Task.Script.Type (BasicType(..), PrimType(..))
+import Task.Script.World (World)
 
 ---- Context -------------------------------------------------------------------
 
@@ -83,6 +84,13 @@ context =
 
 ---- Tasks ---------------------------------------------------------------------
 
+tasks :: Labeled (Parameters * Checked Task)
+tasks =
+  from
+    [ "request_subsidy" ~
+        (PRecord (from empty) ~ request_subsidy)
+    ]
+
 {-
   {value = details} <- enter Citizen "Passenger details"
   {approved} <- check_conditions {details}
@@ -97,6 +105,7 @@ context =
         done {contractor, declaration}
     submit_request {dossier = {documents, declaration}}
 -}
+
 request_subsidy :: Checked Task
 request_subsidy =
   step (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
@@ -122,3 +131,8 @@ request_subsidy =
                 <| execute "submit_request" (ARecord <| from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ])
             )
       ]
+
+---- World ---------------------------------------------------------------------
+
+world :: World
+world = { types, context, tasks }
