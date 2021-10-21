@@ -54,6 +54,7 @@ $unit-16: 3.2rem !default
 
 body
   font-family: Lucida Grande
+  margin: 4pc
 
 .form-select, .form-input, .btn-gray, .step
   &:hover
@@ -147,10 +148,10 @@ div
   align-items: center
 
   >.shape-line
+    flex-grow: 1
     width: 4pc
-  //>.line
-  //  top: 1pc
-  //  width: 4pc
+    // top: 1pc
+    // width: 4pc
 
   &.layout-branch
     >.layout-column
@@ -215,16 +216,34 @@ div
     &:hover
       border-color: $primary-color-light
 
+// NOTE: Hacky as hell...
 .layout-side
   position: absolute
+
+  // NOTE: Hacky as hell...
+  >.layout-column
+    width: 7pc
+
+  &.side-top
+    &.dist-sm
+      bottom: 0.5pc
+      min-width: 10pc
+    &.dist-md
+      bottom: 1pc
+      min-width: 20pc
+    &.dist-lg
+      bottom: 2.25pc
+      min-width: 20pc
 
   &.side-left
     &.dist-sm
       right: 0.5pc
       min-width: 10pc
+    // NOTE: Ugly as hell...
     &.dist-md
-      right: 1.5pc
-      min-width: 15pc
+      right: 0.6pc
+      top: -1pc
+      min-width: 20pc
     &.dist-lg
       right: 2.25pc
       min-width: 20pc
@@ -234,8 +253,8 @@ div
       left: 0.5pc
       min-width: 10pc
     &.dist-md
-      left: 1.5pc
-      min-width: 15pc
+      left: 1pc
+      min-width: 20pc
     &.dist-lg
       left: 2.25pc // Strange number to fit right side of addon
       min-width: 20pc
@@ -316,10 +335,8 @@ div
       background-color: $primary-color-dark
 
 .shape-dot
-  background-color: $gray-color
-  border: 1pt solid $gray-color
+  border: 4pt double $gray-color
   border-radius: 50%
-
   &.radius-sm
     height: 0.75pc
     width: 0.75pc
@@ -329,3 +346,15 @@ div
   &.radius-lg
     height: 2pc
     width: 2pc
+
+  &.style-filled
+    background-color: $gray-color
+    &.radius-sm
+      height: 0.75pc
+      width: 0.75pc
+    &.radius-md
+      height: 1pc
+      width: 1pc
+    &.radius-lg
+      height: 2pc
+      width: 2pc

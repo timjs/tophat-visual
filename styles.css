@@ -1,6 +1,7 @@
 @charset "UTF-8";
 body {
   font-family: Lucida Grande;
+  margin: 4pc;
 }
 
 .form-select:hover, .form-input:hover, .btn-gray:hover, .step:hover {
@@ -88,6 +89,7 @@ div {
   align-items: center;
 }
 .layout-row > .shape-line {
+  flex-grow: 1;
   width: 4pc;
 }
 .layout-row.layout-branch > .layout-column > .shape-line:first-of-type {
@@ -160,13 +162,29 @@ div {
 .layout-side {
   position: absolute;
 }
+.layout-side > .layout-column {
+  width: 7pc;
+}
+.layout-side.side-top.dist-sm {
+  bottom: 0.5pc;
+  min-width: 10pc;
+}
+.layout-side.side-top.dist-md {
+  bottom: 1pc;
+  min-width: 20pc;
+}
+.layout-side.side-top.dist-lg {
+  bottom: 2.25pc;
+  min-width: 20pc;
+}
 .layout-side.side-left.dist-sm {
   right: 0.5pc;
   min-width: 10pc;
 }
 .layout-side.side-left.dist-md {
-  right: 1.5pc;
-  min-width: 15pc;
+  right: 0.6pc;
+  top: -1pc;
+  min-width: 20pc;
 }
 .layout-side.side-left.dist-lg {
   right: 2.25pc;
@@ -177,8 +195,8 @@ div {
   min-width: 10pc;
 }
 .layout-side.side-right.dist-md {
-  left: 1.5pc;
-  min-width: 15pc;
+  left: 1pc;
+  min-width: 20pc;
 }
 .layout-side.side-right.dist-lg {
   left: 2.25pc;
@@ -254,8 +272,7 @@ div {
 }
 
 .shape-dot {
-  background-color: #bcc3ce;
-  border: 1pt solid #bcc3ce;
+  border: 4pt double #bcc3ce;
   border-radius: 50%;
 }
 .shape-dot.radius-sm {
@@ -267,6 +284,21 @@ div {
   width: 1pc;
 }
 .shape-dot.radius-lg {
+  height: 2pc;
+  width: 2pc;
+}
+.shape-dot.style-filled {
+  background-color: #bcc3ce;
+}
+.shape-dot.style-filled.radius-sm {
+  height: 0.75pc;
+  width: 0.75pc;
+}
+.shape-dot.style-filled.radius-md {
+  height: 1pc;
+  width: 1pc;
+}
+.shape-dot.style-filled.radius-lg {
   height: 2pc;
   width: 2pc;
 }
