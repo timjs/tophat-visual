@@ -9,7 +9,7 @@ import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->)
 import Task.Script.Label (Labeled)
 import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Parameters(..), Task)
 import Task.Script.Type (BasicType(..), PrimType(..))
-import Task.Script.World (World)
+import Task.Script.World (World, Tasktext)
 
 ---- Context -------------------------------------------------------------------
 
@@ -84,11 +84,11 @@ context =
 
 ---- Tasks ---------------------------------------------------------------------
 
-tasks :: Labeled (Parameters * Checked Task)
+tasks :: Tasktext
 tasks =
   from
     [ "request_subsidy" ~
-        (PRecord (from empty) ~ request_subsidy)
+        (from [] ~ request_subsidy)
     ]
 
 {-
@@ -110,7 +110,7 @@ request_subsidy :: Checked Task
 request_subsidy =
   step (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
     <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
-      [ Apply (Variable "not") (Variable "approved")
+      [ Variable "not" `Apply` Variable "approved"
           ~
             ( view (Constant (S "Cannot approve"))
             )
