@@ -21,26 +21,27 @@ import Task.Script.Label (Label, Labeled, Name)
 import Task.Script.Loader (validate)
 import Task.Script.Syntax (Arguments(..), Branches, Constant(..), Expression(..), LabeledBranches, Match(..), Task(..))
 import Task.Script.Type (BasicType, isFunction, isTask)
-import Task.Script.World (World)
+import Task.Script.World (World, Parameters)
 
 ---- Rendering -----------------------------------------------------------------
 
 type Renderer = Checked Task -> Widget (Checked Task)
 
-main :: World -> Name -> Widget (Name * Checked Task)
+main :: World -> Name -> Widget (Name * Parameters * Checked Task)
 main { types: s, context: g, tasks: ts } n =
   case HashMap.lookup n ts of
-    Just (ps ~ t) -> Concur.repeat (n ~ t) \(n' ~ t') ->
+    Just (ps ~ t) -> Concur.repeat (n ~ ps ~ t) \(n' ~ ps' ~ t') ->
       let
         t'' = validate s g t'
       in
         Style.column
-          [ renderStart n' >-> Either.in1
+          [ renderStart n' ps' >-> Either.in1
           , renderTask g s t'' >-> Either.in2
           , renderStop
           , Text.code "TopHat" (show t'')
           ]
-          >-> fix2 n' t''
+          >-> fix2 (n' ~ ps') t''
+          >-> assoc
     Nothing -> Text.text <| "Could not find task " ++ quote n
 
 renderTask :: Context -> Typtext -> Renderer
@@ -154,15 +155,28 @@ renderTask g s t = Style.column
 
 -- | [[ * |   n   ]]
 -- |     ||
-renderStart :: Name -> Widget Name
-renderStart name = Style.column
-  [ renderEditor Icon.clipboard (editName name)
-  , Style.line Solid []
-  ]
+renderStart :: Name -> Parameters -> Widget (Name * Parameters)
+renderStart name params =
+  Style.column
+    [ Style.dot Medium Outlined
+        [ Style.place Before Medium
+            [ Style.row
+                [ renderEditor Icon.clipboard (editName name) >-> Either.in1
+                , renderParams params ->> Either.in2 params
+                ]
+            ]
+        ]
+    , Style.line Solid empty
+    ]
+    >-> fix2 name params
+
+renderParams :: Parameters -> Widget Unit
+renderParams params =
+  Style.line Solid [ Style.place Above Small [ Style.column (renderLabels params) ] ]
 
 renderStop :: forall a. Widget a
 renderStop = Style.column
-  [ Style.dot Medium [] ]
+  [ Style.dot Medium Filled [] ]
 
 -- |      || as
 -- |  [[  n  ?]]
@@ -190,7 +204,7 @@ renderArgs status args@(ARecord argrow) =
         []
     )
     --NOTE: make sure every vertical line is in a column to make CSS function properly
-    (Style.column [ Style.line Solid [ Style.place After Small [ renderLabels argrow ] ] ->> args ])
+    (Style.column [ Style.line Solid [ Style.place After Small [ Style.row (renderLabels argrow) ] ] ->> args ])
   where
   --TODO: renaming of variables
   select = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> map check
@@ -230,12 +244,12 @@ renderPossibleArgs status args@(ARecord argrow) =
 
 renderLine :: forall a. Labeled a -> Widget Unit
 renderLine row =
-  Style.line Solid [ Style.place After Small [ renderLabels row ] ]
+  Style.line Solid [ Style.place After Small [ Style.row (renderLabels row) ] ]
 
 -- | || (( a_1 .. a_n ))
-renderLabels :: forall a. Labeled a -> Widget Unit
+renderLabels :: forall a. Labeled a -> Array (Widget Unit)
 renderLabels =
-  HashMap.keys >> map (Input.chip Normal None) >> Style.row
+  HashMap.keys >> map (Input.chip Normal None)
 
 renderContext :: Status -> String
 renderContext = extractContext >> HashMap.filter (isFunction >> not) >> HashMap.toArrayBy (~) >> Array.sortBy (compare `on` fst) >> foldMap go
@@ -407,7 +421,7 @@ renderWatch expr =
   renderEditor Icon.eye <|
     Style.place After Large
       [ Style.row
-          [ Style.dot Small []
+          [ Style.dot Small Filled []
           , Style.line Solid []
           , renderEditor Icon.database (editExpression expr)
           ]
@@ -536,6 +550,9 @@ reorder3 (a ~ b ~ c) = b ~ c ~ a
 
 reorder4 :: forall a b c d. a * b * c * d -> c * d * a * b
 reorder4 (a ~ b ~ c ~ d) = (c ~ d ~ a ~ b)
+
+assoc :: forall a b c. (a * b) * c -> a * (b * c)
+assoc ((a ~ b) ~ c) = a ~ b ~ c
 
 data Par = And | Or
 

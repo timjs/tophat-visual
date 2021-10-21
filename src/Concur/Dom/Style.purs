@@ -127,5 +127,5 @@ line stroke = block [ "shape-line", "stroke-" ++ show stroke ]
 triangle :: forall a. Style -> Array (Widget a) -> Widget a
 triangle style = block [ "shape-triangle", "style-" ++ show style ]
 
-dot :: forall a. Size -> Array (Widget a) -> Widget a
-dot size = block [ "shape-dot", "radius-" ++ show size ]
+dot :: forall a. Size -> Style -> Array (Widget a) -> Widget a
+dot size style = block [ "shape-dot", "style-" ++ show style, "radius-" ++ show size ]

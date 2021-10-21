@@ -8,7 +8,8 @@ import Task.Script.Label (Labeled)
 import Task.Script.Syntax (Task)
 import Task.Script.Type (FullType)
 
-type Tasktext = Labeled (Labeled FullType * Checked Task)
+type Parameters = Labeled FullType
+type Tasktext = Labeled (Parameters * Checked Task)
 
 type World =
   { types :: Typtext
