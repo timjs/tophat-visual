@@ -11,16 +11,18 @@ import Concur.Dom.Input as Input
 import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
+
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
+
 import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
 import Task.Script.Builder as Builder
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Label (Label, Labeled, Name)
 import Task.Script.Loader (validate)
 import Task.Script.Syntax (Arguments(..), Branches, Constant(..), Expression(..), LabeledBranches, Match(..), Task(..))
-import Task.Script.Type (BasicType, isFunction, isTask)
+import Task.Script.Type (BasicType, isFunction, isReference, isTask)
 import Task.Script.World (World, Parameters)
 
 ---- Rendering -----------------------------------------------------------------
@@ -114,7 +116,7 @@ renderTask g s t = Style.column
       e' <- renderView e
       done <| Annotated a_t (View e')
     Watch e -> do
-      e' <- renderWatch e
+      e' <- renderWatch a_t e
       done <| Annotated a_t (Watch e')
 
     ---- Combinators
@@ -419,14 +421,14 @@ renderLabel = editLabel
 
 ---- Shares --------------------------------------------------------------------
 
-renderWatch :: Expression -> Widget Expression
-renderWatch expr =
+renderWatch :: Status -> Expression -> Widget Expression
+renderWatch status expr =
   renderEditor Icon.eye <|
     Style.place After Large
       [ Style.row
           [ Style.dot Small Filled []
           , Style.line Solid []
-          , renderEditor Icon.database (editExpression expr)
+          , renderEditor Icon.database (status |> extractContext |> flip selectRef expr)
           ]
       ]
 
@@ -449,6 +451,13 @@ selectType types name =
     , "Project" ~ Array.sort (HashMap.keys types)
     ]
     name
+
+selectRef :: Context -> Expression -> Widget Expression
+selectRef context (Variable name) =
+  Input.picker
+    [ "Shares" ~ Array.sort (context |> HashMap.filter isReference |> HashMap.keys) ]
+    name >-> Variable
+selectRef _ _ = todo "unnamed references not supported"
 
 -- | [[  e  ]]
 editExpression :: Expression -> Widget Expression

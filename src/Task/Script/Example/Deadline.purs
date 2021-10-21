@@ -14,11 +14,9 @@ types = from []
 
 context :: Context
 context = from
-  [ "send_reminder"
+  [ "send reminder"
       ~ recordOf [ "email" ~ BPrimitive TString ]
       :-> taskOf []
-  , "current_date"
-      ~ TReference (BPrimitive TInt)
   ]
 
 tasks :: Tasktext
@@ -33,8 +31,8 @@ world = { types, context, tasks }
 ---- Tasks ---------------------------------------------------------------------
 
 remind :: Checked Task
-remind = branch (MRecord <| from [ "value" ~ MBind "now" ]) (watch (Variable "current_date"))
+remind = branch (MRecord <| from [ "value" ~ MBind "now" ]) (watch (Variable "current date"))
   [ Variable ">=" `Apply` Variable "now" `Apply` Variable "deadline"
-      ~ execute "send_reminder" (ARecord <| from [ "email" ~ Variable "email" ])
+      ~ execute "send reminder" (ARecord <| from [ "email" ~ Variable "email" ])
 
   ]

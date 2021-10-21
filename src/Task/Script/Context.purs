@@ -15,9 +15,11 @@ module Task.Script.Context
 import Preload
 
 import Data.HashMap as HashMap
+import Data.String (Pattern(..), Replacement(..))
+import Data.String as String
 
 import Task.Script.Label (Name)
-import Task.Script.Type (BasicType(..), PrimType(..), FullType(..), ofBasic)
+import Task.Script.Type (BasicType(..), FullType(..), PrimType(..), ofBasic)
 
 ---- Context -------------------------------------------------------------------
 
@@ -49,8 +51,14 @@ functions = from
   [ "not" ~ TPrimitive TBool :-> TPrimitive TBool
   ]
 
+shares :: Context
+shares = from
+  [ "current date" ~ TReference (BPrimitive TInt)
+  , "current time" ~ TReference (BPrimitive TInt)
+  ]
+
 builtins :: Context
-builtins = operators \/ functions
+builtins = operators \/ functions \/ shares
 
 isOperator :: Name -> Bool
 isOperator = flip HashMap.member operators
@@ -67,6 +75,12 @@ aliases =
     , "Date" ~ BPrimitive TInt
     , "String" ~ BPrimitive TString
     ]
+
+readable :: forall f. Functor f => f String -> f String
+readable = map (String.replace (Pattern "_") (Replacement " "))
+
+unreadable :: forall f. Functor f => f String -> f String
+unreadable = map (String.replace (Pattern " ") (Replacement "_"))
 
 ---- Types ---------------------------------------------------------------------
 

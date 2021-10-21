@@ -33,21 +33,21 @@ types =
         ~ BPrimitive TString
     -- ~ recordOf'
     --     [ "street" ~ BName "String"
-    --     , "house_number" ~ BName "Nat"
-    --     , "postal_code" ~ BName "Nat"
+    --     , "house number" ~ BName "Nat"
+    --     , "postal code" ~ BName "Nat"
     --     , "city" ~ BName "String"
     --     ]
     , "Documents"
         ~ BPrimitive TInt
     -- ~ recordOf'
-    --     [ "invoice_amount" ~ BName "Nat"
-    --     , "invoice_date" ~ BName "Date"
-    --     , "roof_photos" ~ BList (BName "String")
+    --     [ "invoice amount" ~ BName "Nat"
+    --     , "invoice date" ~ BName "Date"
+    --     , "roof photos" ~ BList (BName "String")
     --     ]
     , "Declaration"
         ~ BPrimitive TInt
     -- ~ recordOf'
-    --     [ "roof_photos" ~ BList (BName "String")
+    --     [ "roof photos" ~ BList (BName "String")
     --     , "date" ~ BName "Date"
     --     ]
     , "Dossier"
@@ -60,19 +60,19 @@ types =
 context :: Context
 context =
   from
-    [ "check_conditions"
+    [ "check conditions"
         ~ recordOf [ "details" ~ BName "Citizen" ]
         :-> taskOf [ "approved" ~ BName "Bool" ]
-    , "provide_documents"
+    , "provide documents"
         ~ recordOf [ "details" ~ BName "Citizen" ]
         :-> taskOf [ "documents" ~ BName "Documents" ]
-    , "select_contractor"
+    , "select contractor"
         ~ recordOf []
         :-> taskOf [ "contractor" ~ BName "Company" ]
-    , "provide_declaration"
+    , "provide declaration"
         ~ recordOf [ "contractor" ~ BName "Company", "details" ~ BName "Citizen" ]
         :-> taskOf [ "declaration" ~ BName "Declaration" ]
-    , "submit_request"
+    , "submit request"
         -- ~ recordOf [ "dossier" ~ BName "Dossier" ]
         ~ recordOf
             [ "documents" ~ BName "Documents"
@@ -86,7 +86,7 @@ context =
 tasks :: Tasktext
 tasks =
   from
-    [ "request_subsidy" ~
+    [ "request subsidy" ~
         (from [] ~ request_subsidy)
     ]
 
@@ -108,7 +108,7 @@ tasks =
 request_subsidy :: Checked Task
 request_subsidy =
   step (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
-    <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (execute "check_conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
+    <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (execute "check conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
       [ Variable "not" `Apply` Variable "approved"
           ~
             ( view (Constant (S "Cannot approve"))
@@ -117,17 +117,17 @@ request_subsidy =
           ~
             ( step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
                 ( pair
-                    [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (execute "provide_documents" (ARecord <| from [ "details" ~ Variable "details" ]))
+                    [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (execute "provide documents" (ARecord <| from [ "details" ~ Variable "details" ]))
                         -- <| lift Wildcard -- XXX Something is wrong with Wildcard...
                         <| lift (Record <| from [ "documents" ~ Variable "documents" ])
-                    , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (execute "select_contractor" (ARecord HashMap.empty))
-                        <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (execute "provide_declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
+                    , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (execute "select contractor" (ARecord HashMap.empty))
+                        <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (execute "provide declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
                         <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
                     -- <| lift Wildcard
                     ]
                 )
-                -- <| execute "submit_request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
-                <| execute "submit_request" (ARecord <| from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ])
+                -- <| execute "submit request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
+                <| execute "submit request" (ARecord <| from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ])
             )
       ]
 

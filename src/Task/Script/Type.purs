@@ -2,6 +2,7 @@ module Task.Script.Type
   -- # Types
   ( FullType(..)
   , isFunction
+  , isReference
   , isTask
   , ofRecord
   , ofVariant
@@ -48,6 +49,11 @@ instance Show FullType where
 isFunction :: FullType -> Bool
 isFunction = case _ of
   TFunction _ _ -> true
+  _ -> false
+
+isReference :: FullType -> Bool
+isReference = case _ of
+  TReference _ -> true
   _ -> false
 
 isTask :: FullType -> Bool
