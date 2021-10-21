@@ -13,7 +13,7 @@ module Task.Script.Context
 
 import Preload
 import Task.Script.Label (Name)
-import Task.Script.Type (BasicType(..),  PrimType(..), FullType(..), ofBasic)
+import Task.Script.Type (BasicType(..), PrimType(..), FullType(..), ofBasic)
 
 ---- Context -------------------------------------------------------------------
 
@@ -23,11 +23,19 @@ type Context
 builtins :: Context
 builtins =
   from
+    -- Ver
     [ "not" ~ TPrimitive TBool :-> TPrimitive TBool
     , "&&" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
     , "||" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+    -- Eq
     , "==" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
     , "/=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    -- Ord
+    , "<" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "<=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , ">=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , ">" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    -- Calc
     , "+" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
     , "*" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
     , "-" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
