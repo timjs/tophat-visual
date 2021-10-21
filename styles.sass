@@ -160,6 +160,8 @@ div
         height: 4pc
 
       // Need to spell everything out here because of `:before` specifier, use @mixin?
+      &:hover::before
+        outline-color: $primary-color-light
       &::before
         outline: dashed 1pt $gray-color
         content: ""

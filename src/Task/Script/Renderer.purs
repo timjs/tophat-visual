@@ -159,7 +159,7 @@ renderTask g s t = Style.column
 renderStart :: Name -> Parameters -> Widget (Name * Parameters)
 renderStart name params =
   Style.column
-    [ Style.dot Medium Outlined
+    [ Style.dot Medium Filled
         [ Style.place Before Medium
             [ Style.row
                 [ renderEditor Icon.clipboard (editName name) >-> Either.in1
@@ -269,7 +269,7 @@ renderStep status cont match@(MRecord row) =
     [ renderLine row ->> (Either.in2 match)
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
         Style.element
-          [ void Attr.onDoubleClick ->> (switch cont |> Either.in1)
+          [ void Attr.onClick ->> (switch cont |> Either.in1)
           -- , void Attr.onClick ->> ?h
           ]
           [ Style.triangle (style cont) empty ]
@@ -318,7 +318,10 @@ renderBranches render status match subtask branches =
   Style.column
     [ render subtask >-> Either.in1
     , renderStep status Hurry match >-> Either.in3
-    , Style.branch [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
+    , Style.element [ void Attr.onDoubleClick ->> Either.in2 (branches ++ [ Builder.always ~ Builder.item ]) ]
+        [ Style.branch
+            [ Concur.traverse (renderBranch render) branches >-> Either.in2 ]
+        ]
     ]
     >-> fix3 subtask branches (Hurry ~ match)
     >-> reorder4
@@ -375,10 +378,13 @@ renderSelect render (label ~ guard ~ subtask@(Annotated status _)) =
 -- renderGroup :: forall a. Stroke -> (a -> Widget a) -> Array a -> Widget (Array a)
 renderGroup :: Par -> (Checked Task -> Widget (Checked Task)) -> Array (Checked Task) -> Widget (Task (Checked Task))
 renderGroup par trans tasks =
-  Style.element [ void Attr.onDoubleClick ->> other par tasks ]
+  Style.element
+    [ void Attr.onClick ->> other par tasks
+    , void Attr.onDoubleClick ->> this par (tasks ++ [ Builder.item ])
+    ]
     [ Style.group (stroke par)
         [ Concur.traverse trans tasks >-> this par
-        , Input.button Action Secondary Small "+" ->> this par (tasks ++ [ Builder.item ])
+        -- , Input.button Action Secondary Small "+" ->> this par (tasks ++ [ Builder.item ])
         ]
     ]
 
