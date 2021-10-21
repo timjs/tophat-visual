@@ -3,6 +3,7 @@ module Task.Script.Context
   , builtins
   , Typtext
   , aliases
+  , isOperator
   -- # Types
   , (:->)
   , listOf
@@ -12,6 +13,9 @@ module Task.Script.Context
   ) where
 
 import Preload
+
+import Data.HashMap as HashMap
+
 import Task.Script.Label (Name)
 import Task.Script.Type (BasicType(..), PrimType(..), FullType(..), ofBasic)
 
@@ -20,27 +24,36 @@ import Task.Script.Type (BasicType(..), PrimType(..), FullType(..), ofBasic)
 type Context
   = HashMap Name FullType
 
+operators :: Context
+operators = from
+  -- Ver
+  [ "&&" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+  , "||" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
+  -- Eq
+  , "==" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+  , "/=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+  -- Ord
+  , "<" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+  , "<=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+  , ">=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+  , ">" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+  -- Calc
+  , "+" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+  , "*" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+  , "-" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+  , "/" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+  ]
+
+functions :: Context
+functions = from
+  [ "not" ~ TPrimitive TBool :-> TPrimitive TBool
+  ]
+
 builtins :: Context
-builtins =
-  from
-    -- Ver
-    [ "not" ~ TPrimitive TBool :-> TPrimitive TBool
-    , "&&" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
-    , "||" ~ TPrimitive TBool :-> TPrimitive TBool :-> TPrimitive TBool
-    -- Eq
-    , "==" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , "/=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    -- Ord
-    , "<" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , "<=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , ">=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    , ">" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
-    -- Calc
-    , "+" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "*" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "-" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "/" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    ]
+builtins = operators \/ functions
+
+isOperator :: Name -> Bool
+isOperator = flip HashMap.member operators
 
 type Typtext
   = HashMap Name BasicType
@@ -70,3 +83,7 @@ recordOf = recordOf' >> ofBasic
 
 taskOf :: Array (String * BasicType) -> FullType
 taskOf = from >> map ofBasic >> TTask
+
+---- Helpers -------------------------------------------------------------------
+
+infixr 5 HashMap.union as \/

@@ -17,6 +17,7 @@ import Data.Doc as Doc
 import Data.Doc (class Display, display)
 import Data.HashMap as HashMap
 
+import Task.Script.Context (isOperator)
 import Task.Script.Label (Label, Labeled, Name, showFields)
 import Task.Script.Type (FullType)
 
@@ -40,7 +41,10 @@ derive instance Eq Expression
 instance Show Expression where
   show = case _ of
     Lambda m t e -> unwords [ show m, ":", show t, ".", show e ]
-    Apply e1 e2 -> unwords [ show e1, show e2 ] --FIXME
+    Apply (Apply (Variable n1) e2) e3 -> -- special case for operators
+      if isOperator n1 then unwords [ show e2, n1, show e3 ]
+      else unwords [ n1, show e2, show e3 ]
+    Apply e1 e2 -> unwords [ show e1, show e2 ] --FIXME: parens?
     Variable n -> n
     IfThenElse e1 e2 e3 ->
       unlines
