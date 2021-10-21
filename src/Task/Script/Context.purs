@@ -4,6 +4,8 @@ module Task.Script.Context
   , Typtext
   , aliases
   , isOperator
+  , readable
+  , unreadable
   -- # Types
   , (:->)
   , listOf
@@ -76,11 +78,11 @@ aliases =
     , "String" ~ BPrimitive TString
     ]
 
-readable :: forall f. Functor f => f String -> f String
-readable = map (String.replace (Pattern "_") (Replacement " "))
+readable :: Name -> Name
+readable = String.replace (Pattern "_") (Replacement " ")
 
-unreadable :: forall f. Functor f => f String -> f String
-unreadable = map (String.replace (Pattern " ") (Replacement "_"))
+unreadable :: Name -> Name
+unreadable = String.replace (Pattern " ") (Replacement "_")
 
 ---- Types ---------------------------------------------------------------------
 

@@ -17,7 +17,7 @@ import Data.Doc as Doc
 import Data.Doc (class Display, display)
 import Data.HashMap as HashMap
 
-import Task.Script.Context (isOperator)
+import Task.Script.Context (isOperator, unreadable)
 import Task.Script.Label (Label, Labeled, Name, showFields)
 import Task.Script.Type (FullType)
 
@@ -43,9 +43,9 @@ instance Show Expression where
     Lambda m t e -> unwords [ show m, ":", show t, ".", show e ]
     Apply (Apply (Variable n1) e2) e3 -> -- special case for operators
       if isOperator n1 then unwords [ show e2, n1, show e3 ]
-      else unwords [ n1, show e2, show e3 ]
+      else unwords [ unreadable n1, show e2, show e3 ]
     Apply e1 e2 -> unwords [ show e1, show e2 ] --FIXME: parens?
-    Variable n -> n
+    Variable n -> unreadable n
     IfThenElse e1 e2 e3 ->
       unlines
         [ unwords [ "if", show e1 ]
@@ -150,6 +150,7 @@ instance Display t => Show (Task t) where
 instance Display t => Display (Task t) where
   display = case _ of
     Step m t s -> Doc.lines [ Doc.words [ Doc.show m, Doc.text "<-", display t ], display s ]
+    Branch [ Constant (B true) ~ t ] -> display t --Doc.lines [ Doc.text "branch", inner' bs ]
     Branch bs -> Doc.lines [ Doc.text "branch", inner' bs ]
     Select bs -> Doc.lines [ Doc.text "select", inner'' bs ]
     Enter t -> Doc.words [ Doc.text "enter", Doc.text t ]
@@ -158,25 +159,24 @@ instance Display t => Display (Task t) where
     View e -> Doc.words [ Doc.text "view", Doc.show e ]
     Watch e -> Doc.words [ Doc.text "watch", Doc.show e ]
     Lift e -> Doc.words [ Doc.text "done", Doc.show e ]
-    Pair ss -> Doc.lines [ Doc.text "pair", inner ss ]
-    Choose ss -> Doc.lines [ Doc.text "choose", inner ss ]
-    Execute n as -> Doc.words [ Doc.text n, Doc.show as ]
+    Pair ss -> inner "and" ss --Doc.lines [ Doc.text "pair", inner ss ]
+    Choose ss -> inner "or" ss --Doc.lines [ Doc.text "choose", inner ss ]
+    Execute n as -> Doc.words [ Doc.text (unreadable n), Doc.show as ]
     Hole as -> Doc.words [ Doc.text "?", Doc.show as ]
     Share e -> Doc.words [ Doc.text "share", Doc.show e ]
     Assign e1 e2 -> Doc.words [ Doc.show e1, Doc.text ":=", Doc.show e2 ]
     where
     -- inner :: Array t -> Doc
-    inner =
-      map display
+    inner comb =
+      map (\s -> Doc.lines [ Doc.text comb, Doc.indent (display s) ])
         >> Doc.lines
-        >> Doc.indent
 
     inner' =
-      map (\(e ~ s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+      map (\(e ~ s) -> Doc.lines [ Doc.words [ Doc.show e, Doc.text "->" ], Doc.indent (display s) ])
         >> Doc.lines
         >> Doc.indent
 
     inner'' =
-      map (\(l ~ e ~ s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "?", Doc.show e, Doc.text "|->" ], Doc.indent (display s) ])
+      map (\(l ~ e ~ s) -> Doc.lines [ Doc.words [ Doc.text l, Doc.text "|", Doc.show e, Doc.text "->" ], Doc.indent (display s) ])
         >> Doc.lines
         >> Doc.indent

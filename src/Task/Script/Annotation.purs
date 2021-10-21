@@ -33,6 +33,19 @@ instance Display (Checked Task) where
 instance Show (Checked Task) where
   show = display >> Doc.render
 
+---- Normal --------------------------------------------------------------------
+
+type Unannotated = Annotated Unit
+
+instance Display (Unannotated Task) where
+  display (Annotated _ t) = display t
+
+instance Show (Unannotated Task) where
+  show = display >> Doc.render
+
+unannotate :: forall a f. Functor f => Annotated a f -> Annotated Unit f
+unannotate (Annotated _ f) = Annotated unit (map unannotate f)
+
 ---- Helpers -------------------------------------------------------------------
 
 unchecked :: forall f. f (Checked f) -> Checked f

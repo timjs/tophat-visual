@@ -115,7 +115,7 @@ place pos dist = block [ "layout-side", "side-" ++ show pos, "dist-" ++ show dis
 
 divider :: forall a. Orientation -> Maybe String -> Widget a
 divider orient text = blockWithData
-  [ "divider-" ++ show orient, if isJust text then "text-center" else "" ]
+  [ "divider", "divider-" ++ show orient, if isJust text then "text-center" else "" ]
   { content: text ?? "" }
   []
 

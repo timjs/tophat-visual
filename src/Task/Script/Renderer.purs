@@ -8,15 +8,13 @@ import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input (Action(..))
 import Concur.Dom.Input as Input
-import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
+import Concur.Dom.Style (Button(..), Kind(..), Orientation(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
-
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
-
-import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
+import Task.Script.Annotation (Annotated(..), Checked, Status(..), unannotate, extractContext)
 import Task.Script.Builder as Builder
 import Task.Script.Context (Context, Typtext, aliases)
 import Task.Script.Label (Label, Labeled, Name)
@@ -41,7 +39,7 @@ main { types: s, context: g, tasks: ts } n =
           [ renderStart n' ps' >-> Either.in1
           , renderTask g' s t'' >-> Either.in2
           , renderStop
-          , Text.code "TopHat" (show t'')
+          , Text.code "TopHat" (show (unannotate t''))
           ]
           >-> fix2 (n' ~ ps') t''
           >-> assoc
