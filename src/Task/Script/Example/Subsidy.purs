@@ -6,8 +6,7 @@ import Data.HashMap as HashMap
 import Task.Script.Annotation (Checked)
 import Task.Script.Builder (branch, enter, execute, lift, pair, step, view)
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
-import Task.Script.Label (Labeled)
-import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Parameters(..), Task)
+import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task)
 import Task.Script.Type (BasicType(..), PrimType(..))
 import Task.Script.World (World, Tasktext)
 

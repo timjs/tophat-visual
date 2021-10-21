@@ -86,11 +86,15 @@ div {
 .layout-row {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
 }
 .layout-row > .shape-line {
   flex-grow: 1;
   width: 4pc;
+  align-self: center;
+}
+.layout-row > .shape-dot {
+  align-self: center;
 }
 .layout-row.layout-branch > .layout-column > .shape-line:first-of-type {
   height: 4pc;

@@ -145,13 +145,14 @@ div
   display: flex
   flex-direction: row
   //XXX breaks par?
-  align-items: center
+  align-items: stretch
 
   >.shape-line
     flex-grow: 1
     width: 4pc
-    // top: 1pc
-    // width: 4pc
+    align-self: center
+  >.shape-dot
+    align-self: center
 
   &.layout-branch
     >.layout-column

@@ -13,3 +13,4 @@ import Task.Script.Renderer as Renderer
 main :: Effect Unit
 -- main = runWidgetInDom "root" <| Test.main
 main = runWidgetInDom "root" <| Renderer.main Example.world "remind"
+-- main = runWidgetInDom "root" <| Renderer.main Example.world "request_subsidy"

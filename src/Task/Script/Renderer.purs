@@ -176,7 +176,9 @@ renderParams params =
 
 renderStop :: forall a. Widget a
 renderStop = Style.column
-  [ Style.dot Medium Filled [] ]
+  [ Style.line Solid empty
+  , Style.dot Medium Filled empty
+  ]
 
 -- |      || as
 -- |  [[  n  ?]]
