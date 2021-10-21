@@ -32,11 +32,12 @@ main { types: s, context: g, tasks: ts } n =
   case HashMap.lookup n ts of
     Just (ps ~ t) -> Concur.repeat (n ~ ps ~ t) \(n' ~ ps' ~ t') ->
       let
-        t'' = validate s g t'
+        g' = HashMap.union ps g
+        t'' = validate s g' t'
       in
         Style.column
           [ renderStart n' ps' >-> Either.in1
-          , renderTask g s t'' >-> Either.in2
+          , renderTask g' s t'' >-> Either.in2
           , renderStop
           , Text.code "TopHat" (show t'')
           ]

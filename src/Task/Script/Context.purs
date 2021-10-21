@@ -31,10 +31,10 @@ builtins =
     , "==" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
     , "/=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
     -- Ord
-    , "<" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , "<=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , ">=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
-    , ">" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
+    , "<" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , "<=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , ">=" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
+    , ">" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TBool
     -- Calc
     , "+" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
     , "*" ~ TPrimitive TInt :-> TPrimitive TInt :-> TPrimitive TInt
