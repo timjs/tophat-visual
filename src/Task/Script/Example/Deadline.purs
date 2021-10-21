@@ -4,16 +4,22 @@ import Preload
 
 import Task.Script.Annotation (Checked)
 import Task.Script.Builder (branch, execute, watch)
-import Task.Script.Context (Typtext, Context)
+import Task.Script.Context (Context, Typtext, recordOf, taskOf, (:->))
 import Task.Script.Syntax (Arguments(..), Expression(..), Match(..), Task)
-import Task.Script.Type (FullType(..), PrimType(..))
+import Task.Script.Type (BasicType(..), FullType(..), PrimType(..))
 import Task.Script.World (Tasktext, World)
 
 types :: Typtext
 types = from []
 
 context :: Context
-context = from []
+context = from
+  [ "send_reminder"
+      ~ recordOf [ "email" ~ BPrimitive TString ]
+      :-> taskOf []
+  , "current_date"
+      ~ TReference (BPrimitive TInt)
+  ]
 
 tasks :: Tasktext
 tasks = from
