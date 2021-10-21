@@ -143,7 +143,11 @@ div
 .layout-row
   display: flex
   flex-direction: row
-  align-items: stretch
+  //XXX breaks par?
+  align-items: center
+
+  >.shape-line
+    width: 4pc
   //>.line
   //  top: 1pc
   //  width: 4pc
@@ -205,7 +209,7 @@ div
   align-items: center
   padding: 0 0.5pc
 
-  .shape-line
+  >.shape-line
     height: 2pc
     flex-grow: 1
     &:hover
@@ -215,12 +219,26 @@ div
   position: absolute
 
   &.side-left
-    right: 1.5pc
+    &.dist-sm
+      right: 0.5pc
+      min-width: 10pc
+    &.dist-md
+      right: 1.5pc
+      min-width: 15pc
+    &.dist-lg
+      right: 2.25pc
+      min-width: 20pc
 
   &.side-right
-    left: 0.5pc
-    //padding: 0.5pc 0
-    min-width: 10pc
+    &.dist-sm
+      left: 0.5pc
+      min-width: 10pc
+    &.dist-md
+      left: 1.5pc
+      min-width: 15pc
+    &.dist-lg
+      left: 2.25pc // Strange number to fit right side of addon
+      min-width: 20pc
 
 // Shapes ////////////////
 
@@ -297,9 +315,17 @@ div
     &:hover
       background-color: $primary-color-dark
 
-.shape-circle
-  height: 1pc
-  width: 1pc
+.shape-dot
   background-color: $gray-color
   border: 1pt solid $gray-color
   border-radius: 50%
+
+  &.radius-sm
+    height: 0.75pc
+    width: 0.75pc
+  &.radius-md
+    height: 1pc
+    width: 1pc
+  &.radius-lg
+    height: 2pc
+    width: 2pc

@@ -11,11 +11,9 @@ import Concur.Dom.Input as Input
 import Concur.Dom.Style (Button(..), Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
-
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
-
 import Task.Script.Annotation (Annotated(..), Checked, Status(..), extractContext)
 import Task.Script.Builder as Builder
 import Task.Script.Context (Context, Typtext, aliases)
@@ -23,24 +21,32 @@ import Task.Script.Label (Label, Labeled, Name)
 import Task.Script.Loader (validate)
 import Task.Script.Syntax (Arguments(..), Branches, Constant(..), Expression(..), LabeledBranches, Match(..), Task(..))
 import Task.Script.Type (BasicType, isFunction, isTask)
+import Task.Script.World (World)
 
 ---- Rendering -----------------------------------------------------------------
 
 type Renderer = Checked Task -> Widget (Checked Task)
 
-main :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
-main g s t =
-  Concur.repeat t \t' ->
-    let
-      t'' = validate s g t'
-    in
-      Style.column
-        [ renderTask g s t''
-        , Text.code "TopHat" (show t'')
-        ]
+main :: World -> Name -> Widget (Name * Checked Task)
+main { types: s, context: g, tasks: ts } n =
+  case HashMap.lookup n ts of
+    Just (ps ~ t) -> Concur.repeat (n ~ t) \(n' ~ t') ->
+      let
+        t'' = validate s g t'
+      in
+        Style.column
+          [ renderStart n' >-> Either.in1
+          , renderTask g s t'' >-> Either.in2
+          , renderStop
+          , Text.code "TopHat" (show t'')
+          ]
+          >-> fix2 n' t''
+    Nothing -> Text.text <| "Could not find task " ++ quote n
 
-renderTask :: Context -> Typtext -> Checked Task -> Widget (Checked Task)
-renderTask g s = go
+renderTask :: Context -> Typtext -> Renderer
+renderTask g s t = Style.column
+  [ go t
+  ]
   where
   go :: Checked Task -> Widget (Checked Task)
   go (Annotated a_t t) = case t of
@@ -105,11 +111,9 @@ renderTask g s = go
     View e -> do
       e' <- renderView e
       done <| Annotated a_t (View e')
-    Watch e -> todo "watch"
-    -- Watch  e -> do
-    --   r <- renderConnect style_line Pull (editMessage Icon.eye m) (editExpression Icon.database e)
-    --   let e' = consolidate m e r
-    --   done <| Annotated a_t (Watch m' e')
+    Watch e -> do
+      e' <- renderWatch e
+      done <| Annotated a_t (Watch e')
 
     ---- Combinators
     Lift e -> do
@@ -152,9 +156,13 @@ renderTask g s = go
 -- |     ||
 renderStart :: Name -> Widget Name
 renderStart name = Style.column
-  [ Input.addon Medium Icon.clipboard (Input.entry Medium "name of flow" name)
-  , Style.line Solid empty
+  [ renderEditor Icon.clipboard (editName name)
+  , Style.line Solid []
   ]
+
+renderStop :: forall a. Widget a
+renderStop = Style.column
+  [ Style.dot Medium [] ]
 
 -- |      || as
 -- |  [[  n  ?]]
@@ -181,7 +189,8 @@ renderArgs status args@(ARecord argrow) =
         [ Style.row [ Concur.traverse renderArg select >-> unselect ] ]
         []
     )
-    (Style.line Solid [ Style.place After [ renderLabels argrow ] ] ->> args)
+    --NOTE: make sure every vertical line is in a column to make CSS function properly
+    (Style.column [ Style.line Solid [ Style.place After Small [ renderLabels argrow ] ] ->> args ])
   where
   --TODO: renaming of variables
   select = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> map check
@@ -221,7 +230,7 @@ renderPossibleArgs status args@(ARecord argrow) =
 
 renderLine :: forall a. Labeled a -> Widget Unit
 renderLine row =
-  Style.line Solid [ Style.place After [ renderLabels row ] ]
+  Style.line Solid [ Style.place After Small [ renderLabels row ] ]
 
 -- | || (( a_1 .. a_n ))
 renderLabels :: forall a. Labeled a -> Widget Unit
@@ -254,12 +263,12 @@ renderStep _ _ _ = todo "other matches in step rendering"
 renderOption :: Status -> Expression -> Widget Expression
 renderOption status guard =
   Style.line Dashed
-    [ Style.place After [ renderGuard status guard ] ]
+    [ Style.place After Small [ renderGuard status guard ] ]
 
 renderOptionWithLabel :: Status -> Label -> Expression -> Widget (Label * Expression)
 renderOptionWithLabel status label guard =
   Style.line Dashed
-    [ Style.place After [ renderLabel label >-> Either.in1, renderGuard status guard >-> Either.in2 ]
+    [ Style.place After Small [ renderLabel label >-> Either.in1, renderGuard status guard >-> Either.in2 ]
     -- , Style.place Before [  ] >-> Either.in1
     ]
     >-> fix2 label guard
@@ -391,6 +400,19 @@ renderGuard status expr =
 renderLabel :: Label -> Widget Label
 renderLabel = editLabel
 
+---- Shares --------------------------------------------------------------------
+
+renderWatch :: Expression -> Widget Expression
+renderWatch expr =
+  renderEditor Icon.eye <|
+    Style.place After Large
+      [ Style.row
+          [ Style.dot Small []
+          , Style.line Solid []
+          , renderEditor Icon.database (editExpression expr)
+          ]
+      ]
+
 ---- Helpers -------------------------------------------------------------------
 
 renderError :: forall a. Status -> Widget a -> Widget a
@@ -419,6 +441,10 @@ editExpression expr =
 editGuard :: Expression -> Widget Expression
 editGuard expr =
   Input.entry Small "enter an expression..." (show expr) ->> Variable "x"
+
+editName :: Name -> Widget Name
+editName name =
+  Input.entry Medium "enter a name..." name
 
 editLabel :: Label -> Widget Label
 editLabel lbl =

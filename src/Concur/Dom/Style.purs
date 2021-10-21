@@ -19,6 +19,7 @@ module Concur.Dom.Style
   -- # Shapes
   , line
   , triangle
+  , dot
   ) where
 
 import Preload
@@ -32,6 +33,7 @@ data Kind = Normal | Primary | Secondary | Link | Success | Warning | Error
 data Button = Default | Action
 
 data Size = Large | Medium | Small
+type Distance = Size
 
 -- data Anchor = North | East | South | West
 
@@ -108,8 +110,8 @@ branch = block [ "layout-row", "layout-branch" ]
 group :: forall a. Stroke -> Array (Widget a) -> Widget a
 group stroke = block [ "layout-row", "layout-group", "stroke-" ++ show stroke ]
 
-place :: forall a. Position -> Array (Widget a) -> Widget a
-place pos = block [ "layout-side", "side-" ++ show pos ]
+place :: forall a. Position -> Distance -> Array (Widget a) -> Widget a
+place pos dist = block [ "layout-side", "side-" ++ show pos, "dist-" ++ show dist ]
 
 divider :: forall a. Orientation -> Maybe String -> Widget a
 divider orient text = blockWithData
@@ -123,4 +125,7 @@ line :: forall a. Stroke -> Array (Widget a) -> Widget a
 line stroke = block [ "shape-line", "stroke-" ++ show stroke ]
 
 triangle :: forall a. Style -> Array (Widget a) -> Widget a
-triangle style _contents = block [ "shape-triangle", "style-" ++ show style ] []
+triangle style = block [ "shape-triangle", "style-" ++ show style ]
+
+dot :: forall a. Size -> Array (Widget a) -> Widget a
+dot size = block [ "shape-dot", "radius-" ++ show size ]

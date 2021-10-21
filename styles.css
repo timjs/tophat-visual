@@ -85,7 +85,10 @@ div {
 .layout-row {
   display: flex;
   flex-direction: row;
-  align-items: stretch;
+  align-items: center;
+}
+.layout-row > .shape-line {
+  width: 4pc;
 }
 .layout-row.layout-branch > .layout-column > .shape-line:first-of-type {
   height: 4pc;
@@ -146,23 +149,40 @@ div {
   align-items: center;
   padding: 0 0.5pc;
 }
-.layout-column .shape-line {
+.layout-column > .shape-line {
   height: 2pc;
   flex-grow: 1;
 }
-.layout-column .shape-line:hover {
+.layout-column > .shape-line:hover {
   border-color: #6362dc;
 }
 
 .layout-side {
   position: absolute;
 }
-.layout-side.side-left {
-  right: 1.5pc;
+.layout-side.side-left.dist-sm {
+  right: 0.5pc;
+  min-width: 10pc;
 }
-.layout-side.side-right {
+.layout-side.side-left.dist-md {
+  right: 1.5pc;
+  min-width: 15pc;
+}
+.layout-side.side-left.dist-lg {
+  right: 2.25pc;
+  min-width: 20pc;
+}
+.layout-side.side-right.dist-sm {
   left: 0.5pc;
   min-width: 10pc;
+}
+.layout-side.side-right.dist-md {
+  left: 1.5pc;
+  min-width: 15pc;
+}
+.layout-side.side-right.dist-lg {
+  left: 2.25pc;
+  min-width: 20pc;
 }
 
 .shape-line {
@@ -233,10 +253,20 @@ div {
   background-color: #4b48d6;
 }
 
-.shape-circle {
-  height: 1pc;
-  width: 1pc;
+.shape-dot {
   background-color: #bcc3ce;
   border: 1pt solid #bcc3ce;
   border-radius: 50%;
+}
+.shape-dot.radius-sm {
+  height: 0.75pc;
+  width: 0.75pc;
+}
+.shape-dot.radius-md {
+  height: 1pc;
+  width: 1pc;
+}
+.shape-dot.radius-lg {
+  height: 2pc;
+  width: 2pc;
 }
