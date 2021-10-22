@@ -40,6 +40,9 @@ select m t1 bs = unchecked <| Step m t1 (unchecked <| Select bs)
 always :: Expression
 always = Constant (B true)
 
+never :: Expression
+never = Constant (B false)
+
 -- NOTE:
 -- Be aware of the INVARIANT: Branch and Select need to be inside a Step.
 -- 1. Inserting a new tasks into a step, means we have to create a Branch.
