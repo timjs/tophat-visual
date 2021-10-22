@@ -11,9 +11,11 @@ import Concur.Dom.Input as Input
 import Concur.Dom.Style (Button(..), Kind(..), Orientation(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
+
 import Data.Array as Array
 import Data.Either.Nested as Either
 import Data.HashMap as HashMap
+
 import Task.Script.Annotation (Annotated(..), Checked, Status(..), unannotate, extractContext)
 import Task.Script.Builder as Builder
 import Task.Script.Context (Context, Typtext, aliases)
@@ -51,35 +53,42 @@ renderTask g s t = Style.column
   ]
   where
   go :: Checked Task -> Widget (Checked Task)
-  go (Annotated a_t t) = case t of
+  go (Annotated a_t t) = Annotated a_t <-< case t of
     ---- Steps
-    --INVARIANT third arg of `Step` is always Branch or Select
+    -- NOTE:
+    -- Be aware of the INVARIANT: Branch and Select need to be inside a Step.
 
-    Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])) -> do
-      m' ~ t1' <- renderEnd go a_t m t1
-      done <| Annotated a_t (Step m' t1' (Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])))
+    Step m t1 orig@(Annotated a_b (Branch [ Constant (B true) ~ Annotated a_l (Lift e) ])) -> do
+      c' ~ m' ~ t1' <- renderEnd go a_t m t1
+      done <| Step m' t1' <| case c' of
+        New -> Builder.new orig
+        _ -> orig
 
-    Step m t1 (Annotated a_b (Branch [ Constant (B true) ~ t2 ])) -> do
+    Step m t1 orig@(Annotated a_b (Branch [ Constant (B true) ~ t2 ])) -> do
       c' ~ m' ~ t1' ~ t2' <- renderSingle go a_t Hurry m t1 t2
-      done <| Annotated a_t <| Step m' t1' <| Annotated a_b case c' of
-        Hurry -> Branch [ Constant (B true) ~ t2' ]
-        Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
-    Step m t1 (Annotated a_b (Branch bs)) -> do
+      done <| Step m' t1' <| case c' of
+        Hurry -> Annotated a_b <| Branch [ Constant (B true) ~ t2' ]
+        Delay -> Annotated a_b <| Select [ "Continue" ~ Constant (B true) ~ t2' ]
+        New -> Builder.new orig
+    Step m t1 orig@(Annotated a_b (Branch bs)) -> do
       c' ~ m' ~ t1' ~ bs' <- renderBranches go a_t m t1 bs
-      done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
-        Hurry -> Branch bs'
-        Delay -> Select (addLabels bs')
+      done <| Step m' t1' <| case c' of
+        Hurry -> Annotated a_b <| Branch bs'
+        Delay -> Annotated a_b <| Select (addLabels bs')
+        New -> Builder.new orig
 
-    Step m t1 (Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2 ])) -> do
+    Step m t1 orig@(Annotated a_b (Select [ "Continue" ~ Constant (B true) ~ t2 ])) -> do
       c' ~ m' ~ t1' ~ t2' <- renderSingle go a_t Delay m t1 t2
-      done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
-        Hurry -> Branch [ Constant (B true) ~ t2' ]
-        Delay -> Select [ "Continue" ~ Constant (B true) ~ t2' ]
-    Step m t1 (Annotated a_b (Select bs)) -> do
+      done <| Step m' t1' <| case c' of
+        Hurry -> Annotated a_b <| Branch [ Constant (B true) ~ t2' ]
+        Delay -> Annotated a_b <| Select [ "Continue" ~ Constant (B true) ~ t2' ]
+        New -> Builder.new orig
+    Step m t1 orig@(Annotated a_b (Select bs)) -> do
       c' ~ m' ~ t1' ~ bs' <- renderSelects go a_t m t1 bs
-      done <| Annotated a_t <| Step m' t1' <| Annotated a_b <| case c' of
-        Hurry -> Branch (removeLabels bs')
-        Delay -> Select bs'
+      done <| Step m' t1' <| case c' of
+        Hurry -> Annotated a_b <| Branch (removeLabels bs')
+        Delay -> Annotated a_b <| Select bs'
+        New -> Builder.new orig
 
     Step _ _ _ -> panic "invalid single step"
     -- m' ~ t1' ~ t2' <- renderSingle Hurry go m t1 t2
@@ -101,43 +110,43 @@ renderTask g s t = Style.column
     ---- Editors
     Enter n -> do
       n' <- renderEnter s n
-      done <| Annotated a_t (Enter n')
+      done <| Enter n'
     Update e -> do
       e' <- renderUpdate e
-      done <| Annotated a_t (Update e')
+      done <| Update e'
     Change e -> todo "change"
     -- Change  e -> do
     --   r <- renderConnect style_line Both (editMessage Icon.edit m) (editExpression Icon.database e)
     --   let e' = consolidate m e r
-    --   done <| Annotated a_t (Change m' e')
+    --   done <| (Change m' e')
     View e -> do
       e' <- renderView e
-      done <| Annotated a_t (View e')
+      done <| View e'
     Watch e -> do
       e' <- renderWatch a_t e
-      done <| Annotated a_t (Watch e')
+      done <| Watch e'
 
     ---- Combinators
     Lift e -> do
       e' <- renderLift e
-      done <| Annotated a_t (Lift e')
+      done <| Lift e'
     Pair ts -> do
       t' <- renderGroup And go ts
-      done <| Annotated a_t t'
+      done <| t'
     Choose ts -> do
       t' <- renderGroup Or go ts
-      done <| Annotated a_t t'
+      done <| t'
 
     ---- Extras
     Execute n as -> do
       n' ~ as' <- renderExecute a_t n as
-      done <| Annotated a_t (Execute n' as')
+      done <| Execute n' as'
     Hole as -> do
       n' ~ as' <- renderExecute a_t "??" as
       if n' == "??" then
-        done <| Annotated a_t (Hole as')
+        done <| Hole as'
       else
-        done <| Annotated a_t (Execute n' as')
+        done <| Execute n' as'
 
     ---- Shares
     Assign e1 e2 -> todo "assign"
@@ -148,7 +157,7 @@ renderTask g s t = Style.column
 
     Share e -> do
       e' <- renderShare e
-      done <| Annotated a_t (Share e')
+      done <| Share e'
 
 ---- Parts ---------------------------------------------------------------------
 
@@ -269,8 +278,8 @@ renderStep status cont match@(MRecord row) =
     [ renderLine row ->> (Either.in2 match)
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
         Style.element
-          [ void Attr.onClick ->> (switch cont |> Either.in1)
-          -- , void Attr.onClick ->> ?h
+          [ void Attr.onClick ->> Either.in1 (switch cont)
+          , void Attr.onDoubleClick ->> Either.in1 New
           ]
           [ Style.triangle (style cont) empty ]
     ]
@@ -300,15 +309,16 @@ renderSingle render status cont match sub1 sub2 =
     >-> fix3 sub1 sub2 (cont ~ match)
     >-> reorder4
 
-renderEnd :: forall a. (a -> Widget a) -> Status -> Match -> a -> Widget (Match * a)
+renderEnd :: forall a. (a -> Widget a) -> Status -> Match -> a -> Widget (Cont * Match * a)
 renderEnd render status args@(MRecord row) subtask =
   Style.column
-    [ render subtask >-> Either.in2
-    , renderLine row ->> Either.in1 args
+    [ render subtask >-> Either.in3
+    , renderLine row ->> Either.in2 args
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
-        Style.triangle (style Hurry) empty
+        Style.element [ void Attr.onDoubleClick ->> Either.in1 New ]
+          [ Style.triangle (style Hurry) empty ]
     ]
-    >-> fix2 args subtask
+    >-> fix3 Hurry args subtask
 renderEnd _ _ _ _ = todo "other matches in end rendering"
 
 ---- Branches ----
@@ -570,7 +580,9 @@ reorder4 (a ~ b ~ c ~ d) = (c ~ d ~ a ~ b)
 assoc :: forall a b c. (a * b) * c -> a * (b * c)
 assoc ((a ~ b) ~ c) = a ~ b ~ c
 
-data Par = And | Or
+data Par
+  = And
+  | Or
 
 this :: forall a. Par -> Array a -> Task a
 this And = Pair
@@ -584,11 +596,15 @@ stroke :: Par -> Stroke
 stroke And = Solid
 stroke Or = Double
 
-data Cont = Hurry | Delay
+data Cont
+  = Hurry
+  | Delay
+  | New --NOTE: hacky...
 
 style :: Cont -> Style
 style Hurry = Filled
 style Delay = Outlined
+style New = Filled -- NOTE: just to make it total...
 
 class Switch a where
   switch :: a -> a
@@ -600,6 +616,7 @@ instance Switch Par where
 instance Switch Cont where
   switch Hurry = Delay
   switch Delay = Hurry
+  switch New = New
 
 addLabels :: forall f v. Functor f => f v -> f (String * v)
 addLabels = map ("" ~ _)

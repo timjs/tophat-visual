@@ -1,5 +1,6 @@
 module Task.Script.Context
   ( Context
+  , showContext
   , builtins
   , Typtext
   , aliases
@@ -16,6 +17,7 @@ module Task.Script.Context
 
 import Preload
 
+import Data.Array as Array
 import Data.HashMap as HashMap
 import Data.String (Pattern(..), Replacement(..))
 import Data.String as String
@@ -27,6 +29,13 @@ import Task.Script.Type (BasicType(..), FullType(..), PrimType(..), ofBasic)
 
 type Context
   = HashMap Name FullType
+
+showContext :: Context -> String
+showContext =
+  HashMap.toArrayBy (~)
+    >> Array.sortBy (compare `on` fst)
+    >> map (\(l ~ t) -> l ++ " : " ++ show t)
+    >> intercalate "\n"
 
 operators :: Context
 operators = from

@@ -118,6 +118,11 @@ type Branches t = Array (Expression * t)
 
 type LabeledBranches t = Array (Label * Expression * t)
 
+-- NOTE:
+-- Be aware of the INVARIANT: Branch and Select need to be inside a Step.
+-- The official gramar reflects this, but the grammar defined here is flatened,
+-- to parametrise it as a functor and tie the knot using custom annotations.
+-- (See Task.Script.Annotation.)
 data Task t
   -- Steps
   = Step Match t t

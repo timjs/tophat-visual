@@ -5,7 +5,7 @@ module Task.Script.Error
 
 import Preload
 
-import Task.Script.Context (Context)
+import Task.Script.Context (Context, showContext)
 import Task.Script.Label (Label, Labels, Name, Labeled, showLabels)
 import Task.Script.Syntax (Match)
 import Task.Script.Type (FullType)
@@ -65,6 +65,6 @@ instance Show Error where
     UndeterminedType -> "The type of this part could not be determined due to a type check failure"
     EmptyCase -> unwords [ "This case expression has no branches" ]
     EmptyChoice -> unwords [ "This choice task has no branches" ]
-    HoleFound g -> unlines [ "Found hole of type _ in context", show g |> indent 2 ]
+    HoleFound g -> unlines [ "Found hole in context:", showContext g ]
     RecordMismatch ms t -> unwords [ "Matching against", show ms, "needs", show t, "to be a record type" ]
     UnpackMismatch t -> unwords [ "Unpacking needs", show t, "to be a record type" ]
