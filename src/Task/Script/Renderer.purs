@@ -41,11 +41,39 @@ main { types: s, context: g, tasks: ts } n =
           [ renderStart n' ps' >-> Either.in1
           , renderTask g' s t'' >-> Either.in2
           , renderStop
+          , Text.head " "
+          , Text.head "Code"
           , Text.code "TopHat" (show (unannotate t''))
+          , Text.head "Tips"
+          , renderTips
+          , Text.head "Notes"
+          , renderNotes
           ]
           >-> fix2 (n' ~ ps') t''
           >-> assoc
     Nothing -> Text.text <| "Could not find task " ++ quote n
+
+renderTips :: forall a. Widget a
+renderTips = Text.bullets
+  [ Text.item <| Text.text "Hover over"
+  , Text.bullets
+      [ Text.item <| Text.text "arrows to see values in context"
+      , Text.item <| Text.text "arguments to add or remove some"
+      ]
+  , Text.item <| Text.text "Click on"
+  , Text.bullets
+      [ Text.item <| Text.text "arrows to switch between internal/external step"
+      , Text.item <| Text.text "bars to switch between and/or parallel"
+      ]
+  , Text.item <| Text.text "Double click on"
+  , Text.bullets
+      [ Text.item <| Text.text "arrows to add a new hole"
+      , Text.item <| Text.text "bars to add a new branch"
+      ]
+  ]
+
+renderNotes :: forall a. Widget a
+renderNotes = Text.text "Editing matches (results) and expressions is currently not supported, as is adding fresh tasks to the library."
 
 renderTask :: Context -> Typtext -> Renderer
 renderTask g s t = Style.column

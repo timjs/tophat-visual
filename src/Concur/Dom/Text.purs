@@ -12,9 +12,11 @@ module Concur.Dom.Text
   -- Lists
   , bullets
   , numbers
+  , item
   ) where
 
 import Preload
+
 import Concur.Dom (Widget, block)
 import Concur.Dom.Node as Node
 import Concur.Dom.Attr as Attr
@@ -70,10 +72,10 @@ subsubhead s = Node.h5' [ text s ]
 ---- Lists ---------------------------------------------------------------------
 
 bullets :: forall a. Array (Widget a) -> Widget a
-bullets xs = Node.ul' (map item xs)
+bullets = Node.ul'
 
 numbers :: forall a. Array (Widget a) -> Widget a
-numbers xs = Node.ol' (map item xs)
+numbers = Node.ol'
 
 item :: forall a. Widget a -> Widget a
 item x = Node.li' [ x ]
