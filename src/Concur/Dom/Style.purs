@@ -1,3 +1,4 @@
+-- | Horribly intertwined with `style.sass`...
 module Concur.Dom.Style
   -- # Types
   ( Kind(..)
