@@ -8,7 +8,7 @@ import Concur.Dom.Attr as Attr
 import Concur.Dom.Icon as Icon
 import Concur.Dom.Input (Action(..))
 import Concur.Dom.Input as Input
-import Concur.Dom.Style (Button(..), Kind(..), Orientation(..), Position(..), Size(..), Stroke(..), Style(..))
+import Concur.Dom.Style (Kind(..), Position(..), Size(..), Stroke(..), Style(..))
 import Concur.Dom.Style as Style
 import Concur.Dom.Text as Text
 
@@ -182,7 +182,7 @@ renderStart name params =
 
 renderParams :: Parameters -> Widget Unit
 renderParams params =
-  Style.line Solid [ Style.place Above Small [ Style.column (renderLabels params) ] ]
+  Style.line Solid [ Style.place Above Small [ Style.column (renderLabels (HashMap.keys params)) ] ]
 
 renderStop :: forall a. Widget a
 renderStop = Style.column
@@ -216,7 +216,7 @@ renderArgs status args@(ARecord argrow) =
         []
     )
     --NOTE: make sure every vertical line is in a column to make CSS function properly
-    (Style.column [ Style.line Solid [ Style.place After Small [ Style.row (renderLabels argrow) ] ] ->> args ])
+    (Style.column [ Style.line Solid [ Style.place After Small [ Style.row (renderLabels (HashMap.keys argrow)) ] ] ->> args ])
   where
   --TODO: renaming of variables
   select = status |> extractContext |> HashMap.filter (isFunction >> not) |> HashMap.keys |> map check
@@ -254,14 +254,14 @@ renderPossibleArgs status args@(ARecord argrow) =
   action label = if HashMap.member label argrow then Remove else Add
   toArgs labels = ARecord (HashMap.fromArrayBy identity Variable labels)
 
-renderLine :: forall a. Labeled a -> Widget Unit
-renderLine row =
-  Style.line Solid [ Style.place After Small [ Style.row (renderLabels row) ] ]
+renderLine :: Array Label -> Widget Unit
+renderLine labels =
+  Style.line Solid [ Style.place After Small [ Style.row (renderLabels labels) ] ]
 
 -- | || (( a_1 .. a_n ))
-renderLabels :: forall a. Labeled a -> Array (Widget Unit)
+renderLabels :: Array Label -> Array (Widget Unit)
 renderLabels =
-  HashMap.keys >> map (Input.chip Normal None)
+  map (Input.chip Normal None)
 
 renderContext :: Status -> String
 renderContext = extractContext >> HashMap.filter (isFunction >> not) >> HashMap.toArrayBy (~) >> Array.sortBy (compare `on` fst) >> foldMap go
@@ -275,7 +275,7 @@ renderContext = extractContext >> HashMap.filter (isFunction >> not) >> HashMap.
 renderStep :: Status -> Cont -> Match -> Widget (Cont * Match)
 renderStep status cont match@(MRecord row) =
   Style.column
-    [ renderLine row ->> (Either.in2 match)
+    [ renderLine labels ->> (Either.in2 match)
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
         Style.element
           [ void Attr.onClick ->> Either.in1 (switch cont)
@@ -284,6 +284,11 @@ renderStep status cont match@(MRecord row) =
           [ Style.triangle (style cont) empty ]
     ]
     >-> fix2 cont match
+  where
+  labels = HashMap.values row |> map getBinds |> Array.catMaybes
+  getBinds = case _ of
+    MBind n -> Just n
+    _ -> Nothing
 renderStep _ _ _ = todo "other matches in step rendering"
 
 renderOption :: Status -> Expression -> Widget Expression
@@ -313,7 +318,7 @@ renderEnd :: forall a. (a -> Widget a) -> Status -> Match -> a -> Widget (Cont *
 renderEnd render status args@(MRecord row) subtask =
   Style.column
     [ render subtask >-> Either.in3
-    , renderLine row ->> Either.in2 args
+    , renderLine (HashMap.keys row) ->> Either.in2 args
     , Input.popover Before (Text.code "TopHat" (renderContext status)) <|
         Style.element [ void Attr.onDoubleClick ->> Either.in1 New ]
           [ Style.triangle (style Hurry) empty ]
