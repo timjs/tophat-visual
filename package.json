@@ -6,20 +6,14 @@
   "author": "Tim Steenvoorden <tim.steenvoorden@gmail.com> (https://github.com/timjs)",
   "license": "MIT",
   "scripts": {
-    "clean": "rm -rf .cache .spago .psci_modules .pulp-cache node_modules output _prod _dist",
     "build": "spago build",
-    "bundle": "rm -rf _prod _dist && mkdir _prod && spago bundle-app --main Main --to _prod/index.js && cp index.html _prod/index.html && parcel build --public-url ./ _prod/index.html && rm -rf _prod",
-    "watch": "spago build && parcel index.html"
-  },
-  "devDependencies": {
-    "parcel-bundler": "^1.12.4",
-    "purescript": "~0.13.8",
-    "spago": "~0.15.3"
+    "dist": "rm -r dist/ && sass builder.sass > builder.css && parcel build --public-url /tophat/ --no-minify builder.html",
+    "watch": "parcel builder.html"
   },
   "dependencies": {
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
   },
-  "main": "index.js",
+  "main": "builder.js",
   "repository": "https://github.com/timjs/tophat-visual.git"
 }
