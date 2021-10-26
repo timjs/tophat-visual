@@ -36,8 +36,10 @@ derive instance Eq FullType
 instance Show FullType where
   show = case _ of
     TFunction t1 t2 ->
-      unwords [ show t1, "->", show t2 ]
-        |> enclose '(' ')'
+      unlines
+        [ show t1
+        , indent 2 <| unwords [ "->", show t2 ]
+        ]
     TName n -> n
     TList t -> unwords [ "List", show t ]
     TRecord ts -> showFields ":" ts
@@ -85,6 +87,7 @@ data PrimType
   = TBool
   | TInt
   | TString
+  | TBuiltin Name
 
 derive instance Eq PrimType
 
@@ -93,6 +96,7 @@ instance Show PrimType where
     TBool -> "Bool"
     TInt -> "Int"
     TString -> "String"
+    TBuiltin n -> n
 
 data BasicType
   = BName Name

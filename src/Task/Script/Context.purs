@@ -32,7 +32,9 @@ type Context
 
 showContext :: Context -> String
 showContext =
-  HashMap.toArrayBy (~)
+  flip HashMap.difference operators
+    >> flip HashMap.difference builtins
+    >> HashMap.toArrayBy (~)
     >> Array.sortBy (compare `on` fst)
     >> map (\(l ~ t) -> l ++ " : " ++ show t)
     >> intercalate "\n"
@@ -64,8 +66,8 @@ functions = from
 
 shares :: Context
 shares = from
-  [ "current date" ~ TReference (BPrimitive TInt)
-  , "current time" ~ TReference (BPrimitive TInt)
+  [ "current date" ~ TReference (BPrimitive (TBuiltin "Date"))
+  , "current time" ~ TReference (BPrimitive (TBuiltin "Time"))
   ]
 
 builtins :: Context

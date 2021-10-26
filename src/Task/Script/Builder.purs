@@ -50,7 +50,7 @@ never = Constant (B false)
 --    otherwise we've a single branch.
 -- 3. The old branches need to be inserted into this Step.
 new :: Checked Task -> Checked Task
-new t = unchecked <| Branch [ always ~ (unchecked <| Step (MRecord <| from []) hole t) ]
+new t = unchecked <| Branch [ always ~ (unchecked <| Step (match []) hole t) ]
 
 ---- Combinators ----
 
@@ -60,9 +60,12 @@ pair ts = unchecked <| Pair ts
 choose :: Array (Checked Task) -> Checked Task
 choose ts = unchecked <| Choose ts
 
+end :: Match -> Checked Task -> Checked Task
+end m t = step m t (lift Wildcard)
+
 item :: Checked Task
 -- item = step (MRecord <| from []) hole (lift (Record <| from []))
-item = step (MRecord <| from []) hole (lift Wildcard)
+item = end (match []) hole
 
 ---- Tasks ----
 
@@ -74,3 +77,8 @@ hole = unchecked <| Hole (ARecord <| from [])
 
 lift :: Expression -> Checked Task
 lift e = unchecked <| Lift e
+
+---- Matches ----
+
+match :: Array String -> Match
+match = MRecord << from << map (\x -> x ~ MBind x)

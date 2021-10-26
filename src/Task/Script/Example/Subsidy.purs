@@ -4,7 +4,7 @@ import Preload hiding (pair)
 
 import Data.HashMap as HashMap
 import Task.Script.Annotation (Checked)
-import Task.Script.Builder (branch, enter, execute, lift, pair, step, view)
+import Task.Script.Builder (branch, enter, execute, lift, pair, hole, cont, end, match, step, view)
 import Task.Script.Context (Context, Typtext, recordOf', recordOf, taskOf, (:->))
 import Task.Script.Syntax (Arguments(..), Constant(..), Expression(..), Match(..), Task)
 import Task.Script.Type (BasicType(..), PrimType(..))
@@ -16,21 +16,21 @@ types :: Typtext
 types =
   from
     [ "Citizen"
-        ~ BPrimitive TString
+        ~ BPrimitive (TBuiltin "Citizen")
     -- ~ recordOf'
     --     [ "ssn" ~ BName "Nat"
     --     , "name" ~ BName "String"
     --     , "address" ~ BName "Address"
     --     ]
     , "Company"
-        ~ BPrimitive TString
+        ~ BPrimitive (TBuiltin "Company")
     -- ~ recordOf'
     --     [ "coc" ~ BName "Nat"
     --     , "name" ~ BName "String"
     --     , "address" ~ BName "Address"
     --     ]
     , "Address"
-        ~ BPrimitive TString
+        ~ BPrimitive (TBuiltin "Address")
     -- ~ recordOf'
     --     [ "street" ~ BName "String"
     --     , "house number" ~ BName "Nat"
@@ -38,14 +38,14 @@ types =
     --     , "city" ~ BName "String"
     --     ]
     , "Documents"
-        ~ BPrimitive TInt
+        ~ BPrimitive (TBuiltin "Documents")
     -- ~ recordOf'
     --     [ "invoice amount" ~ BName "Nat"
     --     , "invoice date" ~ BName "Date"
     --     , "roof photos" ~ BList (BName "String")
     --     ]
     , "Declaration"
-        ~ BPrimitive TInt
+        ~ BPrimitive (TBuiltin "Declaration")
     -- ~ recordOf'
     --     [ "roof photos" ~ BList (BName "String")
     --     , "date" ~ BName "Date"
@@ -86,8 +86,8 @@ context =
 tasks :: Tasktext
 tasks =
   from
-    [ "request subsidy" ~
-        (from [] ~ request_subsidy)
+    [ "request subsidy" ~ (from [] ~ request_subsidy)
+    , "request subsidy partial" ~ (from [] ~ request_subsidy_partial)
     ]
 
 {-
@@ -107,7 +107,7 @@ tasks =
 
 request_subsidy :: Checked Task
 request_subsidy =
-  step (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
+  cont (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
     <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (execute "check conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
       [ Variable "not" `Apply` Variable "approved"
           ~
@@ -124,6 +124,30 @@ request_subsidy =
                         <| step (MRecord <| from [ "declaration" ~ MBind "declaration" ]) (execute "provide declaration" (ARecord <| from [ "contractor" ~ Variable "contractor", "details" ~ Variable "details" ]))
                         <| lift (Record <| from [ "contractor" ~ Variable "contractor", "declaration" ~ Variable "declaration" ])
                     -- <| lift Wildcard
+                    ]
+                )
+                -- <| execute "submit request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
+                <| execute "submit request" (ARecord <| from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ])
+            )
+      ]
+
+request_subsidy_partial :: Checked Task
+request_subsidy_partial =
+  cont (MRecord <| from [ "value" ~ MBind "details" ]) (enter "Citizen")
+    <| branch (MRecord <| from [ "approved" ~ MBind "approved" ]) (execute "check conditions" (ARecord <| from [ "details" ~ Variable "details" ]))
+      [ Variable "not" `Apply` Variable "approved"
+          ~
+            ( view (Constant (S "Cannot approve"))
+            )
+      , Variable "approved"
+          ~
+            ( step (MRecord <| from [ "documents" ~ MBind "documents", "declaration" ~ MBind "declaration" ])
+                ( pair
+                    [ step (MRecord <| from [ "documents" ~ MBind "documents" ]) (execute "provide documents" (ARecord <| from [ "details" ~ Variable "details" ]))
+                        -- <| lift Wildcard -- XXX Something is wrong with Wildcard...
+                        <| lift (Record <| from [ "documents" ~ Variable "documents" ])
+                    -- , step (MRecord <| from [ "contractor" ~ MBind "contractor" ]) (execute "select contractor" (ARecord HashMap.empty)) <|
+                    , end (match []) hole
                     ]
                 )
                 -- <| execute "submit request" (ARecord <| from [ "dossier" ~ Record (from [ "declaration" ~ Variable "declaration", "documents" ~ Variable "documents" ]) ])
