@@ -100,7 +100,7 @@ instance Show Match where
   show = case _ of
     MIgnore -> "_"
     MBind x -> x
-    MRecord ms -> showFields "=" ms
+    MRecord ms -> showFields "≈" ms
     MUnpack -> "{..}"
 
 ---- Statements ----------------------------------------------------------------
