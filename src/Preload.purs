@@ -399,19 +399,19 @@ unlines = Reexport.intercalate "\n"
 
 ---- Functors, Applicatives, Applicatives, Monads ------------------------------
 
-infixl 4 Reexport.map as <-<
+infixl 4 Reexport.map as <-< -- <$>
 
-infixl 1 Reexport.mapFlipped as >->
+infixl 1 Reexport.mapFlipped as >-> -- <#>
 
-infixl 4 Reexport.voidRight as <<-
+infixl 4 Reexport.voidRight as <<- -- <$
 
-infixl 4 Reexport.voidLeft as ->>
+infixl 4 Reexport.voidLeft as ->> -- $>
 
-infixl 4 Reexport.apply as -<<
+infixl 4 Reexport.apply as -<< -- <*>
 
-infixl 4 Reexport.applyFirst as -<-
+infixl 4 Reexport.applyFirst as -<- -- <*
 
-infixl 4 Reexport.applySecond as ->-
+infixl 4 Reexport.applySecond as ->- -- *>
 
 infixl 5 pair as <>
 

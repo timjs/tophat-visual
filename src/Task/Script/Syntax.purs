@@ -44,7 +44,7 @@ instance Show Expression where
     Apply (Apply (Variable n1) e2) e3 -> -- special case for operators
       if isOperator n1 then unwords [ show e2, n1, show e3 ]
       else unwords [ unreadable n1, show e2, show e3 ]
-    Apply e1 e2 -> unwords [ show e1, show e2 ] --FIXME: parens?
+    Apply e1 e2 -> unwords [ "(", show e1, show e2, ")" ] --FIXME: parens needed?
     Variable n -> unreadable n
     IfThenElse e1 e2 e3 ->
       unlines
