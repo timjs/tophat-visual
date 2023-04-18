@@ -270,13 +270,13 @@ instance Reexport.Hashable k => Initialise (Reexport.HashMap k v) (k * v) where
 
 ---- Functions -----------------------------------------------------------------
 
-infixr 9 Reexport.compose as <<
+infixr 9 Reexport.compose as << -- <<<
 
-infixr 9 composeFlipped as >>
+infixr 9 composeFlipped as >> -- >>>
 
-infixr 0 apply as <|
+infixr 0 apply as <| -- $
 
-infixl 1 applyFlipped as |>
+infixl 1 applyFlipped as |> -- #
 
 -- undefined :: forall a. Warn (Text "Undefined function in code") => a
 -- undefined = unsafeCoerce {}
@@ -285,7 +285,7 @@ todo :: forall a. Warn (Text "Todo left in code") => String -> a
 todo = panic
 
 panic :: forall a. String -> a
-panic s = Reexport.spy ("TODO: " ++ s) (unsafeCoerce {})
+panic s = Reexport.spy ("PANIC: " ++ s) (unsafeCoerce {})
 
 ---- Enums ---------------------------------------------------------------------
 
